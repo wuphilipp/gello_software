@@ -1,0 +1,12 @@
+{
+  "include": [
+    "gello"
+  ],
+  "exclude": [
+    "**/node_modules",
+    "src/typestubs"
+  ],
+  "reportMissingImports": false,
+  "reportMissingTypeStubs": false,
+  "reportGeneralTypeIssues": false
+}

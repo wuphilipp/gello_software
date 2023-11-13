@@ -1,0 +1,6 @@
+[submodule "third_party/mujoco_menagerie"]
+	path = third_party/mujoco_menagerie
+	url = https://github.com/deepmind/mujoco_menagerie.git
+[submodule "third_party/DynamixelSDK"]
+	path = third_party/DynamixelSDK
+	url = https://github.com/ROBOTIS-GIT/DynamixelSDK.git

@@ -1,0 +1,3 @@
+[flake8]
+ignore = D100, D101, D102, D103, D104, D105, D107, E203, E501, W503, SIM201, SIM113, B027, C408, B008
+docstring-convention = google

@@ -1,0 +1,38 @@
+repos:
+
+# remove unused python imports
+-   repo: https://github.com/myint/autoflake.git
+    rev: v2.1.1
+    hooks:
+    -   id: autoflake
+        args: ["--in-place", "--remove-all-unused-imports", "--ignore-init-module-imports"]
+
+# sort imports
+-   repo: https://github.com/timothycrosley/isort
+    rev: 5.12.0
+    hooks:
+    -   id: isort
+
+# code format according to black
+-   repo: https://github.com/ambv/black
+    rev: 23.3.0
+    hooks:
+    -   id: black
+
+# check for python styling with flake8
+-   repo: https://github.com/PyCQA/flake8
+    rev: 6.0.0
+    hooks:
+    -   id: flake8
+        additional_dependencies: [
+          'flake8-docstrings',
+          'flake8-bugbear',
+          'flake8-comprehensions',
+          'flake8-simplify',
+        ]
+
+# cleanup notebooks
+-   repo: https://github.com/kynan/nbstripout
+    rev: 0.6.1
+    hooks:
+    -   id: nbstripout
