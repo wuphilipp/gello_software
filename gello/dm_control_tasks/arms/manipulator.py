@@ -225,5 +225,5 @@ class ArmObservables(composer.Observables):
             self.flange_position,
             # self.flange_orientation,
             # self.flange_velocity,
-            self.flange_angular_velocity,
+            # self.flange_angular_velocity,
         ] + self._collect_from_attachments("proprioception")
