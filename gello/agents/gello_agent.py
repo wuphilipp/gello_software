@@ -105,6 +105,8 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
     ),
 }
 
+def known_gello_port(port):
+    return port in PORT_CONFIG_MAP
 
 class GelloAgent(Agent):
     def __init__(
