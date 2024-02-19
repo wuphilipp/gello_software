@@ -31,7 +31,7 @@ docker build . -t gello:latest
 
 We have provided an entry point into the docker container
 ```
-python experiments/launch.py
+python scripts/launch.py
 ```
 
 # GELLO configuration setup (PLEASE READ)
