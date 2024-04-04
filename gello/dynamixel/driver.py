@@ -237,8 +237,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         # Return a copy of the joint_angles array to avoid race conditions
         while self._joint_angles is None:
             time.sleep(0.1)
-        with self._lock:
-            _j = self._joint_angles.copy()
+        # with self._lock:
+        _j = self._joint_angles.copy()
         return _j / 2048.0 * np.pi
 
     def close(self):

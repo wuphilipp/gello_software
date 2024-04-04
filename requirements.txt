@@ -5,7 +5,7 @@ pygame
 pyspacemouse
 PyQt6
 pyquaternion
-pyrealsense2
+# pyrealsense2
 pure-python-adb
 quaternion
 tyro
