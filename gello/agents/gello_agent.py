@@ -90,7 +90,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
         gripper_config=(7, 20, -22),
     ),
     # Right UR
-    "/dev/cu.usbserial-FT7WBG6A": DynamixelRobotConfig(
+    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6A-if00-port0": DynamixelRobotConfig(
         joint_ids=(1, 2, 3, 4, 5, 6),
         joint_offsets=(
             np.pi + 0 * np.pi,

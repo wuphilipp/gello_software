@@ -18,15 +18,15 @@ class Args:
 config = DynamixelRobotConfig(
     joint_ids=(1, 2, 3, 4, 5, 6),
     joint_offsets=(
-        np.pi + 0 * np.pi,
-        2 * np.pi + np.pi / 2,
-        2 * np.pi + np.pi / 2,
-        2 * np.pi + np.pi / 2,
-        1 * np.pi,
-        3 * np.pi / 2,
+        -np.pi / 2,
+        1 * np.pi / 2 + np.pi,
+        np.pi / 2 + 0 * np.pi,
+        0 * np.pi + np.pi / 2,
+        np.pi - 2 * np.pi / 2,
+        -1 * np.pi / 2 + 2 * np.pi,
     ),
     joint_signs=(1, 1, -1, 1, 1, 1),
-    gripper_config=(7, 286, 248),
+    gripper_config=(7, 20, -22),
 )
 
 
@@ -40,7 +40,7 @@ def main(args: Args) -> None:
     action_space = env.action_spec()
     if args.use_gello:
         gello = config.make_robot(
-            port="/dev/cu.usbserial-FT7WBG6A", start_joints=reset_joints_left
+            port="/dev/cu.usbserial-FT7WBEIA", start_joints=reset_joints_left
         )
 
     def policy(timestep) -> np.ndarray:
