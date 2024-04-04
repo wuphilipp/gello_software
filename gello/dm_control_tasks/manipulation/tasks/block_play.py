@@ -1,4 +1,5 @@
 """A task where a walker must learn to stand."""
+
 from typing import Optional
 
 import numpy as np

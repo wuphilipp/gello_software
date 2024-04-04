@@ -86,11 +86,14 @@ class DynamixelRobot(Robot):
             if gripper_config is not None:
                 current_joints = current_joints[:-1]
                 start_joints = start_joints[:-1]
-            for idx, (c_joint, s_joint, joint_offset) in enumerate(zip(
-                current_joints, start_joints, self._joint_offsets
-            )):
+            for idx, (c_joint, s_joint, joint_offset) in enumerate(
+                zip(current_joints, start_joints, self._joint_offsets)
+            ):
                 new_joint_offsets.append(
-                    np.pi * 2 * np.round((-s_joint + c_joint) / (2 * np.pi)) * self._joint_signs[idx]
+                    np.pi
+                    * 2
+                    * np.round((-s_joint + c_joint) / (2 * np.pi))
+                    * self._joint_signs[idx]
                     + joint_offset
                 )
             if gripper_config is not None:
