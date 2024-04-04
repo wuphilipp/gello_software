@@ -20,7 +20,6 @@ ADDR_TORQUE_ENABLE = 64
 ADDR_GOAL_POSITION = 116
 LEN_GOAL_POSITION = 4
 ADDR_PRESENT_POSITION = 132
-ADDR_PRESENT_POSITION = 140
 LEN_PRESENT_POSITION = 4
 TORQUE_ENABLE = 1
 TORQUE_DISABLE = 0
@@ -237,8 +236,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         # Return a copy of the joint_angles array to avoid race conditions
         while self._joint_angles is None:
             time.sleep(0.1)
-        with self._lock:
-            _j = self._joint_angles.copy()
+        # with self._lock:
+        _j = self._joint_angles.copy()
         return _j / 2048.0 * np.pi
 
     def close(self):
@@ -257,10 +256,11 @@ def main():
     except FileNotFoundError:
         driver = DynamixelDriver(ids, port="/dev/cu.usbserial-FT7WBMUB")
 
+    # Test setting torque mode
     driver.set_torque_mode(True)
     driver.set_torque_mode(False)
 
-    # Print the joint angles
+    # Test reading the joint angles
     try:
         while True:
             joint_angles = driver.get_joints()
@@ -271,4 +271,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    main()  # Test the driver
