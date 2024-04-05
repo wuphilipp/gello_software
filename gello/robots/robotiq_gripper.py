@@ -284,6 +284,9 @@ class RobotiqGripper:
         :return: A tuple with a bool indicating whether the action it was successfully sent, and an integer with
         the actual position that was requested, after being adjusted to the min/max calibrated range.
         """
+        position = int(position)
+        speed = int(speed)
+        force = int(force)
 
         def clip_val(min_val, val, max_val):
             return max(min_val, min(val, max_val))
@@ -317,6 +320,10 @@ class RobotiqGripper:
         that the move had completed, a status indicating how the move ended (see ObjectStatus enum for details). Note
         that it is possible that the position was not reached, if an object was detected during motion.
         """
+        position = int(position)
+        speed = int(speed)
+        force = int(force)
+
         set_ok, cmd_pos = self.move(position, speed, force)
         if not set_ok:
             raise RuntimeError("Failed to set variables for move.")
