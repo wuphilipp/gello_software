@@ -118,7 +118,7 @@ class Rate:
 
 class XArmRobot(Robot):
     GRIPPER_OPEN = 800
-    GRIPPER_CLOSE = 0
+    GRIPPER_CLOSE = 100
     #  MAX_DELTA = 0.2
     DEFAULT_MAX_DELTA = 0.05
 
@@ -155,9 +155,11 @@ class XArmRobot(Robot):
         real: bool = True,
         control_frequency: float = 50.0,
         max_delta: float = DEFAULT_MAX_DELTA,
+        use_robotiq: bool = True,
     ):
         print(ip)
         self.real = real
+        self.use_robotiq = use_robotiq
         self.max_delta = max_delta
         if real:
             from xarm.wrapper import XArmAPI
@@ -165,6 +167,12 @@ class XArmRobot(Robot):
             self.robot = XArmAPI(ip, is_radian=True)
         else:
             self.robot = None
+
+        if self.use_robotiq:
+            import pyRobotiqGripper
+            gripper = pyRobotiqGripper.RobotiqGripper()
+            self.gripper = gripper
+            #gripper.activate()
 
         self._control_frequency = control_frequency
         self._clear_error_states()
@@ -182,6 +190,7 @@ class XArmRobot(Robot):
         if real:
             self.command_thread = threading.Thread(target=self._robot_thread)
             self.command_thread.start()
+
 
     def get_state(self) -> RobotState:
         with self.last_state_lock:
@@ -207,33 +216,48 @@ class XArmRobot(Robot):
         time.sleep(1)
         self.robot.set_state(state=0)
         time.sleep(1)
-        self.robot.set_gripper_enable(True)
-        time.sleep(1)
-        self.robot.set_gripper_mode(0)
-        time.sleep(1)
-        self.robot.set_gripper_speed(3000)
-        time.sleep(1)
+        if self.use_robotiq:
+            pass
+        else:
+            self.robot.set_gripper_enable(True)
+            time.sleep(1)
+            self.robot.set_gripper_mode(0)
+            time.sleep(1)
+            self.robot.set_gripper_speed(3000)
+            time.sleep(1)
 
     def _get_gripper_pos(self) -> float:
         if self.robot is None:
             return 0.0
-        code, gripper_pos = self.robot.get_gripper_position()
-        while code != 0 or gripper_pos is None:
-            print(f"Error code {code} in get_gripper_position(). {gripper_pos}")
-            time.sleep(0.001)
+        if self.use_robotiq:
+            return self.gripper.getPosition() / 255
+        else:
             code, gripper_pos = self.robot.get_gripper_position()
-            if code == 22:
-                self._clear_error_states()
+            while code != 0 or gripper_pos is None:
+                print(f"Error code {code} in get_gripper_position(). {gripper_pos}")
+                time.sleep(0.001)
+                code, gripper_pos = self.robot.get_gripper_position()
+                if code == 22:
+                    self._clear_error_states()
 
-        normalized_gripper_pos = (gripper_pos - self.GRIPPER_OPEN) / (
-            self.GRIPPER_CLOSE - self.GRIPPER_OPEN
-        )
-        return normalized_gripper_pos
+            normalized_gripper_pos = (gripper_pos - self.GRIPPER_OPEN) / (
+                self.GRIPPER_CLOSE - self.GRIPPER_OPEN
+            )
+            return normalized_gripper_pos
 
     def _set_gripper_position(self, pos: int) -> None:
         if self.robot is None:
             return
-        self.robot.set_gripper_position(pos, wait=False)
+        if self.use_robotiq:
+            pos = 255 - (pos / 800 * 255)
+            try:
+                self.gripper.goTo(pos, wait=False)
+            except Exception as e:
+                print(e)
+                print(pos)
+                raise e
+        else:
+            self.robot.set_gripper_position(pos, wait=False)
         # while self.robot.get_is_moving():
         #     time.sleep(0.01)
 
@@ -347,12 +371,26 @@ def main():
 
     time.sleep(1)
     print(robot.get_state())
+    print(robot.get_state())
+    print(robot.get_state())
+    print(robot.get_state())
+    print(robot.get_state())
 
     time.sleep(1)
     print(robot.get_state())
     print("end")
+    robot.command_joint_state(np.zeros(7))
     robot.stop()
 
 
 if __name__ == "__main__":
+    ip = "192.168.1.226"
+    # from xarm.wrapper import XArmAPI
+    # robot = XArmAPI(ip, is_radian=True)
+    # robot.set_mode(1)
+    # robot.set_mode(1)
+    # robot.set_mode(1)
+    # print(robot.get_servo_angle())
+    # robot.set_servo_angle_j(np.ones(7)*0.1 + robot.get_servo_angle()[1])
+    # print(robot.get_state())
     main()
