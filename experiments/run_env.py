@@ -117,7 +117,7 @@ def main(args):
                     )
             if args.start_joints is None:
                 reset_joints = np.deg2rad(
-                    [0, -90, 90, -90, -90, 0, 0]
+                    [90, 0, 0, 0, 0, 0, 0, 0]
                 )  # Change this to your own reset joints
             else:
                 reset_joints = args.start_joints
@@ -146,10 +146,12 @@ def main(args):
             raise ValueError("Invalid agent name")
 
     # going to start position
-    print("Going to start position")
+    print(f"Going to start position {env.get_obs()}")
     start_pos = agent.act(env.get_obs())
+    print(f"start_pos as: {start_pos}" )
     obs = env.get_obs()
     joints = obs["joint_positions"]
+    print(f"joints {joints}")
 
     abs_deltas = np.abs(start_pos - joints)
     id_max_joint_delta = np.argmax(abs_deltas)
@@ -189,7 +191,7 @@ def main(args):
     obs = env.get_obs()
     joints = obs["joint_positions"]
     action = agent.act(obs)
-    if (action - joints > 0.5).any():
+    if (action - joints > 0.5*10).any():
         print("Action is too big")
 
         # print which joints are too big
@@ -220,6 +222,7 @@ def main(args):
             flush=True,
         )
         action = agent.act(obs)
+        print(f"action: {action}")
         dt = datetime.datetime.now()
         if args.use_save_interface:
             state = kb_interface.update()

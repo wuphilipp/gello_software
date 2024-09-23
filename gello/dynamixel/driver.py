@@ -145,6 +145,33 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._stop_thread = Event()
         self._start_reading_thread()
 
+    def move_single_joint(self, dxl_id, joint_angle: float):
+        if not self._torque_enabled:
+            raise RuntimeError("Torque must be enabled to set joint angles")
+        
+        result, error = self._packetHandler.write4ByteTxRx(
+                self._portHandler, dxl_id, ADDR_GOAL_POSITION, int(joint_angle * 2048 / np.pi)
+            )
+        
+        if result != COMM_SUCCESS:
+            print(f"move_single_joint: {dxl_id}, {joint_angle}, {result}, {error}")
+            # raise RuntimeError(f"Failed to write goal position for Dynamixel with ID {dxl_id}")
+        
+        
+
+    def move_joints(self, joint_angles: Sequence[float]):
+        if len(joint_angles) != len(self._ids):
+            raise ValueError(
+                "The length of joint_angles must match the number of servos"
+            )
+        if not self._torque_enabled:
+            raise RuntimeError("Torque must be enabled to set joint angles")
+        # Write goal position
+
+        for dxl_id, angle in zip(self._ids, joint_angles):
+            self.move_single_joint(dxl_id, angle)
+
+
     def set_joints(self, joint_angles: Sequence[float]):
         if len(joint_angles) != len(self._ids):
             raise ValueError(
@@ -248,7 +275,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
 def main():
     # Set the port, baudrate, and servo IDs
-    ids = [1]
+    ids = [1,2,3,4,5,6,7]
 
     # Create a DynamixelDriver instance
     try:
@@ -256,15 +283,34 @@ def main():
     except FileNotFoundError:
         driver = DynamixelDriver(ids, port="/dev/cu.usbserial-FT7WBMUB")
 
+    joint_angles = driver.get_joints()
+    print(f"Joint angles for IDs {ids}: {joint_angles}")
+
     # Test setting torque mode
     driver.set_torque_mode(True)
-    driver.set_torque_mode(False)
+    # driver.set_torque_mode(False)
+    
+    # driver.move_single_joint(1, 4)
+    # driver.move_single_joint(2, 0.2)
+    # driver.move_single_joint(3, 2)
+    # driver.move_single_joint(4, 3)
+    # driver.move_single_joint(5, 1.5)
+    # driver.move_single_joint(6, 2.5)
+    # driver.move_single_joint(7, 0.25)
+
+    init_angles = np.array([4,0,2,2.5,1.5,3,3.5])
+    driver.move_joints(init_angles)
 
     # Test reading the joint angles
     try:
         while True:
             joint_angles = driver.get_joints()
             print(f"Joint angles for IDs {ids}: {joint_angles}")
+            next_joint = joint_angles - 0.05
+            time.sleep(1.0)
+            print(f"next_joint: {next_joint}")
+            driver.move_joints(joint_angles)
+            time.sleep(5.0)
             # print(f"Joint angles for IDs {ids[1]}: {joint_angles[1]}")
     except KeyboardInterrupt:
         driver.close()
