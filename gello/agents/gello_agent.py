@@ -147,3 +147,9 @@ class GelloAgent(Agent):
         dyna_joints = self._robot.get_joint_state()
         gripper = dyna_joints[-1]
         return dyna_joints[:-1], gripper
+
+
+class FakeGelloAgent(Agent):
+
+    def __init__(self):
+        self.gripper_state = 0.0
