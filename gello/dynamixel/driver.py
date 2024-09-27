@@ -3,11 +3,14 @@ from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
 
 import numpy as np
-from dynamixel_sdk.group_sync_read import GroupSyncRead
-from dynamixel_sdk.group_sync_write import GroupSyncWrite
-from dynamixel_sdk.packet_handler import PacketHandler
-from dynamixel_sdk.port_handler import PortHandler
-from dynamixel_sdk.robotis_def import (
+import pdb
+
+pdb.set_trace()
+from third_party.DynamixelSDK.dynamixel_sdk.group_sync_read import GroupSyncRead
+from third_party.DynamixelSDK.dynamixel_sdk.group_sync_write import GroupSyncWrite
+from third_party.DynamixelSDK.dynamixel_sdk.packet_handler import PacketHandler
+from third_party.DynamixelSDK.dynamixel_sdk.port_handler import PortHandler
+from third_party.DynamixelSDK.dynamixel_sdk.robotis_def import (
     COMM_SUCCESS,
     DXL_HIBYTE,
     DXL_HIWORD,
