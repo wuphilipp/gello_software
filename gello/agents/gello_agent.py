@@ -6,6 +6,8 @@ import numpy as np
 
 from gello.agents.agent import Agent
 from gello.robots.dynamixel import DynamixelRobot
+import time  # Import the time module
+
 
 
 @dataclass
@@ -135,7 +137,7 @@ class GelloAgent(Agent):
         # current_q = dyna_joints[:-1]  # last one dim is the gripper
         current_gripper = dyna_joints[-1]  # last one dim is the gripper
 
-        print(current_gripper)
+        # print(current_gripper)
         if current_gripper < 0.2:
             self._robot.set_torque_mode(False)
             return obs["joint_positions"]
@@ -150,6 +152,22 @@ class GelloAgent(Agent):
 
 
 class FakeGelloAgent(Agent):
-
     def __init__(self):
-        self.gripper_state = 0.0
+        self.gripper_state = 1.0
+        self.start_time = time.time()  # Record the start time
+        self.initial_offset = np.array([-1.147, -1.061, 2.261, 1.391, 1.987, 1.392, -2.685])
+        self.joint_lower_limits = np.full(7, -np.pi/2)
+        self.joint_upper_limits = np.full(7, np.pi/2)
+        self.initial_joint_positions = np.random.uniform(self.joint_lower_limits, self.joint_upper_limits)
+        self.initial_joint_positions = self.initial_joint_positions + self.initial_offset
+    
+    def act(self, obs: Dict[str, np.ndarray]) -> np.ndarray:
+        return obs["joint_positions"]
+    
+    def get_gello_joint_state(self) -> Tuple[np.ndarray, float]:
+        # Compute the elapsed time since initialization
+        elapsed_time = time.time() - self.start_time
+        # Create joint positions that increment over time
+        joint_positions = self.initial_joint_positions + elapsed_time * 0.1  # Increment each joint by 0.1 radians per second
+        joint_positions = (joint_positions + np.pi) % (2 * np.pi) - np.pi
+        return joint_positions, self.gripper_state
