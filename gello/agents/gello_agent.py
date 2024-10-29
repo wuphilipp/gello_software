@@ -52,14 +52,14 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
             joint_ids=(1, 2, 3, 4, 5, 6, 7),
             joint_offsets=(
                 1 * np.pi / 2,
+                3 * np.pi / 2,
+                2 * np.pi / 2,
                 1 * np.pi / 2,
                 1 * np.pi / 2,
                 1 * np.pi / 2,
-                1 * np.pi / 2,
-                1 * np.pi / 2,
-                1 * np.pi / 2,
+                2 * np.pi / 2,
             ),
-            joint_signs=(1, 1, 1, 1, 1, 1, 1),
+            joint_signs=(1, -1, 1, 1, 1, 1, 1),
             gripper_config=(8, 115.024609375, 73.224609375),
         ),
     # panda
