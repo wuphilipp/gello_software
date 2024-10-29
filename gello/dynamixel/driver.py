@@ -140,10 +140,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
         # Disable torque for each Dynamixel servo
         self._torque_enabled = False
-        try:
-            self.set_torque_mode(self._torque_enabled)
-        except Exception as e:
-            print(f"port: {port}, {e}")
+        # try:
+        #     self.set_torque_mode(self._torque_enabled)
+        # except Exception as e:
+        #     print(f"port: {port}, {e}")
 
         self._stop_thread = Event()
         self._start_reading_thread()
@@ -283,7 +283,7 @@ def main():
     print(f"Joint angles for IDs {ids}: {joint_angles}")
 
     # Test setting torque mode
-    driver.set_torque_mode(True)
+    # driver.set_torque_mode(True)
     # driver.set_torque_mode(False)
 
     # driver.move_single_joint(1, 4)

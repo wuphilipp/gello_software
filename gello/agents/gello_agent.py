@@ -139,10 +139,10 @@ class GelloAgent(Agent):
 
         # print(current_gripper)
         if current_gripper < 0.2:
-            self._robot.set_torque_mode(False)
+            # self._robot.set_torque_mode(False)
             return obs["joint_positions"]
         else:
-            self._robot.set_torque_mode(False)
+            # self._robot.set_torque_mode(False)
             return dyna_joints
 
     def get_gello_joint_state(self) -> Tuple[np.ndarray, float]:
