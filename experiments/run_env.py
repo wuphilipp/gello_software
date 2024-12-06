@@ -115,13 +115,20 @@ def main(args):
                     raise ValueError(
                         "No gello port found, please specify one or plug in gello"
                     )
+ 
             if args.start_joints is None:
                 reset_joints = np.deg2rad(
-                    [0, -90, 90, -90, -90, 0, 0]
+                    [0, 0, 0, -90, 0, 90, 0, 0]
                 )  # Change this to your own reset joints
+                # To get the gripper not inverted
+                reset_joints[-1] = 1
             else:
                 reset_joints = args.start_joints
+            
+            # Agent is the Gello -> agent.act() returns the joint positions of the gello hardware
             agent = GelloAgent(port=gello_port, start_joints=args.start_joints)
+            
+            # Joints of robot in the environment (not gello)
             curr_joints = env.get_obs()["joint_positions"]
             if reset_joints.shape == curr_joints.shape:
                 max_delta = (np.abs(curr_joints - reset_joints)).max()
@@ -147,9 +154,9 @@ def main(args):
 
     # going to start position
     print("Going to start position")
-    start_pos = agent.act(env.get_obs())
+    start_pos = agent.act(env.get_obs()) # Gello
     obs = env.get_obs()
-    joints = obs["joint_positions"]
+    joints = obs["joint_positions"] # Environment
 
     abs_deltas = np.abs(start_pos - joints)
     id_max_joint_delta = np.argmax(abs_deltas)

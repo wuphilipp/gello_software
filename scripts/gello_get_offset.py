@@ -45,7 +45,7 @@ def get_config(args: Args) -> None:
     joint_ids = list(range(1, args.num_joints + 1))
     driver = DynamixelDriver(joint_ids, port=args.port, baudrate=57600)
 
-    # assume that the joint state shouold be args.start_joints
+    # assume that the joint state should be args.start_joints
     # find the offset, which is a multiple of np.pi/2 that minimizes the error between the current joint state and args.start_joints
     # this is done by brute force, we seach in a range of +/- 8pi
 

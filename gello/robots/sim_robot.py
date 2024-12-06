@@ -158,6 +158,7 @@ class MujocoRobotServer:
 
         self._num_joints = self._model.nu
 
+        # Initialize joint state
         self._joint_state = np.zeros(self._num_joints)
         self._joint_cmd = self._joint_state
 

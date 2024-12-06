@@ -112,8 +112,11 @@ class DynamixelRobot(Robot):
             g_pos = (pos[-1] - self.gripper_open_close[0]) / (
                 self.gripper_open_close[1] - self.gripper_open_close[0]
             )
-            g_pos = min(max(0, g_pos), 1)
+            
+            #g_pos = min(max(0, g_pos), 1) #ORIGINAL
+            g_pos = 1 - min(max(0, g_pos), 1) #MATTEO
             pos[-1] = g_pos
+            
 
         if self._last_pos is None:
             self._last_pos = pos

@@ -1,0 +1,262 @@
+<mujoco model="unnamed_model">
+  <compiler autolimits="true" angle="radian"/>
+  <option integrator="implicitfast"/>
+  <default>
+    <default class="/"/>
+    <default class="panda/">
+      <default class="panda/panda">
+        <material specular="0.5" shininess="0.25"/>
+        <joint axis="0 0 1" range="-2.8973 2.8973" armature="0.10000000000000001" damping="1"/>
+        <general ctrlrange="-2.8973 2.8973" forcerange="-87 87" dyntype="none" biastype="affine"/>
+        <default class="panda/finger">
+          <joint type="slide" axis="0 1 0" range="0 0.040000000000000001"/>
+        </default>
+        <default class="panda/visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="panda/collision">
+          <geom type="mesh" group="3"/>
+          <default class="panda/fingertip_pad_collision_1">
+            <geom type="box" size="0.0085000000000000006 0.0040000000000000001 0.0085000000000000006" pos="0 0.0054999999999999997 0.044499999999999998"/>
+          </default>
+          <default class="panda/fingertip_pad_collision_2">
+            <geom type="box" size="0.0030000000000000001 0.002 0.0030000000000000001" pos="0.0054999999999999997 0.002 0.050000000000000003"/>
+          </default>
+          <default class="panda/fingertip_pad_collision_3">
+            <geom type="box" size="0.0030000000000000001 0.002 0.0030000000000000001" pos="-0.0054999999999999997 0.002 0.050000000000000003"/>
+          </default>
+          <default class="panda/fingertip_pad_collision_4">
+            <geom type="box" size="0.0030000000000000001 0.002 0.0035000000000000001" pos="0.0054999999999999997 0.002 0.0395"/>
+          </default>
+          <default class="panda/fingertip_pad_collision_5">
+            <geom type="box" size="0.0030000000000000001 0.002 0.0035000000000000001" pos="-0.0054999999999999997 0.002 0.0395"/>
+          </default>
+        </default>
+      </default>
+    </default>
+  </default>
+  <asset>
+    <material name="panda/white" class="panda/panda" rgba="1 1 1 1"/>
+    <material name="panda/off_white" class="panda/panda" rgba="0.90196100000000001 0.92156899999999997 0.92941200000000002 1"/>
+    <material name="panda/black" class="panda/panda" rgba="0.25 0.25 0.25 1"/>
+    <material name="panda/green" class="panda/panda" rgba="0 1 0 1"/>
+    <material name="panda/light_blue" class="panda/panda" rgba="0.039216000000000001 0.54117599999999999 0.78039199999999997 1"/>
+    <mesh name="panda/link0_c" class="panda/" file="link0-3f633d19409870795516c6de40b4c7922f53c43d.stl"/>
+    <mesh name="panda/link1_c" class="panda/" file="link1-53f934209b6019b996b6d9c714d0a9cf102f7fb2.stl"/>
+    <mesh name="panda/link2_c" class="panda/" file="link2-8500c695b73e8ceeaa520c02db5684f02793b80f.stl"/>
+    <mesh name="panda/link3_c" class="panda/" file="link3-0af960563df21dd3a3b0afac6e34f62bf10c71c4.stl"/>
+    <mesh name="panda/link4_c" class="panda/" file="link4-97c9a53ee35f3939b3438a38005e78fd4c9f23cb.stl"/>
+    <mesh name="panda/link5_c0" class="panda/" file="link5_collision_0-f402b8885893e833c27f7eca01b669b81476a48f.obj"/>
+    <mesh name="panda/link5_c1" class="panda/" file="link5_collision_1-3735bde5d4211e2d565b9cc20b919f55e697be05.obj"/>
+    <mesh name="panda/link5_c2" class="panda/" file="link5_collision_2-585e84d1d7e381827b73c7ecd50f2010775235c9.obj"/>
+    <mesh name="panda/link6_c" class="panda/" file="link6-e9fa3ad660cf2a9b04e0ec55e8d56abf5891d531.stl"/>
+    <mesh name="panda/link7_c" class="panda/" file="link7-5dcc7199c8e231447ebda37651ead64ebe3cf6ec.stl"/>
+    <mesh name="panda/hand_c" class="panda/" file="hand-56394d6e04b1579484cd4323dc50c3240332cfe2.stl"/>
+    <mesh name="panda/link0_0" class="panda/" file="link0_0-b7cf6e228cebc1309b79491310541fe8a60e2d62.obj"/>
+    <mesh name="panda/link0_1" class="panda/" file="link0_1-5ecc0c585f0d6a4207ba87f6aeed2df5632b2ebe.obj"/>
+    <mesh name="panda/link0_2" class="panda/" file="link0_2-88529048e478fb7cca6eeeaaa0405b00ca337c0a.obj"/>
+    <mesh name="panda/link0_3" class="panda/" file="link0_3-75c03dfe4002c399dfeaea609db33c25ae42f82f.obj"/>
+    <mesh name="panda/link0_4" class="panda/" file="link0_4-6917a10a52309fc722169515f143ac9bd6a2b084.obj"/>
+    <mesh name="panda/link0_5" class="panda/" file="link0_5-8d54ecd0c38e0b412ac31ef46675fdca7e0e4717.obj"/>
+    <mesh name="panda/link0_7" class="panda/" file="link0_7-79cbcc01643937964f9e547e9b3d225888aa50c7.obj"/>
+    <mesh name="panda/link0_8" class="panda/" file="link0_8-4c89da97ea30fff7777d1a961c922a48425291ef.obj"/>
+    <mesh name="panda/link0_9" class="panda/" file="link0_9-776b30016c2bb8f206d560786910bfccb809926d.obj"/>
+    <mesh name="panda/link0_10" class="panda/" file="link0_10-d7b529ebc6940c0415ad91e938b0c39f05853d07.obj"/>
+    <mesh name="panda/link0_11" class="panda/" file="link0_11-46418d08940dd95e72b8290253d6bfb37aa3ba10.obj"/>
+    <mesh name="panda/link1" class="panda/" file="link1-ed231c089447a0928504d8a0b6d31c196f6f4b28.obj"/>
+    <mesh name="panda/link2" class="panda/" file="link2-21fdd1eb16bc9d11a5349b39cc21c9ecafff6cb2.obj"/>
+    <mesh name="panda/link3_0" class="panda/" file="link3_0-644740d89be54fee424dac34a096ed07f0c0be9a.obj"/>
+    <mesh name="panda/link3_1" class="panda/" file="link3_1-aa5980b7ffb0ff37d6f81bf5d03cca87b4182c72.obj"/>
+    <mesh name="panda/link3_2" class="panda/" file="link3_2-41efc81a33bb7585a8676c163e2d66ac5cc1fbb5.obj"/>
+    <mesh name="panda/link3_3" class="panda/" file="link3_3-c433c61f6a518e2810fa405a084aa55ae95bc09c.obj"/>
+    <mesh name="panda/link4_0" class="panda/" file="link4_0-70b359cb835f79b58037732ffb174c30589ca379.obj"/>
+    <mesh name="panda/link4_1" class="panda/" file="link4_1-8a206f8e5eee869db6b4d9e77db083f6edbc5e6b.obj"/>
+    <mesh name="panda/link4_2" class="panda/" file="link4_2-5c5b38db50c3864953a5ee4766d35f5fae84e0dc.obj"/>
+    <mesh name="panda/link4_3" class="panda/" file="link4_3-46cdfe6cf343836b30218551cd40c45197cd3f7d.obj"/>
+    <mesh name="panda/link5_0" class="panda/" file="link5_0-c9c057e806e8a7919fb33f70114229b6d3c40dcd.obj"/>
+    <mesh name="panda/link5_1" class="panda/" file="link5_1-f07ba3f01e7be86042be33cef54249a02bd73749.obj"/>
+    <mesh name="panda/link5_2" class="panda/" file="link5_2-fc227a4bf91b7bc23a55448c810557f391f1d5e3.obj"/>
+    <mesh name="panda/link6_0" class="panda/" file="link6_0-6836f8b697cf67e536dc9bbd5fa9250c58c12ca7.obj"/>
+    <mesh name="panda/link6_1" class="panda/" file="link6_1-d0da79111a0c81081fcdfa01fb58586c92d8322d.obj"/>
+    <mesh name="panda/link6_2" class="panda/" file="link6_2-d6b659cb277c78c300d62cdb6449eaaa8814b5d2.obj"/>
+    <mesh name="panda/link6_3" class="panda/" file="link6_3-ba09733138cd64d0a7366ffe1385267da3597481.obj"/>
+    <mesh name="panda/link6_4" class="panda/" file="link6_4-32e7cb101a33786176152037acd0a8872e7d5ad5.obj"/>
+    <mesh name="panda/link6_5" class="panda/" file="link6_5-38d0c1ecd191ee8d914ba6b7a6afa271432c665f.obj"/>
+    <mesh name="panda/link6_6" class="panda/" file="link6_6-5ed9d943e4d2c63735b56d3e3635a3a07c6470db.obj"/>
+    <mesh name="panda/link6_7" class="panda/" file="link6_7-106080e92cb497bc3906f4e5ee2f49fd62ea7f89.obj"/>
+    <mesh name="panda/link6_8" class="panda/" file="link6_8-bbfe67149c4cfd9d81968a91844069d474f53f2d.obj"/>
+    <mesh name="panda/link6_9" class="panda/" file="link6_9-09876ce72bf2f306c3ac7005f461a2d88f78dccd.obj"/>
+    <mesh name="panda/link6_10" class="panda/" file="link6_10-b0430678bf45d2dcb5a064b8a19f1f93945864fb.obj"/>
+    <mesh name="panda/link6_11" class="panda/" file="link6_11-dbcbe820a516782674773335ffc26931de719df1.obj"/>
+    <mesh name="panda/link6_12" class="panda/" file="link6_12-7f56f8ec4561cb5b724ff00e00d6f0efe8bf7123.obj"/>
+    <mesh name="panda/link6_13" class="panda/" file="link6_13-a0d4d39ca68ff2ec5a17977ecc13dc02b5b4fdd2.obj"/>
+    <mesh name="panda/link6_14" class="panda/" file="link6_14-fde4741db758169025860d9d06157c80aab9f9c0.obj"/>
+    <mesh name="panda/link6_15" class="panda/" file="link6_15-5e7addd48c4088cfeb5280ef77bc69e4cdb45939.obj"/>
+    <mesh name="panda/link6_16" class="panda/" file="link6_16-d583372e8c9632ad1aa003ef6c5ac09effbf2102.obj"/>
+    <mesh name="panda/link7_0" class="panda/" file="link7_0-2e4ca001c5c670d1e7b84e342df95cc1b01ee137.obj"/>
+    <mesh name="panda/link7_1" class="panda/" file="link7_1-3dfe858021e5f7d422c2f51e5663f07272b758fc.obj"/>
+    <mesh name="panda/link7_2" class="panda/" file="link7_2-2643e68c73e2988b9f66992bdd9ea846cae1e128.obj"/>
+    <mesh name="panda/link7_3" class="panda/" file="link7_3-9eff475605fd7c4d72ff0031ee375b7bab95920b.obj"/>
+    <mesh name="panda/link7_4" class="panda/" file="link7_4-6ea88c0c0f5a79079aa03008291a9df01ea43ed5.obj"/>
+    <mesh name="panda/link7_5" class="panda/" file="link7_5-916ac62d00e858d819cb553fe73db314185cdd47.obj"/>
+    <mesh name="panda/link7_6" class="panda/" file="link7_6-9d637adbf9ceabb0d5f85515c03d065c54fde3dc.obj"/>
+    <mesh name="panda/link7_7" class="panda/" file="link7_7-652eee34bbafccbee18e5c1c8f96823fcaaf242d.obj"/>
+    <mesh name="panda/hand_0" class="panda/" file="hand_0-cfe318371d80d790934fba8bf6b6fb7f64071ac6.obj"/>
+    <mesh name="panda/hand_1" class="panda/" file="hand_1-7cd93918f5bc964665658b0af0ff92876fe9a85d.obj"/>
+    <mesh name="panda/hand_2" class="panda/" file="hand_2-9aff904f0b08a77437e7894da1d4efc4d4a52059.obj"/>
+    <mesh name="panda/hand_3" class="panda/" file="hand_3-9909795ec9ec03e824cbb49691c32a4366fb2f4d.obj"/>
+    <mesh name="panda/hand_4" class="panda/" file="hand_4-8a7602e34e1ed3ddacdaa10cf857f811276d4a2c.obj"/>
+    <mesh name="panda/finger_0" class="panda/" file="finger_0-cf20576acd5b52daef643d398ae3b30fee1027d3.obj"/>
+    <mesh name="panda/finger_1" class="panda/" file="finger_1-87276f8cb602e3141fccda3eb9b263c18fba3fe1.obj"/>
+  </asset>
+  <worldbody>
+    <body name="panda/">
+      <light name="panda/top" class="panda/" mode="trackcom" pos="0 0 2"/>
+      <body name="panda/link0" childclass="panda/panda">
+        <inertial pos="-0.041017999999999999 -0.00013999999999999999 0.049973999999999998" mass="0.62976900000000002" fullinertia="0.00315 0.0038800000000000002 0.0042849999999999997 8.2903999999999996e-07 0.00014999999999999999 8.2299000000000006e-06"/>
+        <geom name="panda//unnamed_geom_0" class="panda/visual" material="panda/off_white" mesh="panda/link0_0"/>
+        <geom name="panda//unnamed_geom_1" class="panda/visual" material="panda/black" mesh="panda/link0_1"/>
+        <geom name="panda//unnamed_geom_2" class="panda/visual" material="panda/off_white" mesh="panda/link0_2"/>
+        <geom name="panda//unnamed_geom_3" class="panda/visual" material="panda/black" mesh="panda/link0_3"/>
+        <geom name="panda//unnamed_geom_4" class="panda/visual" material="panda/off_white" mesh="panda/link0_4"/>
+        <geom name="panda//unnamed_geom_5" class="panda/visual" material="panda/black" mesh="panda/link0_5"/>
+        <geom name="panda//unnamed_geom_6" class="panda/visual" material="panda/white" mesh="panda/link0_7"/>
+        <geom name="panda//unnamed_geom_7" class="panda/visual" material="panda/white" mesh="panda/link0_8"/>
+        <geom name="panda//unnamed_geom_8" class="panda/visual" material="panda/black" mesh="panda/link0_9"/>
+        <geom name="panda//unnamed_geom_9" class="panda/visual" material="panda/off_white" mesh="panda/link0_10"/>
+        <geom name="panda//unnamed_geom_10" class="panda/visual" material="panda/white" mesh="panda/link0_11"/>
+        <geom name="panda//unnamed_geom_11" class="panda/collision" mesh="panda/link0_c"/>
+        <body name="panda/link1" pos="0 0 0.33300000000000002">
+          <inertial pos="0.003875 0.002081 -0.047620000000000003" mass="4.9706840000000003" fullinertia="0.70337000000000005 0.70660999999999996 0.0091170000000000001 -0.00013899999999999999 0.0067720000000000002 0.019168999999999999"/>
+          <joint name="panda/joint1"/>
+          <geom name="panda//unnamed_geom_12" class="panda/visual" material="panda/white" mesh="panda/link1"/>
+          <geom name="panda//unnamed_geom_13" class="panda/collision" mesh="panda/link1_c"/>
+          <body name="panda/link2" quat="1 -1 0 0">
+            <inertial pos="-0.0031410000000000001 -0.028719999999999999 0.0034949999999999998" mass="0.646926" fullinertia="0.0079620000000000003 0.02811 0.025995000000000001 -0.0039249999999999997 0.010253999999999999 0.00070399999999999998"/>
+            <joint name="panda/joint2" range="-1.7627999999999999 1.7627999999999999"/>
+            <geom name="panda//unnamed_geom_14" class="panda/visual" material="panda/white" mesh="panda/link2"/>
+            <geom name="panda//unnamed_geom_15" class="panda/collision" mesh="panda/link2_c"/>
+            <body name="panda/link3" pos="0 -0.316 0" quat="1 1 0 0">
+              <joint name="panda/joint3"/>
+              <inertial pos="0.027518000000000001 0.039252000000000002 -0.066502000000000006" mass="3.2286039999999998" fullinertia="0.037241999999999997 0.036155 0.010829999999999999 -0.0047609999999999996 -0.011396 -0.012805"/>
+              <geom name="panda//unnamed_geom_16" class="panda/visual" material="panda/white" mesh="panda/link3_0"/>
+              <geom name="panda//unnamed_geom_17" class="panda/visual" material="panda/white" mesh="panda/link3_1"/>
+              <geom name="panda//unnamed_geom_18" class="panda/visual" material="panda/white" mesh="panda/link3_2"/>
+              <geom name="panda//unnamed_geom_19" class="panda/visual" material="panda/black" mesh="panda/link3_3"/>
+              <geom name="panda//unnamed_geom_20" class="panda/collision" mesh="panda/link3_c"/>
+              <body name="panda/link4" pos="0.082500000000000004 0 0" quat="1 1 0 0">
+                <inertial pos="-0.053170000000000002 0.104419 0.027453999999999999" mass="3.5878950000000001" fullinertia="0.025853000000000001 0.019552 0.028323000000000001 0.007796 -0.0013320000000000001 0.0086409999999999994"/>
+                <joint name="panda/joint4" range="-3.0718000000000001 -0.069800000000000001"/>
+                <geom name="panda//unnamed_geom_21" class="panda/visual" material="panda/white" mesh="panda/link4_0"/>
+                <geom name="panda//unnamed_geom_22" class="panda/visual" material="panda/white" mesh="panda/link4_1"/>
+                <geom name="panda//unnamed_geom_23" class="panda/visual" material="panda/black" mesh="panda/link4_2"/>
+                <geom name="panda//unnamed_geom_24" class="panda/visual" material="panda/white" mesh="panda/link4_3"/>
+                <geom name="panda//unnamed_geom_25" class="panda/collision" mesh="panda/link4_c"/>
+                <body name="panda/link5" pos="-0.082500000000000004 0.38400000000000001 0" quat="1 -1 0 0">
+                  <inertial pos="-0.011953 0.041064999999999997 -0.038436999999999999" mass="1.225946" fullinertia="0.035548999999999997 0.029474 0.0086269999999999993 -0.002117 -0.0040369999999999998 0.00022900000000000001"/>
+                  <joint name="panda/joint5"/>
+                  <geom name="panda//unnamed_geom_26" class="panda/visual" material="panda/black" mesh="panda/link5_0"/>
+                  <geom name="panda//unnamed_geom_27" class="panda/visual" material="panda/white" mesh="panda/link5_1"/>
+                  <geom name="panda//unnamed_geom_28" class="panda/visual" material="panda/white" mesh="panda/link5_2"/>
+                  <geom name="panda//unnamed_geom_29" class="panda/collision" mesh="panda/link5_c0"/>
+                  <geom name="panda//unnamed_geom_30" class="panda/collision" mesh="panda/link5_c1"/>
+                  <geom name="panda//unnamed_geom_31" class="panda/collision" mesh="panda/link5_c2"/>
+                  <body name="panda/link6" quat="1 1 0 0">
+                    <inertial pos="0.060149000000000001 -0.014116999999999999 -0.010517" mass="1.666555" fullinertia="0.001964 0.0043540000000000002 0.0054330000000000003 0.00010900000000000001 -0.001158 0.00034099999999999999"/>
+                    <joint name="panda/joint6" range="-0.017500000000000002 3.7524999999999999"/>
+                    <geom name="panda//unnamed_geom_32" class="panda/visual" material="panda/off_white" mesh="panda/link6_0"/>
+                    <geom name="panda//unnamed_geom_33" class="panda/visual" material="panda/white" mesh="panda/link6_1"/>
+                    <geom name="panda//unnamed_geom_34" class="panda/visual" material="panda/black" mesh="panda/link6_2"/>
+                    <geom name="panda//unnamed_geom_35" class="panda/visual" material="panda/white" mesh="panda/link6_3"/>
+                    <geom name="panda//unnamed_geom_36" class="panda/visual" material="panda/white" mesh="panda/link6_4"/>
+                    <geom name="panda//unnamed_geom_37" class="panda/visual" material="panda/white" mesh="panda/link6_5"/>
+                    <geom name="panda//unnamed_geom_38" class="panda/visual" material="panda/white" mesh="panda/link6_6"/>
+                    <geom name="panda//unnamed_geom_39" class="panda/visual" material="panda/light_blue" mesh="panda/link6_7"/>
+                    <geom name="panda//unnamed_geom_40" class="panda/visual" material="panda/light_blue" mesh="panda/link6_8"/>
+                    <geom name="panda//unnamed_geom_41" class="panda/visual" material="panda/black" mesh="panda/link6_9"/>
+                    <geom name="panda//unnamed_geom_42" class="panda/visual" material="panda/black" mesh="panda/link6_10"/>
+                    <geom name="panda//unnamed_geom_43" class="panda/visual" material="panda/white" mesh="panda/link6_11"/>
+                    <geom name="panda//unnamed_geom_44" class="panda/visual" material="panda/green" mesh="panda/link6_12"/>
+                    <geom name="panda//unnamed_geom_45" class="panda/visual" material="panda/white" mesh="panda/link6_13"/>
+                    <geom name="panda//unnamed_geom_46" class="panda/visual" material="panda/black" mesh="panda/link6_14"/>
+                    <geom name="panda//unnamed_geom_47" class="panda/visual" material="panda/black" mesh="panda/link6_15"/>
+                    <geom name="panda//unnamed_geom_48" class="panda/visual" material="panda/white" mesh="panda/link6_16"/>
+                    <geom name="panda//unnamed_geom_49" class="panda/collision" mesh="panda/link6_c"/>
+                    <body name="panda/link7" pos="0.087999999999999995 0 0" quat="1 1 0 0">
+                      <inertial pos="0.010517 -0.0042519999999999997 0.061596999999999999" mass="0.73552200000000001" fullinertia="0.012515999999999999 0.010026999999999999 0.0048149999999999998 -0.000428 -0.001196 -0.00074100000000000001"/>
+                      <joint name="panda/joint7"/>
+                      <geom name="panda//unnamed_geom_50" class="panda/visual" material="panda/white" mesh="panda/link7_0"/>
+                      <geom name="panda//unnamed_geom_51" class="panda/visual" material="panda/black" mesh="panda/link7_1"/>
+                      <geom name="panda//unnamed_geom_52" class="panda/visual" material="panda/black" mesh="panda/link7_2"/>
+                      <geom name="panda//unnamed_geom_53" class="panda/visual" material="panda/black" mesh="panda/link7_3"/>
+                      <geom name="panda//unnamed_geom_54" class="panda/visual" material="panda/black" mesh="panda/link7_4"/>
+                      <geom name="panda//unnamed_geom_55" class="panda/visual" material="panda/black" mesh="panda/link7_5"/>
+                      <geom name="panda//unnamed_geom_56" class="panda/visual" material="panda/black" mesh="panda/link7_6"/>
+                      <geom name="panda//unnamed_geom_57" class="panda/visual" material="panda/white" mesh="panda/link7_7"/>
+                      <geom name="panda//unnamed_geom_58" class="panda/collision" mesh="panda/link7_c"/>
+                      <body name="panda/hand" pos="0 0 0.107" quat="0.92387949999999996 0 0 -0.38268340000000001">
+                        <inertial pos="-0.01 0 0.029999999999999999" mass="0.72999999999999998" diaginertia="0.001 0.0025000000000000001 0.0016999999999999999"/>
+                        <geom name="panda//unnamed_geom_59" class="panda/visual" material="panda/off_white" mesh="panda/hand_0"/>
+                        <geom name="panda//unnamed_geom_60" class="panda/visual" material="panda/black" mesh="panda/hand_1"/>
+                        <geom name="panda//unnamed_geom_61" class="panda/visual" material="panda/black" mesh="panda/hand_2"/>
+                        <geom name="panda//unnamed_geom_62" class="panda/visual" material="panda/white" mesh="panda/hand_3"/>
+                        <geom name="panda//unnamed_geom_63" class="panda/visual" material="panda/off_white" mesh="panda/hand_4"/>
+                        <geom name="panda//unnamed_geom_64" class="panda/collision" mesh="panda/hand_c"/>
+                        <body name="panda/left_finger" pos="0 0 0.058400000000000001">
+                          <inertial pos="0 0 0" mass="0.014999999999999999" diaginertia="2.3750000000000001e-06 2.3750000000000001e-06 7.5000000000000002e-07"/>
+                          <joint name="panda/finger_joint1" class="panda/finger"/>
+                          <geom name="panda//unnamed_geom_65" class="panda/visual" material="panda/off_white" mesh="panda/finger_0"/>
+                          <geom name="panda//unnamed_geom_66" class="panda/visual" material="panda/black" mesh="panda/finger_1"/>
+                          <geom name="panda//unnamed_geom_67" class="panda/collision" mesh="panda/finger_0"/>
+                          <geom name="panda//unnamed_geom_68" class="panda/fingertip_pad_collision_1"/>
+                          <geom name="panda//unnamed_geom_69" class="panda/fingertip_pad_collision_2"/>
+                          <geom name="panda//unnamed_geom_70" class="panda/fingertip_pad_collision_3"/>
+                          <geom name="panda//unnamed_geom_71" class="panda/fingertip_pad_collision_4"/>
+                          <geom name="panda//unnamed_geom_72" class="panda/fingertip_pad_collision_5"/>
+                        </body>
+                        <body name="panda/right_finger" pos="0 0 0.058400000000000001" quat="0 0 0 1">
+                          <inertial pos="0 0 0" mass="0.014999999999999999" diaginertia="2.3750000000000001e-06 2.3750000000000001e-06 7.5000000000000002e-07"/>
+                          <joint name="panda/finger_joint2" class="panda/finger"/>
+                          <geom name="panda//unnamed_geom_73" class="panda/visual" material="panda/off_white" mesh="panda/finger_0"/>
+                          <geom name="panda//unnamed_geom_74" class="panda/visual" material="panda/black" mesh="panda/finger_1"/>
+                          <geom name="panda//unnamed_geom_75" class="panda/collision" mesh="panda/finger_0"/>
+                          <geom name="panda//unnamed_geom_76" class="panda/fingertip_pad_collision_1"/>
+                          <geom name="panda//unnamed_geom_77" class="panda/fingertip_pad_collision_2"/>
+                          <geom name="panda//unnamed_geom_78" class="panda/fingertip_pad_collision_3"/>
+                          <geom name="panda//unnamed_geom_79" class="panda/fingertip_pad_collision_4"/>
+                          <geom name="panda//unnamed_geom_80" class="panda/fingertip_pad_collision_5"/>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <equality>
+    <joint name="panda//unnamed_equality_0" class="panda/" solref="0.0050000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" joint1="panda/finger_joint1" joint2="panda/finger_joint2"/>
+  </equality>
+  <tendon>
+    <fixed name="panda/split" class="panda/">
+      <joint joint="panda/finger_joint1" coef="0.5"/>
+      <joint joint="panda/finger_joint2" coef="0.5"/>
+    </fixed>
+  </tendon>
+  <actuator>
+    <general name="panda/actuator1" class="panda/panda" joint="panda/joint1" gainprm="4500" biasprm="0 -4500 -450"/>
+    <general name="panda/actuator2" class="panda/panda" ctrlrange="-1.7627999999999999 1.7627999999999999" joint="panda/joint2" gainprm="4500" biasprm="0 -4500 -450"/>
+    <general name="panda/actuator3" class="panda/panda" joint="panda/joint3" gainprm="3500" biasprm="0 -3500 -350"/>
+    <general name="panda/actuator4" class="panda/panda" ctrlrange="-3.0718000000000001 -0.069800000000000001" joint="panda/joint4" gainprm="3500" biasprm="0 -3500 -350"/>
+    <general name="panda/actuator5" class="panda/panda" forcerange="-12 12" joint="panda/joint5" gainprm="2000" biasprm="0 -2000 -200"/>
+    <general name="panda/actuator6" class="panda/panda" ctrlrange="-0.017500000000000002 3.7524999999999999" forcerange="-12 12" joint="panda/joint6" gainprm="2000" biasprm="0 -2000 -200"/>
+    <general name="panda/actuator7" class="panda/panda" forcerange="-12 12" joint="panda/joint7" gainprm="2000" biasprm="0 -2000 -200"/>
+    <general name="panda/actuator8" class="panda/panda" ctrlrange="0 1" forcerange="-100 100" tendon="panda/split" gainprm="4 0 0" biasprm="0 -100 -10"/>
+  </actuator>
+  <keyframe>
+    <key name="panda/home" qpos="0 0 0 -1.5707899999999999 0 1.5707899999999999 -0.7853 0.040000000000000001 0.040000000000000001" ctrl="0 0 0 -1.5707899999999999 0 1.5707899999999999 -0.7853 255"/>
+  </keyframe>
+</mujoco>

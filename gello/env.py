@@ -74,6 +74,8 @@ class RobotEnv:
         assert "joint_velocities" in robot_obs
         assert "ee_pos_quat" in robot_obs
         observations["joint_positions"] = robot_obs["joint_positions"]
+        # MATTEO: map gripper joint (joint idx 7) observation from [0, 0.04] to [0, 1]
+        observations["joint_positions"][-1] = observations["joint_positions"][-1] / 0.04
         observations["joint_velocities"] = robot_obs["joint_velocities"]
         observations["ee_pos_quat"] = robot_obs["ee_pos_quat"]
         observations["gripper_position"] = robot_obs["gripper_position"]
