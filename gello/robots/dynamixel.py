@@ -30,6 +30,7 @@ class DynamixelRobot(Robot):
         if gripper_config is not None:
             assert joint_offsets is not None
             assert joint_signs is not None
+            print("add gripper...")
 
             # joint_ids.append(gripper_config[0])
             # joint_offsets.append(0.0)
@@ -41,6 +42,7 @@ class DynamixelRobot(Robot):
                 gripper_config[1] * np.pi / 180,
                 gripper_config[2] * np.pi / 180,
             )
+            print(f"joint_ids: {joint_ids}")
         else:
             self.gripper_open_close = None
 
@@ -71,7 +73,7 @@ class DynamixelRobot(Robot):
 
         if real:
             self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
-            self._driver.set_torque_mode(False)
+            # self._driver.set_torque_mode(False)
         else:
             self._driver = FakeDynamixelDriver(joint_ids)
         self._torque_on = False
@@ -109,10 +111,13 @@ class DynamixelRobot(Robot):
 
         if self.gripper_open_close is not None:
             # map pos to [0, 1]
+            # print(f"pos: {pos[-1]}")
+            # print(f"gripper_open_close: {self.gripper_open_close}")
             g_pos = (pos[-1] - self.gripper_open_close[0]) / (
                 self.gripper_open_close[1] - self.gripper_open_close[0]
             )
             g_pos = min(max(0, g_pos), 1)
+            # print(f"g_pos: {g_pos}")
             pos[-1] = g_pos
 
         if self._last_pos is None:
@@ -125,6 +130,7 @@ class DynamixelRobot(Robot):
         return pos
 
     def command_joint_state(self, joint_state: np.ndarray) -> None:
+        print(f"Command driver here as {(joint_state + self._joint_offsets).tolist()}")
         self._driver.set_joints((joint_state + self._joint_offsets).tolist())
 
     def set_torque_mode(self, mode: bool):
