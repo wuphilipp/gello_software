@@ -27,3 +27,8 @@ outputs/*
 # vim
 *.swp
 MUJOCO_LOG.TXT
+
+#ros
+ros2/build/
+ros2/install/
+ros2/log/

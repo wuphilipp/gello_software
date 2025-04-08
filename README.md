@@ -34,6 +34,10 @@ We have provided an entry point into the docker container
 python scripts/launch.py
 ```
 
+## Use with ROS 2
+
+> **Note:** GELLO also supports ROS 2 humble for the Franka FR3 robot. For more details, see the [ROS 2-specific README](ros2/README.md) located in the `ros2` directory.
+
 # GELLO configuration setup (PLEASE READ)
 Now that you have downloaded the code, there is some additional preparation work to properly configure the Dynamixels and GELLO.
 These instructions will guide you on how to update the motor ids of the Dynamixels and then how to extract the joint offsets to configure your GELLO.
@@ -56,13 +60,14 @@ Dynamixels have a symmetric 4 hole pattern which means there the joint offset is
 The `GelloAgent` class  accepts a `DynamixelRobotConfig` (found in `gello/agents/gello_agent.py`). The Dynamixel config specifies the parameters you need to find to operate your GELLO. Look at the documentation for more details.
 
 We have created a simple script to automatically detect the joint offset:
-* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set out GELLO in this configuration, where we know the desired ground truth joints. (0, -90, 90, -90, -90, 0)
+* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set our GELLO for the UR and Franka FR3 in this configuration, where we know the desired ground truth joints (0, -90, 90, -90, -90, 0), or (0, 0, 0, -90, 0, 90 , 0) respectively.
 <p align="center">
-  <img src="imgs/gello_matching_joints.jpg" width="45%"/>
-  <img src="imgs/robot_known_configuration.jpg" width="45%"/>
+  <img src="imgs/gello_matching_joints.jpg" width="29%"/>
+  <img src="imgs/robot_known_configuration.jpg" width="29%"/>
+  <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
 </p>
 
-* run 
+* For the UR run 
 ```
 python scripts/gello_get_offset.py \
     --start-joints 0 -1.57 1.57 -1.57 -1.57 0 \ # in radians
@@ -70,13 +75,22 @@ python scripts/gello_get_offset.py \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
 # replace values with your own
 ```
+* For the Franka FR3 run
+```
+python scripts/gello_get_offset.py \
+    --start-joints 0 0 0 -1.57 0 1.57 0 \ # in radians
+    --joint-signs 1 1 1 1 1 -1 1 \
+    --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
+# replace values with your own
+```
 * Use the known starting joints for `start-joints`.
-* Use the `joint-signs` for your own robot (see below).
+* Depending on the mechanical setup of your GELLO, the joint signs can flip, so you need to specify them for each axis.
 * Use your serial port for `port`. You can find the port id of your U2D2 Dynamixel device by running `ls /dev/serial/by-id` and looking for the path that starts with `usb-FTDI_USB__-__Serial_Converter` (on Ubuntu). On Mac, look in /dev/ and the device that starts with `cu.usbserial`
 
 `joint-signs` for each robot type:
 * UR: `1 1 -1 1 1 1`
 * Panda: `1 -1 1 1 1 -1 1`
+* FR3: `1 1 1 1 1 -1 1`
 * xArm: `1 1 1 1 1 1 1`
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!

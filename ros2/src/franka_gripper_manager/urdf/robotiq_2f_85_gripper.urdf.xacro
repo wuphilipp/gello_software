@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<!-- Based on ros2_robotiq_gripper/robotiq_description/urdf/robotiq_2f_85_gripper.urdf.xacro, added arg com_port-->
+<robot xmlns:xacro="http://wiki.ros.org/xacro" name="robotiq_gripper">
+    <!-- parameters -->
+    <xacro:arg name="use_fake_hardware" default="true" />
+    <xacro:arg name="com_port" default="/dev/ttyUSB0" />
+
+    <!-- Import macros -->
+    <xacro:include filename="$(find robotiq_description)/urdf/robotiq_2f_85_macro.urdf.xacro" />
+
+    <link name="world" />
+    <xacro:robotiq_gripper name="RobotiqGripperHardwareInterface" prefix="" parent="world" use_fake_hardware="$(arg use_fake_hardware)" com_port="$(arg com_port)">
+        <origin xyz="0 0 0" rpy="0 0 0" />
+    </xacro:robotiq_gripper>
+</robot>

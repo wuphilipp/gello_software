@@ -1,0 +1,15 @@
+services:
+  gello-ros2: 
+    build: .
+    privileged: true
+    restart: no
+    network_mode: host
+    volumes:
+      - ../:/workspace
+      - ../../gello/dynamixel/driver.py:/workspace/src/franka_gello_state_publisher/franka_gello_state_publisher/driver.py
+      - /dev/serial/by-id:/dev/serial/by-id
+      # GELLO Calibration Files
+      - ../../scripts/gello_get_offset.py:/workspace/gello_get_offset.py
+      - ../../gello/dynamixel:/workspace/gello/dynamixel
+      # Python flake8 config
+      - ../../.flake8:/workspace/.flake8

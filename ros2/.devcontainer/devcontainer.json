@@ -1,0 +1,41 @@
+{
+  "name": "gello-ros2",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "gello-ros2",
+  "overrideCommand": true,
+  "customizations": {
+      "vscode": {
+          "extensions": [
+            "ms-python.python",
+            "charliermarsh.ruff",
+            "ms-vscode.cpptools-extension-pack",
+            "ms-iot.vscode-ros",
+            "smilerobotics.urdf",
+            "redhat.vscode-xml",
+            "tamasfe.even-better-toml",
+            "timonwong.shellcheck",
+            "yzhang.markdown-all-in-one",
+            "GitHub.copilot-chat", 
+            "xaver.clang-format"
+          ],
+          "settings": {
+              "files.associations": {
+                  "*.rviz": "yaml",
+                  "*.srdf": "xml",
+                  "*.urdf": "xml",
+                  "*.xacro": "xml"
+              }, 
+              "terminal.integrated.defaultProfile.linux": "bash",
+              "terminal.integrated.profiles.linux": {
+                  "bash": {
+                      "path": "/bin/bash"
+                  }
+              },
+              "terminal.integrated.cwd": "/workspace"
+          }
+      }
+  },
+  "workspaceFolder": "/workspace/",
+  "shutdownAction": "stopCompose",
+  "postCreateCommand": "echo \"source /workspace/install/setup.bash \">> ~/.bashrc"
+}
