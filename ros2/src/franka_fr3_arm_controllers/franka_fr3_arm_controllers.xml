@@ -1,0 +1,9 @@
+<library path="franka_fr3_arm_controllers">
+    <class name="franka_fr3_arm_controllers/JointImpedanceController"
+        type="franka_fr3_arm_controllers::JointImpedanceController"
+        base_class_type="controller_interface::ControllerInterface">
+        <description>
+            The JointImpedanceController single arm controller for gello
+        </description>
+    </class>
+</library>

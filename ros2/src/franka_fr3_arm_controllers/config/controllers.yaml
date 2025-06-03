@@ -1,0 +1,32 @@
+controller_manager:
+  ros__parameters:
+    update_rate: 1000  # Hz
+
+    joint_impedance_controller:
+      type: franka_fr3_arm_controllers/JointImpedanceController
+
+    joint_state_broadcaster:
+      type: joint_state_broadcaster/JointStateBroadcaster
+
+    franka_robot_state_broadcaster:
+      type: franka_robot_state_broadcaster/FrankaRobotStateBroadcaster
+
+joint_impedance_controller:
+  ros__parameters:
+    k_alpha: 0.99
+    k_gains:
+      - 240.0
+      - 240.0
+      - 240.0
+      - 240.0
+      - 100.0
+      - 60.0
+      - 20.0
+    d_gains:
+      - 20.0
+      - 20.0
+      - 20.0
+      - 10.0
+      - 10.0
+      - 10.0
+      - 5.0

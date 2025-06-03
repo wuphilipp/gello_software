@@ -1,0 +1,25 @@
+name: ROS 2 workspace
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: "0 0 * * 0"
+
+jobs:
+  test-in-devcontainer:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build and test ROS 2 workspace
+        uses: devcontainers/ci@v0.3
+        with:
+          subFolder: ./ros2
+          runCmd: |
+            colcon build
+            colcon test
+            colcon test-result --verbose
