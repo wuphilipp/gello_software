@@ -35,7 +35,8 @@ def main(args: Args) -> None:
     if args.use_gello:
         gello = config.make_robot(
             port="/dev/ttyUSB0", 
-            start_joints=reset_joints_left
+            start_joints=reset_joints_left,
+            baudrate=1000000  # Use 1Mbps as detected
         )
 
     def policy(timestep) -> np.ndarray:
