@@ -37,5 +37,5 @@
   },
   "workspaceFolder": "/workspace/",
   "shutdownAction": "stopCompose",
-  "postCreateCommand": "echo \"source /workspace/install/setup.bash \">> ~/.bashrc"
+  "postCreateCommand": "echo \"source /workspace/ros2/install/setup.bash \">> ~/.bashrc"
 }

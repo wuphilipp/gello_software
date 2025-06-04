@@ -83,7 +83,7 @@ In this case, the `GELLO_USB_ID` would be `/dev/serial/by-id/usb-FTDI_USB__-__Se
 If not done already, follow the instructions of the `Create the GELLO configuration and determining joint ID's` section in the main README.md. Use the provided script to configure the GELLO for Franka FR3:
 
 ```bash
-python3 gello_get_offset.py \
+python3 scripts/gello_get_offset.py \
 --start-joints 0 0 0 -1.57 0 1.57 0 \
 --joint-signs 1 1 1 1 1 -1 1 \
 --port /dev/serial/by-id/<GELLO_USB_ID>
