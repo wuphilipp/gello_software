@@ -25,12 +25,15 @@ class DynamixelRobotConfig:
     gripper_config: Tuple[int, int, int]
     """The gripper config of GELLO. This is a tuple of (gripper_joint_id, degrees in open_position, degrees in closed_position)."""
 
+    protocol_version: float = 1.0
+    """Protocol version for Dynamixel servos (1.0 or 2.0)."""
+
     def __post_init__(self):
         assert len(self.joint_ids) == len(self.joint_offsets)
         assert len(self.joint_ids) == len(self.joint_signs)
 
     def make_robot(
-        self, port: str = "/dev/ttyUSB0", start_joints: Optional[np.ndarray] = None
+        self, port: str = "/dev/ttyUSB0", start_joints: Optional[np.ndarray] = None, baudrate: int = 57600
     ) -> DynamixelRobot:
         return DynamixelRobot(
             joint_ids=self.joint_ids,
@@ -38,8 +41,10 @@ class DynamixelRobotConfig:
             real=True,
             joint_signs=list(self.joint_signs),
             port=port,
+            baudrate=baudrate,
             gripper_config=self.gripper_config,
             start_joints=start_joints,
+            protocol_version=self.protocol_version,
         )
 
 

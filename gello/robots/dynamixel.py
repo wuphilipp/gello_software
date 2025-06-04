@@ -18,6 +18,7 @@ class DynamixelRobot(Robot):
         baudrate: int = 57600,
         gripper_config: Optional[Tuple[int, float, float]] = None,
         start_joints: Optional[np.ndarray] = None,
+        protocol_version: float = 1.0,
     ):
         from gello.dynamixel.driver import (
             DynamixelDriver,
@@ -70,7 +71,7 @@ class DynamixelRobot(Robot):
         ), f"joint_signs: {self._joint_signs}"
 
         if real:
-            self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
+            self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate, protocol_version=protocol_version)
             self._driver.set_torque_mode(False)
         else:
             self._driver = FakeDynamixelDriver(joint_ids)

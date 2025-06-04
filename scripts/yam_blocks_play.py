@@ -19,10 +19,10 @@ class Args:
     control_rate_hz: float = 100.0
 
 config = DynamixelRobotConfig(
-    joint_ids=(1, 2, 3, 4, 5, 6, 7),
-    joint_offsets=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
-    joint_signs=(-1, 1, 1, 1, -1, -1, 1),
-    gripper_config= (6, 0.0, 0.5)
+    joint_ids=(1, 2, 3, 4, 5, 6),
+    joint_offsets=(0.0, 0.0, 0.0, 0.0, 0.0, 0.0),
+    joint_signs=(-1, 1, 1, 1, -1, -1),
+    gripper_config=(7, 0.0, 0.5)
 )
     
 def main(args: Args) -> None:
@@ -34,7 +34,8 @@ def main(args: Args) -> None:
     action_space = env.action_spec()
     if args.use_gello:
         gello = config.make_robot(
-            port="/dev/TTYUSB1", start_joints=reset_joints_left
+            port="/dev/ttyUSB0", 
+            start_joints=reset_joints_left
         )
 
     def policy(timestep) -> np.ndarray:
