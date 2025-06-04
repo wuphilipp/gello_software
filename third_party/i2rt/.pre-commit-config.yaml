@@ -1,0 +1,21 @@
+repos:
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    # Ruff version.
+    rev: v0.6.8
+    hooks:
+    # Run the linter.
+    - id: ruff
+      types_or: [ python, pyi, jupyter ]
+      args: [ --fix ]
+    # Sort imports
+    - id: ruff
+      args: ["check", "--select", "I", "--fix"]
+    # Run the formatter.
+    - id: ruff-format
+      types_or: [ python, pyi, jupyter ]
+
+# cleanup notebooks
+-   repo: https://github.com/kynan/nbstripout
+    rev: 0.7.1
+    hooks:
+    -   id: nbstripout

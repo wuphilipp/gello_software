@@ -1,0 +1,92 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$PYTHON_EXTENSIONS
+
+# Virtual environment
+venv/
+env/
+
+# Distribution / packaging
+*.egg-info/
+dist/
+build/
+
+# Logs and debugging
+logs/
+*.log
+debug.log
+nohup.out
+
+# IDE / Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Test coverage reports
+.coverage
+coverage.xml
+htmlcov/
+*.cover
+*.pycover
+*.pyc
+.tox/
+
+# Docker / Container related
+*.dockerfile
+*.containerignore
+
+# Compiled files
+*.o
+*.so
+*.a
+*.out
+
+# Temporary files
+*.tmp
+*.cache
+*.pid
+*.lock
+
+# Ignore Mujoco-related compiled binaries if applicable
+mjkey.txt
+mjmodel.xml
+
+# SSH / sensitive files (double-check before committing!)
+*.pem
+*.crt
+*.key
+
+# Ignore user-specific configs
+config.json
+config.yaml
+
+# Ignore large data files (if applicable)
+data/
+datasets/
+*.csv
+*.h5
+*.npz
+*.pickle
+
+# Ignore backup files
+*.bak
+*.old
+
+# Ignore Python Poetry files (if using)
+poetry.lock
+
+# Ignore i2rt and egg metadata
+i2rt.egg-info/
+
+# Ignore temporary scripts or generated files
+scripts/temp_*/
+
