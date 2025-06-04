@@ -8,41 +8,41 @@ from dynamixel_sdk.robotis_def import *
 ADDR_TORQUE_ENABLE = 64
 ADDR_PRESENT_POSITION = 132
 BROADCAST_ID = 254  # Broadcast ID
-BAUDRATE = 57600
 DEVICENAME = '/dev/ttyUSB0'
+BAUDRATES = [57600, 1000000, 9600, 115200]  # Common baudrates
+PROTOCOLS = [1.0, 2.0]  # Try both protocols
 
-# Initialize PortHandler instance
-portHandler = PortHandler(DEVICENAME)
-
-# Initialize PacketHandler instance
-# Set the protocol version
-# Get methods and members of Protocol1PacketHandler or Protocol2PacketHandler
-packetHandler = PacketHandler(1.0)  # Using Protocol 1.0
+def scan_servos(port_handler, packet_handler):
+    found = False
+    print(f"\nScanning with Protocol {packet_handler.getProtocolVersion()}")
+    for dxl_id in range(0, 253):
+        dxl_model_number, dxl_comm_result, dxl_error = packet_handler.ping(port_handler, dxl_id)
+        if dxl_comm_result == COMM_SUCCESS and dxl_error == 0:
+            found = True
+            print(f"Found Dynamixel ID {dxl_id} with model number: {dxl_model_number}")
+    return found
 
 def main():
-    # Open port
-    if portHandler.openPort():
-        print("Succeeded to open the port")
-    else:
-        print("Failed to open the port")
+    port_handler = PortHandler(DEVICENAME)
+    if not port_handler.openPort():
+        print("Failed to open port")
         return
 
-    # Set port baudrate
-    if portHandler.setBaudRate(BAUDRATE):
-        print("Succeeded to change the baudrate")
-    else:
-        print("Failed to change the baudrate")
-        return
+    for baudrate in BAUDRATES:
+        print(f"\nTrying baudrate: {baudrate}")
+        if not port_handler.setBaudRate(baudrate):
+            print("Failed to change baudrate")
+            continue
+        
+        for protocol in PROTOCOLS:
+            packet_handler = PacketHandler(protocol)
+            scan_servos(port_handler, packet_handler)
 
-    print("Scanning for Dynamixel servos...")
-    for dxl_id in range(0, 253):  # Valid ID range
-        # Try to ping the Dynamixel
-        dxl_model_number, dxl_comm_result, dxl_error = packetHandler.ping(portHandler, dxl_id)
-        if dxl_comm_result == COMM_SUCCESS and dxl_error == 0:
-            print(f"Found Dynamixel ID {dxl_id} with model number: {dxl_model_number}")
-
-    # Close port
-    portHandler.closePort()
+    port_handler.closePort()
+    print("\nIf no servos were found, please check:")
+    print("1. Is the power supply connected and turned on?")
+    print("2. Are all cables securely connected?")
+    print("3. Is the USB adapter (U2D2 or similar) properly connected?")
 
 if __name__ == '__main__':
     main() 
