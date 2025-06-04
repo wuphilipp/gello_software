@@ -17,7 +17,7 @@ class DynamixelRobot(Robot):
         port: str = "/dev/ttyUSB0",
         baudrate: int = 57600,
         gripper_config: Optional[Tuple[int, float, float]] = None,
-        start_joints: Optional[np.ndarray] = None
+        start_joints: Optional[np.ndarray] = None,
     ):
         from gello.dynamixel.driver import (
             DynamixelDriver,
