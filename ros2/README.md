@@ -37,7 +37,9 @@ This package provides a ROS 2 node for managing the gripper connected to the Fra
 
 ## VS-Code Dev-Container
 
-We recommend working inside the provided VS-Code Dev-Container for a seamless development experience. Dev-Containers allow you to use a consistent environment with all necessary dependencies pre-installed. For more information, refer to the [VS-Code Dev-Containers documentation](https://code.visualstudio.com/docs/devcontainers/containers).
+We recommend working inside the provided VS-Code Dev-Container for a seamless development experience. Dev-Containers allow you to use a consistent environment with all necessary dependencies pre-installed. 
+
+To start the Dev-Container, open the `ros2` sub-folder of this repository (not the entire `gello_software` folder) in VS Code. If prompted, select **"Reopen in Container"** to launch the workspace inside the Dev-Container. If you are not prompted, open the Command Palette (`Ctrl+Shift+P`) and select **"Dev Containers: Reopen in Container"**. Building the container for the first time will take a few minutes. For more information, refer to the [VS-Code Dev-Containers documentation](https://code.visualstudio.com/docs/devcontainers/containers).
 
 If you choose not to use the Dev-Container, you will need to manually install the dependencies listed in the `Dockerfile` located in the `.devcontainer` folder.
 
@@ -58,6 +60,9 @@ The packages come with a set of tests, which can be executed using the following
 ```bash
 colcon test 
 ```
+
+> ⚠️ **Important:**  
+> All commands for building and testing must be executed from the `ros2` directory of this repository.
 
 ## Getting Started
 
