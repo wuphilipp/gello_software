@@ -6,8 +6,7 @@
   <description>Provisioning of gripper clients for gello</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>Apache 2.0</license>
-  <depend>ros2-robotiq-gripper</depend>
-  <depend>sensor-msgs</depend>
+  <depend>sensor_msgs</depend>
   <depend>rclpy</depend>
 
   <test_depend>ament_copyright</test_depend>

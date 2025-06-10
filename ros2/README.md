@@ -41,7 +41,27 @@ We recommend working inside the provided VS-Code Dev-Container for a seamless de
 
 To start the Dev-Container, open the `ros2` sub-folder of this repository (not the entire `gello_software` folder) in VS Code. If prompted, select **"Reopen in Container"** to launch the workspace inside the Dev-Container. If you are not prompted, open the Command Palette (`Ctrl+Shift+P`) and select **"Dev Containers: Reopen in Container"**. Building the container for the first time will take a few minutes. For more information, refer to the [VS-Code Dev-Containers documentation](https://code.visualstudio.com/docs/devcontainers/containers).
 
-If you choose not to use the Dev-Container, you will need to manually install the dependencies listed in the `Dockerfile` located in the `.devcontainer` folder.
+If you choose not to use the Dev-Container, please refer to the [Local Setup](#local-setup) section below for manual installation instructions.
+
+## Local Setup
+
+### Prerequisites
+
+- **ROS 2 Humble Desktop** must be installed.  
+  See the [official installation guide](https://docs.ros.org/en/humble/Installation.html) for instructions.
+- **libfranka** and **franka_ros2** must be installed.  
+  Refer to the [Franka Robotics documentation](https://frankaemika.github.io/docs/index.html) for installation steps and compatibility information.
+- **ros2_robotiq_gripper** (if required) must be installed.  
+  See the [ros2_robotiq_gripper GitHub repository](https://github.com/PickNikRobotics/ros2_robotiq_gripper) for installation and usage instructions.
+
+> 💡 **Hint:**  
+> You can also find example installation commands for `libfranka`, `franka_ros2`, and `ros2_robotiq_gripper` in the [Dockerfile](./.devcontainer/Dockerfile) located in the `ros2/.devcontainer` directory. These commands can be copy-pasted for your local setup.
+
+### Further Dependency Installations
+
+After installing the prerequisites, you may need to install additional dependencies required by this workspace. For this you can run the `install_workspace_dependencies.bash` script.
+
+If you add new dependencies to your packages, remember to update the relevant `requirements.txt`, `requirements_dev.txt` or `package.xml` files and re-run the script.
 
 ## Build and Test
 
@@ -132,7 +152,7 @@ ros2 launch franka_gello_state_publisher main.launch.py com_port:=/dev/serial/by
 
    - **For the Robotiq 2F-85**:  
      ```bash
-     ros2 launch franka_gripper_manager robotiq_gripper_controller_client.launch.py com_port:=<ROBOTIQ_USB_ID>
+     ros2 launch franka_gripper_manager robotiq_gripper_controller_client.launch.py com_port:=/dev/serial/by-id/<ROBOTIQ_USB_ID>
      ```
 
      The `ROBOTIQ_USB_ID` can be determined by `ls /dev/serial/by-id`.
