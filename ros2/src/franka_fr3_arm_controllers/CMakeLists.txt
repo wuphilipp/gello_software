@@ -109,7 +109,7 @@ if(BUILD_TESTING)
   ament_cppcheck(${CPP_DIRECTORIES})
   ament_lint_cmake(CMakeLists.txt)
   ament_xmllint()
-  ament_clang_format(CONFIG_FILE /workspace/.clang-format ${CPP_DIRECTORIES})
+  ament_clang_format(CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-format ${CPP_DIRECTORIES})
   ament_copyright(${CPP_DIRECTORIES} package.xml)
 
 ament_add_gtest(
@@ -125,7 +125,7 @@ endif()
 
 if(CHECK_TIDY)
   find_package(ament_cmake_clang_tidy REQUIRED)
-  set(ament_cmake_clang_tidy_CONFIG_FILE /workspace/.clang-tidy)
+  set(ament_cmake_clang_tidy_CONFIG_FILE ${CMAKE_CURRENT_SOURCE_DIR}/../../.clang-tidy)
   ament_clang_tidy(${CMAKE_BINARY_DIR})
 endif()
 

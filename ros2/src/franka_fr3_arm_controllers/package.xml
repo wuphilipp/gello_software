@@ -13,9 +13,10 @@
   <depend>controller_interface</depend>
   <depend>pluginlib</depend>
   <depend>rclcpp_lifecycle</depend>
+  <depend>hardware_interface</depend>
   <depend>franka_msgs</depend>
-  <depend>franka_semantic_components</depend>
-
+  <depend>moveit_core</depend>
+  <depend>moveit_msgs</depend>
 
   <test_depend>ament_cmake_clang_format</test_depend>
   <test_depend>ament_cmake_copyright</test_depend>

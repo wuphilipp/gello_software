@@ -1,18 +1,14 @@
 import os
+import sys
 import glob
 from typing import Tuple
 import rclpy
 from rclpy.node import Node
 import numpy as np
-
-try:
-    from franka_gello_state_publisher.driver import DynamixelDriver
-except ImportError:
-    from driver import DynamixelDriver
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
 import yaml
-from ament_index_python.packages import get_package_share_directory
+from ament_index_python.packages import get_package_share_directory, get_package_prefix
 
 
 class GelloPublisher(Node):
@@ -72,6 +68,9 @@ class GelloPublisher(Node):
         """Whether or not the gripper is attached."""
 
         joint_ids = list(range(1, self.num_joints + 1))
+        self.add_dynamixel_driver_path()
+        from gello.dynamixel.driver import DynamixelDriver
+
         self.driver = DynamixelDriver(joint_ids, port=self.com_port, baudrate=57600)
         """The driver for the Dynamixel motors."""
 
@@ -118,6 +117,12 @@ class GelloPublisher(Node):
             self.gripper_range_rad[1] - self.gripper_range_rad[0]
         )
         return max(0.0, min(1.0, gripper_percent))
+
+    def add_dynamixel_driver_path(self):
+        gello_path = os.path.abspath(
+            os.path.join(get_package_prefix("franka_gello_state_publisher"), "../../../")
+        )
+        sys.path.insert(0, gello_path)
 
 
 def main(args=None):
