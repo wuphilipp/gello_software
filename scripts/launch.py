@@ -13,7 +13,7 @@ def run_docker_container():
     cmd = [
         "docker",
         "run",
-        "--runtime=nvidia",
+        # "--runtime=nvidia",
         "--rm",
         "--name",
         container_name,
