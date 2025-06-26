@@ -29,6 +29,17 @@ def launch_robot_server(args: Args):
             xml_path=xml, gripper_xml_path=gripper_xml, port=port, host=args.hostname
         )
         server.serve()
+    elif args.robot == "sim_yam":
+        MENAGERIE_ROOT: Path = (
+            Path(__file__).parent.parent / "third_party" / "mujoco_menagerie"
+        )
+        xml = MENAGERIE_ROOT / "i2rt_yam" / "yam.xml"
+        from gello.robots.sim_robot import MujocoRobotServer
+
+        server = MujocoRobotServer(
+            xml_path=xml, gripper_xml_path=None, port=port, host=args.hostname
+        )
+        server.serve()
     elif args.robot == "sim_panda":
         from gello.robots.sim_robot import MujocoRobotServer
 

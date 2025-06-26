@@ -1,18 +1,33 @@
-from typing import Dict
+from dm_control import mjcf
+from pathlib import Path
 import numpy as np
+from typing import Dict
 from gello.robots.robot import Robot
+from gello.dm_control_tasks.mjcf_utils import MENAGERIE_ROOT
 
 class YAMRobot(Robot):
     """A class representing a simulated YAM robot."""
 
     def __init__(self, no_gripper: bool = False):
         self._use_gripper = not no_gripper
-        self._joint_state = np.zeros(self.num_dofs())
-        self._joint_velocities = np.zeros(self.num_dofs())
+
+        # Load MJCF model and filter joint names
+        mjcf_model = mjcf.from_path(str(MENAGERIE_ROOT / "i2rt_yam" / "yam.xml"))
+        all_joints = [j.name for j in mjcf_model.find_all("joint")]
+
+        if self._use_gripper:
+            # Use all joints except right_finger (passive)
+            self._joint_names = [j for j in all_joints if j != "right_finger"]
+        else:
+            # Use only joint1–6
+            self._joint_names = [j for j in all_joints if j.startswith("joint")]
+
+        self._joint_state = np.zeros(len(self._joint_names))
+        self._joint_velocities = np.zeros(len(self._joint_names))
         self._gripper_state = 0.0
 
     def num_dofs(self) -> int:
-        return 7 if self._use_gripper else 6
+        return len(self._joint_names)
 
     def get_joint_state(self) -> np.ndarray:
         return self._joint_state
@@ -21,6 +36,7 @@ class YAMRobot(Robot):
         assert len(joint_state) == self.num_dofs(), (
             f"Expected {self.num_dofs()} joint values, got {len(joint_state)}"
         )
+        
         dt = 0.01
         self._joint_velocities = (joint_state - self._joint_state) / dt
         self._joint_state = joint_state

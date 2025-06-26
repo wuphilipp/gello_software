@@ -37,6 +37,12 @@ def main(args: Args) -> None:
     # task = BlockPlay(robot, Floor())
     env = composer.Environment(task=task)
 
+
+    print(f"UR5e env: Total number of joints (qpos length): {env.physics.model.nq}")
+    print(f"UR5e env: Length of reset_joints passed to task: {len(reset_joints_left[:-1])}")
+    print(f"UR5e env: Initial qpos state: {env.physics.data.qpos}")
+  
+
     action_space = env.action_spec()
     if args.use_gello:
         gello = config.make_robot(

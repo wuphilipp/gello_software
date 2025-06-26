@@ -42,6 +42,10 @@ class Args:
     bimanual: bool = False
     verbose: bool = False
 
+    def __post_init__(self):
+        if self.start_joints is not None:
+            self.start_joints = np.array(self.start_joints)
+
 
 def main(args):
     if args.mock:
@@ -120,7 +124,7 @@ def main(args):
                     [0, -90, 90, -90, -90, 0, 0]
                 )  # Change this to your own reset joints
             else:
-                reset_joints = args.start_joints
+                reset_joints = np.array(args.start_joints)
             agent = GelloAgent(port=gello_port, start_joints=args.start_joints)
             curr_joints = env.get_obs()["joint_positions"]
             if reset_joints.shape == curr_joints.shape:

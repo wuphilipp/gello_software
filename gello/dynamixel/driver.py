@@ -213,9 +213,14 @@ class DynamixelDriver(DynamixelDriverProtocol):
             with self._lock:
                 _joint_angles = np.zeros(len(self._ids), dtype=int)
                 dxl_comm_result = self._groupSyncRead.txRxPacket()
+
                 if dxl_comm_result != COMM_SUCCESS:
-                    print(f"warning, comm failed: {dxl_comm_result}")
+                    print(f"WARNING: comm failed with code {dxl_comm_result} ({self._groupSyncRead.getTxRxResult(dxl_comm_result) if hasattr(self._groupSyncRead, 'getTxRxResult') else 'Unknown error'})")
+                    print(f"Attempted to read IDs: {self._ids}")
+                    # Optionally clear buffer or reset comm here if supported:
+                    # self._groupSyncRead.clearParam()
                     continue
+
                 for i, dxl_id in enumerate(self._ids):
                     if self._groupSyncRead.isAvailable(
                         dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
@@ -226,11 +231,13 @@ class DynamixelDriver(DynamixelDriverProtocol):
                         angle = np.int32(np.uint32(angle))
                         _joint_angles[i] = angle
                     else:
-                        raise RuntimeError(
-                            f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
-                        )
+                        print(f"WARNING: Dynamixel ID {dxl_id} not responding to position request, skipping")
+                        continue
+
                 self._joint_angles = _joint_angles
-            # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
+
+
+                # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions

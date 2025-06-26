@@ -53,6 +53,7 @@ Steps:
  * Click scan (found at the top left corner), this should detect the dynamixel. Connect to the motor
  * Look for the ID address and change the ID to the appropriate number.
  * Repeat for each motor
+ * If some ID are missing, perform an ID scan
 
 ## Create the GELLO configuration and determining joint ID's
 After the motor ID's are set, we can now connect to the GELLO controller device. However each motor has its own joint offset, which will result in a joint offset between GELLO and your actual robot arm.
@@ -60,11 +61,13 @@ Dynamixels have a symmetric 4 hole pattern which means there the joint offset is
 The `GelloAgent` class  accepts a `DynamixelRobotConfig` (found in `gello/agents/gello_agent.py`). The Dynamixel config specifies the parameters you need to find to operate your GELLO. Look at the documentation for more details.
 
 We have created a simple script to automatically detect the joint offset:
-* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set our GELLO for the UR and Franka FR3 in this configuration, where we know the desired ground truth joints (0, -90, 90, -90, -90, 0), or (0, 0, 0, -90, 0, 90 , 0) respectively.
+* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set our GELLO for the UR and Franka FR3 in this configuration, where we know the desired ground truth joints (0, -90, 90, -90, -90, 0), or (0, 0, 0, -90, 0, 90 , 0) respectively. For the YAM the ground truth is in position (0, 0, 0, 0, 0, 0 , 0)
 <p align="center">
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
   <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
+  <img src="imgs/YAM_known_position.PNG" width="31%">
+
 </p>
 
 * For the UR run 
@@ -83,6 +86,14 @@ python scripts/gello_get_offset.py \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
 # replace values with your own
 ```
+* For the YAM run
+```
+python scripts/gello_get_offset.py \
+    --start-joints 0 0 0 0 0 0 0 \ 
+    --joint-signs 1 1 -1 -1 1 1 \
+    --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
+# replace values with your own
+```
 * Use the known starting joints for `start-joints`.
 * Depending on the mechanical setup of your GELLO, the joint signs can flip, so you need to specify them for each axis.
 * Use your serial port for `port`. You can find the port id of your U2D2 Dynamixel device by running `ls /dev/serial/by-id` and looking for the path that starts with `usb-FTDI_USB__-__Serial_Converter` (on Ubuntu). On Mac, look in /dev/ and the device that starts with `cu.usbserial`
@@ -92,6 +103,7 @@ python scripts/gello_get_offset.py \
 * Panda: `1 -1 1 1 1 -1 1`
 * FR3: `1 1 1 1 1 -1 1`
 * xArm: `1 1 1 1 1 1 1`
+* YAM: `1 1 -1 -1 1 1`
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!
 
@@ -104,7 +116,7 @@ For multiprocessing, we leverage [ZMQ](https://zeromq.org/)
 First test your GELLO with a simulated robot to make sure that the joint angles match as expected.
 In one terminal run
 ```
-python experiments/launch_nodes.py --robot <sim_ur, sim_panda, or sim_xarm>
+python experiments/launch_nodes.py --robot <sim_ur, sim_panda, or sim_xarm, or sim_yam>
 ```
 This launched the robot node. A simulated robot using the mujoco viewer should appear.
 
@@ -201,3 +213,6 @@ This project builds on top of or utilizes the following third party dependencies
  * [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie): Prebuilt robot models for mujoco
  * [brentyi/tyro](https://github.com/brentyi/tyro): Argument parsing and configuration
  * [ZMQ](https://zeromq.org/): Enables easy create of node like processes in python.
+
+
+
