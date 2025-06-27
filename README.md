@@ -139,7 +139,8 @@ The supported robots are in `gello/robots`.
 # Launch all of the node
 python experiments/launch_nodes.py --robot=<your robot>
 # run the enviroment loop
-python experiments/run_env.py --agent=gello
+python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
+
 ```
 
 Ideally you can start your GELLO near a known configuration each time. If this is possible, you can set the `--start-joint` flag with GELLO's known starting configuration. This also enables the robot to reset before you begin teleoperation.
