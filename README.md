@@ -18,6 +18,7 @@ git submodule update
 pip install -r requirements.txt
 pip install -e .
 pip install -e third_party/DynamixelSDK/python
+pip install -e third_party/i2rt
 ```
 
 ## Use with Docker
@@ -89,7 +90,7 @@ python scripts/gello_get_offset.py \
 * For the YAM run
 ```
 python scripts/gello_get_offset.py \
-    --start-joints 0 0 0 0 0 0 0 \ 
+    --start-joints 0 0 0 0 0 0 1 \ 
     --joint-signs 1 1 -1 -1 1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
 # replace values with your own
