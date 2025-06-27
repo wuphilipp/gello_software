@@ -66,7 +66,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
      "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0": DynamixelRobotConfig(
         joint_ids=(1, 2, 3, 4, 5, 6),
         # joint_offsets=(-3.142, 3.142, 4.712, 6.283, 1.571, 0.000),
-        joint_offsets=[2*np.pi/2, 2*np.pi/2, 4*np.pi/2, 7*np.pi/6, 1*np.pi/2, 4*np.pi/2],
+        joint_offsets=[3*np.pi/2, 2*np.pi/2, 4*np.pi/2, 7*np.pi/6, 1*np.pi/2, 4*np.pi/2],
         joint_signs=(1, 1, -1, -1, 1, 1),
         gripper_config=(7, -30, 24),  # Reversed: now starts open (-30) and closes on press (24)
     ),
