@@ -58,18 +58,18 @@ class DynamixelRobot(Robot):
             self._joint_signs = np.ones(len(joint_ids))
         else:
             self._joint_signs = np.array(joint_signs)
-        #uncomment this later
-        # assert len(self._joint_ids) == len(self._joint_offsets), (
-        #     f"joint_ids: {len(self._joint_ids)}, "
-        #     f"joint_offsets: {len(self._joint_offsets)}"
-        # )
-        # assert len(self._joint_ids) == len(self._joint_signs), (
-        #     f"joint_ids: {len(self._joint_ids)}, "
-        #     f"joint_signs: {len(self._joint_signs)}"
-        # )
-        # assert np.all(
-        #     np.abs(self._joint_signs) == 1
-        # ), f"joint_signs: {self._joint_signs}"
+        
+        assert len(self._joint_ids) == len(self._joint_offsets), (
+            f"joint_ids: {len(self._joint_ids)}, "
+            f"joint_offsets: {len(self._joint_offsets)}"
+        )
+        assert len(self._joint_ids) == len(self._joint_signs), (
+            f"joint_ids: {len(self._joint_ids)}, "
+            f"joint_signs: {len(self._joint_signs)}"
+        )
+        assert np.all(
+            np.abs(self._joint_signs) == 1
+        ), f"joint_signs: {self._joint_signs}"
 
         if real:
             self._driver = DynamixelDriver(joint_ids, port=port, baudrate=baudrate)
