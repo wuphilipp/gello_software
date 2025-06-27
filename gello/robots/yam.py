@@ -4,32 +4,34 @@ import numpy as np
 from typing import Dict
 from gello.robots.robot import Robot
 from gello.dm_control_tasks.mjcf_utils import MENAGERIE_ROOT
+from i2rt.robots.motor_chain_robot import get_yam_robot
 
 class YAMRobot(Robot):
     """A class representing a simulated YAM robot."""
 
-    def __init__(self, no_gripper: bool = False):
-        self._use_gripper = not no_gripper
+    def __init__(self, channel="can0", motor_timeout_enabled=True):
+        self.robot = get_yam_robot(channel=channel, motor_timeout_enabled=motor_timeout_enabled)
 
-        # Load MJCF model and filter joint names
-        mjcf_model = mjcf.from_path(str(MENAGERIE_ROOT / "i2rt_yam" / "yam.xml"))
-        all_joints = [j.name for j in mjcf_model.find_all("joint")]
-
-        if self._use_gripper:
-            # Use all joints except right_finger (passive)
-            self._joint_names = [j for j in all_joints if j != "right_finger"]
-        else:
-            # Use only joint1–6
-            self._joint_names = [j for j in all_joints if j.startswith("joint")]
-
-        self._joint_state = np.zeros(len(self._joint_names))
-        self._joint_velocities = np.zeros(len(self._joint_names))
+        # YAM has 7 joints (6 arm joints + 1 gripper)
+        self._joint_names = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "gripper"]
+        self._joint_state = np.zeros(7)  # 7 joints
+        self._joint_velocities = np.zeros(7)  # 7 joints
         self._gripper_state = 0.0
 
     def num_dofs(self) -> int:
-        return len(self._joint_names)
+        return 7  # YAM has 7 DOFs
 
     def get_joint_state(self) -> np.ndarray:
+        # Get actual joint positions from I2RT robot (7 joints total)
+        joint_pos = self.robot.get_joint_pos()
+        # Ensure we have exactly 7 joints
+        if len(joint_pos) > 7:
+            joint_pos = joint_pos[:7]
+        elif len(joint_pos) < 7:
+            # Pad with zeros if we have fewer than 7 joints
+            joint_pos = np.pad(joint_pos, (0, 7 - len(joint_pos)), 'constant')
+        
+        self._joint_state = joint_pos
         return self._joint_state
 
     def command_joint_state(self, joint_state: np.ndarray) -> None:
@@ -40,8 +42,9 @@ class YAMRobot(Robot):
         dt = 0.01
         self._joint_velocities = (joint_state - self._joint_state) / dt
         self._joint_state = joint_state
-        if self._use_gripper:
-            self._gripper_state = joint_state[-1]
+        
+        # Command the I2RT robot with all 7 joints (6 arm + 1 gripper)
+        self.command_joint_pos(joint_state)
 
     def get_observations(self) -> Dict[str, np.ndarray]:
         ee_pos_quat = np.zeros(7)  # Placeholder for FK
@@ -52,6 +55,25 @@ class YAMRobot(Robot):
             "gripper_position": np.array([self._gripper_state]),
         }
 
+    def get_joint_pos(self):
+        # Get 7 joints from I2RT robot (6 arm + 1 gripper)
+        joint_pos = self.robot.get_joint_pos()
+        # Ensure we return exactly 7 joints
+        if len(joint_pos) > 7:
+            joint_pos = joint_pos[:7]
+        elif len(joint_pos) < 7:
+            # Pad with zeros if we have fewer than 7 joints
+            joint_pos = np.pad(joint_pos, (0, 7 - len(joint_pos)), 'constant')
+        return joint_pos
+
+    def command_joint_pos(self, target_pos):
+        # Ensure we send exactly 7 joints to the I2RT robot
+        if len(target_pos) > 7:
+            target_pos = target_pos[:7]
+        elif len(target_pos) < 7:
+            # Pad with zeros if we have fewer than 7 joints
+            target_pos = np.pad(target_pos, (0, 7 - len(target_pos)), 'constant')
+        self.robot.command_joint_pos(np.array(target_pos))
 
 def main():
     robot = YAMRobot()
