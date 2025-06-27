@@ -135,10 +135,20 @@ The supported robots are in `gello/robots`.
  * UR: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
  * panda: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html). If you use a different framework to control the panda, the code is easy to adpot. See/Modify `gello/robots/panda.py`
  * xArm: [xArm python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
+ * YAM: [i2rt] (https://github.com/i2rt-robotics/i2rt) Already installed under third_party/i2rt.
 
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=<your robot>
+# run the enviroment loop
+python experiments/run_env.py --agent=gello 
+
+```
+
+For the YAM append start joint position to run:
+```
+# Launch all of the node
+python experiments/launch_nodes.py --robot=yam
 # run the enviroment loop
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 
