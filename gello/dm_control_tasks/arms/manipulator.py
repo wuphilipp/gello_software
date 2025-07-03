@@ -77,9 +77,6 @@ class Manipulator(composer.Entity, abc.ABC):
         self._add_mjcf_elements()
 
     def set_joints(self, physics: mjcf.Physics, joints: np.ndarray) -> None:
-        
-
-        print(f"len(joints): {len(joints)}, len(self._arm_joints): {len(self._arm_joints)}")
         assert len(joints) == len(self._arm_joints)
         for joint, joint_value in zip(self._arm_joints, joints):
             joint_id = physics.bind(joint).element_id

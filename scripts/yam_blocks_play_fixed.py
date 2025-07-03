@@ -3,11 +3,13 @@ import numpy as np
 import tyro
 import time
 from dm_control import composer, viewer
+import glob
 
 from gello.agents.gello_agent import DynamixelRobotConfig
 from gello.dm_control_tasks.arms.yam import YAM
 from gello.dm_control_tasks.manipulation.arenas.floors import Floor
 from gello.dm_control_tasks.manipulation.tasks.block_play import BlockPlay
+from gello.agents.gello_agent import GelloAgent
 
 
 @dataclass
@@ -51,19 +53,36 @@ def main(args: Args) -> None:
             
     else:
         print("[DEBUG] Entering simulation mode")
-        # Simulation mode - use dm_control viewer
         arm_model = YAM()
-        
-        # The simulation environment expects 8 joints (6 arm + 2 gripper joints from MJCF)
-        # Add a dummy value for the 8th joint for simulation
-        reset_joints_sim_8 = np.append(reset_joints_sim, 0.0)  # Add 8th joint
-        
-        # Use 8 joints for the simulation environment
+        reset_joints_sim_8 = np.append(reset_joints_sim, 0.0)  # Add 8th joint if needed by your MJCF
+
         task = BlockPlay(arm_model, Floor(), reset_joints=reset_joints_sim_8)
         env = composer.Environment(task=task)
+        action_space = env.action_spec()
 
-        def policy(timestep) -> np.ndarray:
-            return np.random.uniform(env.action_spec().minimum, env.action_spec().maximum)
+        policy = None
+        if args.use_gello:
+            usb_ports = glob.glob("/dev/serial/by-id/*")
+            if len(usb_ports) > 0:
+                gello_port = usb_ports[0]
+                print(f"Using GELLO port: {gello_port}")
+            else:
+                raise ValueError("No GELLO port found, please plug in your GELLO device.")
+
+            gello = yam_config.make_robot(port=gello_port, start_joints=reset_joints_sim)
+
+            def policy(timestep):
+                joint_command = gello.get_joint_state()
+                joint_command = np.array(joint_command).copy()
+                # If your sim expects 8 joints, pad or slice as needed
+                if len(joint_command) < action_space.shape[0]:
+                    joint_command = np.pad(joint_command, (0, action_space.shape[0] - len(joint_command)), 'constant')
+                elif len(joint_command) > action_space.shape[0]:
+                    joint_command = joint_command[:action_space.shape[0]]
+                return joint_command
+        else:
+            def policy(timestep):
+                return np.random.uniform(action_space.minimum, action_space.maximum)
 
         print("[INFO] Launching viewer loop")
         viewer.launch(env, policy=policy)

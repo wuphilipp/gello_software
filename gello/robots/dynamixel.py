@@ -84,7 +84,6 @@ class DynamixelRobot(Robot):
             # loop through all joints and add +- 2pi to the joint offsets to get the closest to start joints
             new_joint_offsets = []
             current_joints = self.get_joint_state()
-            print(f"current_joints.shape: {current_joints.shape}, start_joints.shape: {start_joints.shape}")
             assert current_joints.shape == start_joints.shape
             if gripper_config is not None:
                 current_joints = current_joints[:-1]
