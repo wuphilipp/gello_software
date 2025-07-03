@@ -50,7 +50,7 @@ If you choose not to use the Dev-Container, please refer to the [Local Setup](#l
 - **ROS 2 Humble Desktop** must be installed.  
   See the [official installation guide](https://docs.ros.org/en/humble/Installation.html) for instructions.
 - **libfranka** and **franka_ros2** must be installed.  
-  Refer to the [Franka Robotics documentation](https://frankaemika.github.io/docs/index.html) for installation steps and compatibility information.
+  Refer to the [Franka Robotics documentation](https://frankarobotics.github.io/docs/index.html) for installation steps and compatibility information.
 - **ros2_robotiq_gripper** (if required) must be installed.  
   See the [ros2_robotiq_gripper GitHub repository](https://github.com/PickNikRobotics/ros2_robotiq_gripper) for installation and usage instructions.
 
@@ -168,7 +168,7 @@ The open com port could not be opened. Possible reasons are:
   
 ### libfranka: Incompatible library version (server version: X, library version: Y).
 
-The libfranka version and robot system version are not compatible. More information can be found [here](https://frankaemika.github.io/docs/compatibility.html).
+The libfranka version and robot system version are not compatible. More information can be found [here](https://frankarobotics.github.io/docs/compatibility.html).
 Fix this by correcting the `LIBFRANKA_VERSION=0.15.0` in the [Dockerfile](./.devcontainer/Dockerfile) and update the `FRANKA_ROS2_VERSION` and `FRANKA_DESCRIPTION_VERSION` accordingly.
 
 

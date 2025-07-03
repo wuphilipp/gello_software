@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y \
 # Install libfranka
 ARG LIBFRANKA_VERSION=0.15.0
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-  git clone --recursive https://github.com/frankaemika/libfranka --branch ${LIBFRANKA_VERSION} \
+  git clone --recursive https://github.com/frankarobotics/libfranka --branch ${LIBFRANKA_VERSION} \
   && cd libfranka \
   && mkdir build \
   && cd build \
@@ -34,8 +34,8 @@ ARG FRANKA_ROS2_VERSION=v1.0.0
 ARG FRANKA_DESCRIPTION_VERSION=0.4.0
 RUN /bin/bash -c 'source /opt/ros/humble/setup.bash && \
   mkdir -p /tmp/franka_ros2 && cd /tmp/franka_ros2 && \
-  git clone --recursive https://github.com/frankaemika/franka_ros2.git --branch ${FRANKA_ROS2_VERSION} && \
-  git clone --recursive https://github.com/frankaemika/franka_description.git --branch ${FRANKA_DESCRIPTION_VERSION} && \
+  git clone --recursive https://github.com/frankarobotics/franka_ros2.git --branch ${FRANKA_ROS2_VERSION} && \
+  git clone --recursive https://github.com/frankarobotics/franka_description.git --branch ${FRANKA_DESCRIPTION_VERSION} && \
   apt-get update && \
   rosdep update && \
   rosdep install --from-paths . --ignore-src -r -y && \
