@@ -90,7 +90,7 @@ python scripts/gello_get_offset.py \
 * For the YAM run
 ```
 python scripts/gello_get_offset.py \
-    --start-joints 0 0 0 0 0 0 1 \ 
+    --start-joints 0 0 0 0 0 0 \ 
     --joint-signs 1 1 -1 -1 1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
 # replace values with your own
