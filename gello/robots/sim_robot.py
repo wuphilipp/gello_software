@@ -156,8 +156,6 @@ class MujocoRobotServer:
         self._model = mujoco.MjModel.from_xml_string(xml_string, assets)
         self._data = mujoco.MjData(self._model)
 
-        
-
         self._num_joints = self._model.nu
 
         self._joint_state = np.zeros(self._num_joints)
