@@ -136,7 +136,15 @@ Ideally you can start your GELLO near a known configuration each time. If this i
 We have provided a simple example for collecting data with gello.
 To save trajectories with the keyboard, add the following flag `--use-save-interface`
 
-Data can then be processed using the demo_to_gdict script.
+In order to process the data using the demo_to_gdict script, you will need to install the requirements by running
+```
+pip install -r requirements_data_process.txt
+```
+and then installing `ffmpeg` using your package manager. On Ubuntu, you can run
+```
+sudo apt install ffmpeg
+```
+Finally, run the demo_to_gdict script.
 ```
 python gello/data_utils/demo_to_gdict.py --source-dir=<source dir location>
 ```
