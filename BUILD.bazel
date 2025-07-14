@@ -1,0 +1,17 @@
+
+load("@rules_python//python:defs.bzl", "py_library", "py_binary")
+load("@python_deps//:requirements.bzl", "requirement")
+
+py_library(
+    name = "gello",
+    srcs = glob(["*.py", "**/*.py"]),
+    deps = [
+        requirement("numpy"),
+        requirement("torchvision"),
+        requirement("torch"),
+        requirement("ultralytics"),
+        requirement("opencv-python"),
+        requirement("pyquaternion"),
+    ],
+    visibility = ["//visibility:public"],
+)
