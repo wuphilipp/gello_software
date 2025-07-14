@@ -4,6 +4,3 @@
 [submodule "third_party/DynamixelSDK"]
 	path = third_party/DynamixelSDK
 	url = https://github.com/ROBOTIS-GIT/DynamixelSDK.git
-[submodule "third_party/i2rt"]
-	path = third_party/i2rt
-	url = https://github.com/i2rt-robotics/i2rt.git

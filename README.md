@@ -18,7 +18,6 @@ git submodule update
 pip install -r requirements.txt
 pip install -e .
 pip install -e third_party/DynamixelSDK/python
-pip install -e third_party/i2rt
 ```
 
 ## Use with Docker
@@ -67,7 +66,7 @@ We have created a simple script to automatically detect the joint offset:
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
   <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
-  <img src="imgs/YAM_known_position.PNG" width="31%">
+  <img src="imgs/YAM_known_position.jpg" width="31%">
 
 </p>
 
@@ -90,7 +89,7 @@ python scripts/gello_get_offset.py \
 * For the YAM run
 ```
 python scripts/gello_get_offset.py \
-    --start-joints 0 0 0 0 0 0 \ 
+    --start-joints 0 0 0 0 0 0 \ #in radians
     --joint-signs 1 1 -1 -1 1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
 # replace values with your own
@@ -133,9 +132,9 @@ Once you have verified that your GELLO is properly configured, you can test it o
 Before you run with the real robot, you will have to install a robot specific python package.
 The supported robots are in `gello/robots`.
  * UR: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
- * panda: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html). If you use a different framework to control the panda, the code is easy to adpot. See/Modify `gello/robots/panda.py`
+ * panda: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html). If you use a different framework to control the panda, the code is easy to adopt. See/Modify `gello/robots/panda.py`
  * xArm: [xArm python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
- * YAM: [i2rt] (https://github.com/i2rt-robotics/i2rt) Already installed under third_party/i2rt.
+ * YAM: [i2rt] (https://github.com/i2rt-robotics/i2rt) 
 
 ```
 # Launch all of the node
@@ -177,8 +176,8 @@ python processes.
 ```
 
 ### Using a new robot!
-If you want to use a new robot you need a GELLO that is compatible. If the kiniamtics are close enough, you may directly use an existing GELLO. Otherwise you will have to design your own.
-To add a new robot, simply implement the `Robot` protocol found in `gello/robots/robot`. See `gello/robots/panda.py`, `gello/robots/ur.py`, `gello/robots/xarm_robot.py` for examples.
+If you want to use a new robot you need a GELLO that is compatible. If the kinemtics are close enough, you may directly use an existing GELLO. Otherwise you will have to design your own.
+To add a new robot, simply implement the `Robot` protocol found in `gello/robots/robot`. See `gello/robots/panda.py`, `gello/robots/ur.py`, `gello/robots/xarm_robot.py`, `gello/robots/yam.py` for examples.
 
 ### Contributing
 Please make a PR if you would like to contribute! The goal of this project is to enable more accessible and higher quality teleoperation devices and we would love your input!
@@ -195,7 +194,7 @@ The code is organized as follows:
     * `agents`: teleoperation agents
     * `cameras`: code to interface with camera hardware
     * `data_utils`: data processing utils. used for imitation learning
-    * `dm_control_tasks`: dm_control utils to build a simple dm_control enviroment. used for demos
+    * `dm_control_tasks`: dm_control utils to build a simple dm_control environment. used for demos
     * `dynamixel`: code to interface with the dynamixel hardware
     * `robots`: robot specific interfaces
     * `zmq_core`: zmq utilities for enabling a multi node system
@@ -225,6 +224,3 @@ This project builds on top of or utilizes the following third party dependencies
  * [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie): Prebuilt robot models for mujoco
  * [brentyi/tyro](https://github.com/brentyi/tyro): Argument parsing and configuration
  * [ZMQ](https://zeromq.org/): Enables easy create of node like processes in python.
-
-
-

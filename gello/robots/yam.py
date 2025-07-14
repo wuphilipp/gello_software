@@ -4,12 +4,12 @@ import numpy as np
 from typing import Dict
 from gello.robots.robot import Robot
 from gello.dm_control_tasks.mjcf_utils import MENAGERIE_ROOT
-from i2rt.robots.motor_chain_robot import get_yam_robot
 
 class YAMRobot(Robot):
     """A class representing a simulated YAM robot."""
 
     def __init__(self, channel="can0", motor_timeout_enabled=True):
+        from i2rt.robots.motor_chain_robot import get_yam_robot
         self.robot = get_yam_robot(channel=channel, motor_timeout_enabled=motor_timeout_enabled)
 
         # YAM has 7 joints (6 arm joints + 1 gripper)
