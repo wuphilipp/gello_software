@@ -30,7 +30,7 @@ JointImpedanceController::command_interface_configuration() const {
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
 
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/effort");
+    config.names.push_back(namespace_prefix_ + arm_id_ + "_joint" + std::to_string(i) + "/effort");
   }
   return config;
 }
@@ -40,8 +40,10 @@ JointImpedanceController::state_interface_configuration() const {
   controller_interface::InterfaceConfiguration config;
   config.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   for (int i = 1; i <= num_joints; ++i) {
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/position");
-    config.names.push_back(arm_id_ + "_joint" + std::to_string(i) + "/velocity");
+    config.names.push_back(namespace_prefix_ + arm_id_ + "_joint" + std::to_string(i) +
+                           "/position");
+    config.names.push_back(namespace_prefix_ + arm_id_ + "_joint" + std::to_string(i) +
+                           "/velocity");
   }
   return config;
 }
@@ -112,6 +114,11 @@ CallbackReturn JointImpedanceController::on_init() {
 CallbackReturn JointImpedanceController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = get_node()->get_parameter("arm_id").as_string();
+  namespace_prefix_ = get_node()->get_parameter("namespace").as_string();
+  if (namespace_prefix_ != "") {
+    namespace_prefix_ = namespace_prefix_ + "_";
+  }
+
   auto k_gains = get_node()->get_parameter("k_gains").as_double_array();
   auto d_gains = get_node()->get_parameter("d_gains").as_double_array();
   auto k_alpha = get_node()->get_parameter("k_alpha").as_double();
@@ -135,7 +142,7 @@ CallbackReturn JointImpedanceController::on_configure(
   dq_filtered_.setZero();
 
   auto parameters_client =
-      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "/robot_state_publisher");
+      std::make_shared<rclcpp::AsyncParametersClient>(get_node(), "robot_state_publisher");
   parameters_client->wait_for_service();
 
   auto future = parameters_client->get_parameters({"robot_description"});
@@ -147,7 +154,7 @@ CallbackReturn JointImpedanceController::on_configure(
   }
 
   joint_state_subscriber_ = get_node()->create_subscription<sensor_msgs::msg::JointState>(
-      "/gello/joint_states", 1,
+      "gello/joint_states", 1,
       [this](const sensor_msgs::msg::JointState& msg) { jointStateCallback_(msg); });
 
   return CallbackReturn::SUCCESS;
