@@ -11,13 +11,19 @@ cd gello_software
 </p>
 
 
-## Use your own enviroment
+## Create a vitual environment
+First, install uv if you do not already have it installed
+`curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+Create a uv virtual environment and use uv pip to install the necessary packages
 ```
+uv venv --python 3.11
+source .venv/bin/activate # run this every time you open a new shell
 git submodule init
 git submodule update
-pip install -r requirements.txt
-pip install -e .
-pip install -e third_party/DynamixelSDK/python
+uv pip install -r requirements.txt
+uv pip install -e .
+uv pip install -e third_party/DynamixelSDK/python
 ```
 
 ## Use with Docker
