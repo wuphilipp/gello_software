@@ -4,7 +4,7 @@ LEFT:
   fake_sensor_commands: "false" 
   joint_sources: ["joint_states", "franka_gripper/joint_states"] 
   joint_state_rate: 30 
-  load_gripper: "false" 
+  load_gripper: "true" 
   namespace: "left"
   robot_ip: "192.168.20.11" 
   urdf_file: "fr3/fr3.urdf.xacro" 
@@ -17,7 +17,7 @@ RIGHT:
   fake_sensor_commands: "false"
   joint_sources: ["joint_states", "franka_gripper/joint_states"]
   joint_state_rate: 30
-  load_gripper: "false"
+  load_gripper: "true"
   namespace: "right"
   robot_ip: "192.168.20.12"
   urdf_file: "fr3/fr3.urdf.xacro"

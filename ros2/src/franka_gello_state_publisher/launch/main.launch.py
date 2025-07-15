@@ -16,13 +16,13 @@ def load_yaml(file_path):
 
 
 def generate_robot_nodes(context):
-    config_file = LaunchConfiguration("gello_config_file").perform(context)
+    config_file_name = LaunchConfiguration("config_file").perform(context)
+    package_config_dir = FindPackageShare("franka_gello_state_publisher").perform(context)
+    config_file = os.path.join(package_config_dir, "config", config_file_name)
     configs = load_yaml(config_file)
     nodes = []
     for item_name, config in configs.items():
         namespace = config["namespace"]
-        com_port = config["com_port"]
-        gello_name = item_name
         nodes.append(
             Node(
                 package="franka_gello_state_publisher",
@@ -31,8 +31,13 @@ def generate_robot_nodes(context):
                 namespace=namespace,
                 output="screen",
                 parameters=[
-                    {"com_port": "/dev/serial/by-id/" + com_port},
-                    {"gello_name": gello_name},
+                    {"com_port": "/dev/serial/by-id/" + config["com_port"]},
+                    {"gello_name": item_name},
+                    {"num_joints": config["num_joints"]},
+                    {"joint_signs": config["joint_signs"]},
+                    {"gripper": config["gripper"]},
+                    {"gripper_range_rad": config["gripper_range_rad"]},
+                    {"best_offsets": config["best_offsets"]},
                 ],
             )
         )
@@ -43,15 +48,9 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
-                "gello_config_file",
-                default_value=PathJoinSubstitution(
-                    [
-                        FindPackageShare("franka_gello_state_publisher"),
-                        "config",
-                        "gello_config.yaml",
-                    ]
-                ),
-                description="Path to the robot configuration file to load",
+                "config_file",
+                default_value="example_fr3_config.yaml",
+                description="Name of the gello configuration file to load",
             ),
             OpaqueFunction(function=generate_robot_nodes),
         ]

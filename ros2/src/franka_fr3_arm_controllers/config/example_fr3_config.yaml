@@ -1,0 +1,12 @@
+robot1:
+  arm_id: "fr3"
+  arm_prefix: ""
+  fake_sensor_commands: "false" 
+  joint_sources: ["joint_states", "franka_gripper/joint_states"] 
+  joint_state_rate: 30 
+  load_gripper: "true" 
+  namespace: ""
+  robot_ip: "192.168.20.11" 
+  urdf_file: "fr3/fr3.urdf.xacro" 
+  use_fake_hardware: "false" 
+  use_rviz: "false" 

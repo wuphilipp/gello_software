@@ -15,7 +15,9 @@ def load_yaml(file_path):
 
 
 def generate_nodes(context):
-    config_file = LaunchConfiguration("gripper_manager_config_file").perform(context)
+    config_file_name = LaunchConfiguration("config_file").perform(context)
+    package_config_dir = FindPackageShare("franka_gripper_manager").perform(context)
+    config_file = os.path.join(package_config_dir, "config", config_file_name)
     configs = load_yaml(config_file)
     nodes = []
     for item_name, config in configs.items():
@@ -37,14 +39,8 @@ def generate_launch_description():
     return LaunchDescription(
         [
             DeclareLaunchArgument(
-                "gripper_manager_config_file",
-                default_value=PathJoinSubstitution(
-                    [
-                        FindPackageShare("franka_gripper_manager"),
-                        "config",
-                        "franka_gripper_config.yaml",
-                    ]
-                ),
+                "config_file",
+                default_value="example_fr3_config_franka_hand.yaml",
                 description="Path to the franka_gripper_manager configuration file to load",
             ),
             OpaqueFunction(function=generate_nodes),

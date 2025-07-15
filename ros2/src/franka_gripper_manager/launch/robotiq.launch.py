@@ -45,9 +45,7 @@ def generate_nodes(context: LaunchContext):
     description_pkg_share = launch_ros.substitutions.FindPackageShare(
         package="robotiq_description"
     ).find("robotiq_description")
-    default_rviz_config_path = os.path.join(
-        description_pkg_share, "rviz", "view_urdf.rviz"
-    )
+    default_rviz_config_path = os.path.join(description_pkg_share, "rviz", "view_urdf.rviz")
 
     gripper_pkg_share = launch_ros.substitutions.FindPackageShare(
         package="franka_gripper_manager"
@@ -77,17 +75,14 @@ def generate_nodes(context: LaunchContext):
         )
     )
     args.append(
-        launch.actions.DeclareLaunchArgument(
-            name="com_port", description="Default COM port"
-        )
+        launch.actions.DeclareLaunchArgument(name="com_port", description="Default COM port")
     )
     args.append(
         launch.actions.DeclareLaunchArgument(
             name="namespace", default_value="", description="Namespace of gripper"
         )
     )
-    namespace=context.perform_substitution(LaunchConfiguration("namespace"))
-
+    namespace = context.perform_substitution(LaunchConfiguration("namespace"))
 
     robot_description_content = Command(
         [
@@ -107,7 +102,7 @@ def generate_nodes(context: LaunchContext):
         )
     }
 
-    # TODO: file does not exist 
+    # TODO: file does not exist
     update_rate_config_file = PathJoinSubstitution(
         [
             description_pkg_share,
@@ -174,13 +169,13 @@ def generate_nodes(context: LaunchContext):
     )
 
     robotiq_gripper_client = launch_ros.actions.Node(
-      package='franka_gripper_manager',
-      executable='robotiq_gripper_client',
-      name='robotiq_gripper_client',
-      output='screen',
-      parameters=[{'namespace': namespace}],
+        package="franka_gripper_manager",
+        executable="robotiq_gripper_client",
+        name="robotiq_gripper_client",
+        output="screen",
+        parameters=[{"namespace": namespace}],
     )
-    
+
     nodes = [
         control_node,
         robot_state_publisher_node,
@@ -188,12 +183,15 @@ def generate_nodes(context: LaunchContext):
         robotiq_gripper_controller_spawner,
         robotiq_activation_controller_spawner,
         rviz_node,
-        robotiq_gripper_client
+        robotiq_gripper_client,
     ]
 
     return args + nodes
 
+
 def generate_launch_description():
-    return LaunchDescription([
-        OpaqueFunction(function=generate_nodes),
-    ])
+    return LaunchDescription(
+        [
+            OpaqueFunction(function=generate_nodes),
+        ]
+    )

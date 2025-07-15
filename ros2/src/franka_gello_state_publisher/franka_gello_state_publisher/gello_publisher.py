@@ -18,15 +18,28 @@ class GelloPublisher(Node):
         default_com_port = self.determine_default_com_port()
         self.declare_parameter("com_port", default_com_port)
         self.declare_parameter("gello_name", default_com_port)
+        self.declare_parameter("num_joints", 7)
+        self.declare_parameter("joint_signs", [1] * 7)
+        self.declare_parameter("gripper", True)
+        self.declare_parameter("gripper_range_rad", (0.0, 0.0))
+        self.declare_parameter("best_offsets", [0.0] * 7)
         self.com_port = self.get_parameter("com_port").get_parameter_value().string_value
         self.gello_name = self.get_parameter("gello_name").get_parameter_value().string_value
-
-        config_path = os.path.join(
-            get_package_share_directory("franka_gello_state_publisher"),
-            "config",
-            "gello_config.yaml",
+        self.num_robot_joints = (
+            self.get_parameter("num_joints").get_parameter_value().integer_value
         )
-        self.get_values_from_config(config_path)
+        self.joint_signs = (
+            self.get_parameter("joint_signs").get_parameter_value().integer_array_value
+        )
+        self.gripper = self.get_parameter("gripper").get_parameter_value().bool_value
+        self.gripper_range_rad = (
+            self.get_parameter("gripper_range_rad").get_parameter_value().double_array_value
+        )
+        self.best_offsets = (
+            self.get_parameter("best_offsets").get_parameter_value().double_array_value
+        )
+
+        self.get_values_from_config()
 
         self.robot_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
         self.gripper_joint_publisher = self.create_publisher(
@@ -54,33 +67,13 @@ class GelloPublisher(Node):
             self.get_logger().warn("No com_ports detected. Please specify the com_port manually.")
             return "INVALID_COM_PORT"
 
-    def get_values_from_config(self, config_file: str):
-        with open(config_file, "r") as file:
-            config = yaml.safe_load(file)
-
-        self.num_robot_joints: int = config[self.gello_name]["num_joints"]
-        """The number of joints in the robot."""
-
-        self.joint_signs: Tuple[float, ...] = config[self.gello_name]["joint_signs"]
-        """Depending on how the motor is mounted on the Gello, its rotation direction can be reversed."""
-
-        self.gripper: bool = config[self.gello_name]["gripper"]
-        """Whether or not the gripper is attached."""
-
+    def get_values_from_config(self: str):
         joint_ids = list(range(1, self.num_joints + 1))
         self.add_dynamixel_driver_path()
         from gello.dynamixel.driver import DynamixelDriver
 
         self.driver = DynamixelDriver(joint_ids, port=self.com_port, baudrate=57600)
         """The driver for the Dynamixel motors."""
-
-        self.best_offsets = np.array(config[self.gello_name]["best_offsets"])
-        """The best offsets for the joints."""
-
-        self.gripper_range_rad: Tuple[float, float] = config[self.gello_name]["gripper_range_rad"]
-        """The range of the gripper in radians."""
-
-        self.__post_init__()
 
     def __post_init__(self):
         assert len(self.joint_signs) == self.num_robot_joints

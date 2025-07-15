@@ -32,7 +32,9 @@ def load_yaml(file_path):
 
 
 def generate_robot_nodes(context):
-    config_file = LaunchConfiguration("robot_config_file").perform(context)
+    config_file_name = LaunchConfiguration("robot_config_file").perform(context)
+    package_config_dir = FindPackageShare("franka_fr3_arm_controllers").perform(context)
+    config_file = os.path.join(package_config_dir, "config", config_file_name)
     configs = load_yaml(config_file)
     nodes = []
     for item_name, config in configs.items():
@@ -107,14 +109,8 @@ def generate_launch_description():
         [
             DeclareLaunchArgument(
                 "robot_config_file",
-                default_value=PathJoinSubstitution(
-                    [
-                        FindPackageShare("franka_fr3_arm_controllers"),
-                        "config",
-                        "config.yaml",
-                    ]
-                ),
-                description="Path to the robot configuration file to load",
+                default_value="example_fr3_config.yaml",
+                description="Name of the robot configuration file to load (relative to config/ in franka_arm_controllers)",
             ),
             OpaqueFunction(function=generate_robot_nodes),
         ]
