@@ -11,13 +11,19 @@ cd gello_software
 </p>
 
 
-## Use your own enviroment
+## Create a vitual environment
+First, install uv if you do not already have it installed
+`curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+Create a uv virtual environment and use uv pip to install the necessary packages
 ```
+uv venv --python 3.11
+source .venv/bin/activate # run this every time you open a new shell
 git submodule init
 git submodule update
-pip install -r requirements.txt
-pip install -e .
-pip install -e third_party/DynamixelSDK/python
+uv pip install -r requirements.txt
+uv pip install -e .
+uv pip install -e third_party/DynamixelSDK/python
 ```
 
 ## Use with Docker
@@ -53,6 +59,7 @@ Steps:
  * Click scan (found at the top left corner), this should detect the dynamixel. Connect to the motor
  * Look for the ID address and change the ID to the appropriate number.
  * Repeat for each motor
+ * If some ID are missing, perform an ID scan
 
 ## Create the GELLO configuration and determining joint ID's
 After the motor ID's are set, we can now connect to the GELLO controller device. However each motor has its own joint offset, which will result in a joint offset between GELLO and your actual robot arm.
@@ -60,11 +67,13 @@ Dynamixels have a symmetric 4 hole pattern which means there the joint offset is
 The `GelloAgent` class  accepts a `DynamixelRobotConfig` (found in `gello/agents/gello_agent.py`). The Dynamixel config specifies the parameters you need to find to operate your GELLO. Look at the documentation for more details.
 
 We have created a simple script to automatically detect the joint offset:
-* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set our GELLO for the UR and Franka FR3 in this configuration, where we know the desired ground truth joints (0, -90, 90, -90, -90, 0), or (0, 0, 0, -90, 0, 90 , 0) respectively.
+* set GELLO into a known configuration, where you know what the corresponding joint angles should be. For example, we set our GELLO for the UR and Franka FR3 in this configuration, where we know the desired ground truth joints (0, -90, 90, -90, -90, 0), or (0, 0, 0, -90, 0, 90 , 0) respectively. For the YAM the ground truth is in position (0, 0, 0, 0, 0, 0 , 0)
 <p align="center">
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
   <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
+  <img src="imgs/YAM_known_position.jpg" width="31%">
+
 </p>
 
 * For the UR run 
@@ -83,6 +92,14 @@ python scripts/gello_get_offset.py \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
 # replace values with your own
 ```
+* For the YAM run
+```
+python scripts/gello_get_offset.py \
+    --start-joints 0 0 0 0 0 0 \ #in radians
+    --joint-signs 1 1 -1 -1 1 1 \
+    --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
+# replace values with your own
+```
 * Use the known starting joints for `start-joints`.
 * Depending on the mechanical setup of your GELLO, the joint signs can flip, so you need to specify them for each axis.
 * Use your serial port for `port`. You can find the port id of your U2D2 Dynamixel device by running `ls /dev/serial/by-id` and looking for the path that starts with `usb-FTDI_USB__-__Serial_Converter` (on Ubuntu). On Mac, look in /dev/ and the device that starts with `cu.usbserial`
@@ -92,8 +109,10 @@ python scripts/gello_get_offset.py \
 * Panda: `1 -1 1 1 1 -1 1`
 * FR3: `1 1 1 1 1 -1 1`
 * xArm: `1 1 1 1 1 1 1`
+* YAM: `1 1 -1 -1 1 1`
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!
+
 
 # Using GELLO to control a robot!
 
@@ -104,7 +123,7 @@ For multiprocessing, we leverage [ZMQ](https://zeromq.org/)
 First test your GELLO with a simulated robot to make sure that the joint angles match as expected.
 In one terminal run
 ```
-python experiments/launch_nodes.py --robot <sim_ur, sim_panda, or sim_xarm>
+python experiments/launch_nodes.py --robot <sim_ur, sim_panda, or sim_xarm, or sim_yam>
 ```
 This launched the robot node. A simulated robot using the mujoco viewer should appear.
 
@@ -120,14 +139,25 @@ Once you have verified that your GELLO is properly configured, you can test it o
 Before you run with the real robot, you will have to install a robot specific python package.
 The supported robots are in `gello/robots`.
  * UR: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
- * panda: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html). If you use a different framework to control the panda, the code is easy to adpot. See/Modify `gello/robots/panda.py`
+ * panda: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html). If you use a different framework to control the panda, the code is easy to adopt. See/Modify `gello/robots/panda.py`
  * xArm: [xArm python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
+ * YAM: [i2rt] (https://github.com/i2rt-robotics/i2rt) 
 
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=<your robot>
 # run the enviroment loop
-python experiments/run_env.py --agent=gello
+python experiments/run_env.py --agent=gello 
+
+```
+
+For the YAM append start joint position to run:
+```
+# Launch all of the node
+python experiments/launch_nodes.py --robot=yam
+# run the enviroment loop, the last start joint is 1 to set the gripper open
+python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
+
 ```
 
 Ideally you can start your GELLO near a known configuration each time. If this is possible, you can set the `--start-joint` flag with GELLO's known starting configuration. This also enables the robot to reset before you begin teleoperation.
@@ -153,15 +183,15 @@ python processes.
 ```
 
 ### Using a new robot!
-If you want to use a new robot you need a GELLO that is compatible. If the kiniamtics are close enough, you may directly use an existing GELLO. Otherwise you will have to design your own.
-To add a new robot, simply implement the `Robot` protocol found in `gello/robots/robot`. See `gello/robots/panda.py`, `gello/robots/ur.py`, `gello/robots/xarm_robot.py` for examples.
+If you want to use a new robot you need a GELLO that is compatible. If the kinemtics are close enough, you may directly use an existing GELLO. Otherwise you will have to design your own.
+To add a new robot, simply implement the `Robot` protocol found in `gello/robots/robot`. See `gello/robots/panda.py`, `gello/robots/ur.py`, `gello/robots/xarm_robot.py`, `gello/robots/yam.py` for examples.
 
 ### Contributing
 Please make a PR if you would like to contribute! The goal of this project is to enable more accessible and higher quality teleoperation devices and we would love your input!
 
 You can optionally install some dev packages.
 ```
-pip install -r requirements_dev.txt
+uv pip install -r requirements_dev.txt
 ```
 
 The code is organized as follows:
@@ -171,7 +201,7 @@ The code is organized as follows:
     * `agents`: teleoperation agents
     * `cameras`: code to interface with camera hardware
     * `data_utils`: data processing utils. used for imitation learning
-    * `dm_control_tasks`: dm_control utils to build a simple dm_control enviroment. used for demos
+    * `dm_control_tasks`: dm_control utils to build a simple dm_control environment. used for demos
     * `dynamixel`: code to interface with the dynamixel hardware
     * `robots`: robot specific interfaces
     * `zmq_core`: zmq utilities for enabling a multi node system
@@ -180,7 +210,7 @@ The code is organized as follows:
 This code base uses `isort` and `black` for code formatting.
 pre-commits hooks are great. This will automatically do some checking/formatting. To use the pre-commit hooks, run the following:
 ```
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 ```
 

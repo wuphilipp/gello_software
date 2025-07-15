@@ -8,6 +8,7 @@ pyquaternion
 pyrealsense2
 pure-python-adb
 quaternion
+setuptools
 tyro
 ur-rtde
 zmq
