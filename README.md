@@ -199,7 +199,7 @@ Please make a PR if you would like to contribute! The goal of this project is to
 
 You can optionally install some dev packages.
 ```
-pip install -r requirements_dev.txt
+uv pip install -r requirements_dev.txt
 ```
 
 The code is organized as follows:
@@ -218,7 +218,7 @@ The code is organized as follows:
 This code base uses `isort` and `black` for code formatting.
 pre-commits hooks are great. This will automatically do some checking/formatting. To use the pre-commit hooks, run the following:
 ```
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 ```
 
