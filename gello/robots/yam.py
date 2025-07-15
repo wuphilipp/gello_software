@@ -12,7 +12,6 @@ class YAMRobot(Robot):
         from i2rt.robots.get_robot import get_yam_robot
 
         self.robot = get_yam_robot(channel=channel)
-
         self._joint_state = np.zeros(7)  # 7 joints
         self._joint_velocities = np.zeros(7)  # 7 joints
         self._gripper_state = 0.0
