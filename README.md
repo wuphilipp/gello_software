@@ -107,6 +107,12 @@ python scripts/gello_get_offset.py \
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!
 
+# Robot-Specifc Setup Information
+
+You will need to install the relevant packages for your robot.
+
+For example, you would need to clone the [i2rt repo](https://github.com/i2rt-robotics/i2rt) in order to use the YAM arm.
+
 # Using GELLO to control a robot!
 
 The code provided here is simple and only relies on python packages. The code does NOT use ROS, but a ROS wrapper can easily be adapted from this code.
