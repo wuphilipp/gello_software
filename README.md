@@ -117,7 +117,10 @@ The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.p
 
 You will need to install the relevant packages for your robot.
 
-For example, you would need to clone the [i2rt repo](https://github.com/i2rt-robotics/i2rt) in order to use the YAM arm.
+For example, you would need to:
+ - Clone the [i2rt repo](https://github.com/i2rt-robotics/i2rt)
+ - Run the following to install: `uv pip install -e third_party/i2rt`
+
 
 # Using GELLO to control a robot!
 

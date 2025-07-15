@@ -4,9 +4,6 @@ import numpy as np
 
 from gello.robots.robot import Robot
 
-def normalize_angles(angles: np.ndarray) -> np.ndarray:
-    return (angles + np.pi) % (2 * np.pi) - np.pi
-
 class DynamixelRobot(Robot):
     """A class representing a UR robot."""
 
@@ -124,7 +121,7 @@ class DynamixelRobot(Robot):
             pos = self._last_pos * (1 - self._alpha) + pos * self._alpha
             self._last_pos = pos
 
-        return normalize_angles(pos)
+        return pos
 
     def command_joint_state(self, joint_state: np.ndarray) -> None:
         self._driver.set_joints((joint_state + self._joint_offsets).tolist())
