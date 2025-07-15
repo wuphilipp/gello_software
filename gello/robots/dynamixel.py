@@ -4,6 +4,7 @@ import numpy as np
 
 from gello.robots.robot import Robot
 
+
 class DynamixelRobot(Robot):
     """A class representing a UR robot."""
 
@@ -55,7 +56,7 @@ class DynamixelRobot(Robot):
             self._joint_signs = np.ones(len(joint_ids))
         else:
             self._joint_signs = np.array(joint_signs)
-        
+
         assert len(self._joint_ids) == len(self._joint_offsets), (
             f"joint_ids: {len(self._joint_ids)}, "
             f"joint_offsets: {len(self._joint_offsets)}"

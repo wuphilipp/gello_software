@@ -87,6 +87,7 @@ def launch_robot_server(args: Args):
             robot = BimanualRobot(_robot_l, _robot_r)
         elif args.robot == "yam":
             from gello.robots.yam import YAMRobot
+
             robot = YAMRobot(channel="can0")
         elif args.robot == "none" or args.robot == "print":
             robot = PrintRobot(8)

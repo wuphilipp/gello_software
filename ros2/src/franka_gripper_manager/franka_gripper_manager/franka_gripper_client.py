@@ -1,10 +1,10 @@
-import rclpy
 import time
-from rclpy.node import Node
-from franka_msgs.action import Move
-from franka_msgs.action import Homing
-from sensor_msgs.msg import JointState
+
+import rclpy
+from franka_msgs.action import Homing, Move
 from rclpy.action import ActionClient
+from rclpy.node import Node
+from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
 
 DEFAULT_MOVE_ACTION_TOPIC = "/fr3_gripper/move"
@@ -29,7 +29,9 @@ class GripperClient(Node):
             self.get_parameter("homing_action_topic").get_parameter_value().string_value
         )
         gripper_command_topic = (
-            self.get_parameter("gripper_command_topic").get_parameter_value().string_value
+            self.get_parameter("gripper_command_topic")
+            .get_parameter_value()
+            .string_value
         )
         joint_states_topic = (
             self.get_parameter("joint_states_topic").get_parameter_value().string_value
@@ -53,7 +55,9 @@ class GripperClient(Node):
         self._action_client = ActionClient(self, Move, move_action_topic)
 
         self.get_logger().info("Waiting for gripper move action server...")
-        if not self._action_client.wait_for_server(timeout_sec=self._ACTION_SERVER_TIMEOUT):
+        if not self._action_client.wait_for_server(
+            timeout_sec=self._ACTION_SERVER_TIMEOUT
+        ):
             raise RuntimeError(
                 f"Move action server not available after {self._ACTION_SERVER_TIMEOUT} seconds!"
             )
@@ -64,7 +68,9 @@ class GripperClient(Node):
         self.get_logger().info("Starting gripper homing...")
         homing_client = ActionClient(self, Homing, homing_action_topic)
 
-        self.get_logger().info(f"Waiting for homing action server {homing_action_topic}...")
+        self.get_logger().info(
+            f"Waiting for homing action server {homing_action_topic}..."
+        )
         if not homing_client.wait_for_server(timeout_sec=self._ACTION_SERVER_TIMEOUT):
             raise RuntimeError(
                 f"Homing action server not available after {self._ACTION_SERVER_TIMEOUT} seconds!"
@@ -96,7 +102,9 @@ class GripperClient(Node):
         def joint_state_callback(msg):
             _INDEX_FINGER_LEFT = 0
             self._max_width = 2 * msg.position[_INDEX_FINGER_LEFT]
-            self.get_logger().info(f"Maximum gripper width determined: {self._max_width}")
+            self.get_logger().info(
+                f"Maximum gripper width determined: {self._max_width}"
+            )
             future.set_result(True)
 
         self.get_logger().info(f"Subscribing to {joint_states_topic}...")
@@ -113,7 +121,10 @@ class GripperClient(Node):
     def _gripper_command_callback(self, msg: Float32) -> None:
         new_open_width_percent = msg.data
         new_open_width = self._max_width * new_open_width_percent
-        if self._gripper_command_transmitted and new_open_width != self._last_gripper_command:
+        if (
+            self._gripper_command_transmitted
+            and new_open_width != self._last_gripper_command
+        ):
             self._send_gripper_command(new_open_width)
             self._last_gripper_command = new_open_width
             self._gripper_command_transmitted = False

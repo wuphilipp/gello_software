@@ -12,14 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from ament_pep257.main import main
-import pytest
 from pathlib import Path
+
+import pytest
+from ament_pep257.main import main
 
 
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    excluded_file = Path(__file__).resolve().parents[1] / "franka_gello_state_publisher/driver.py"
+    excluded_file = (
+        Path(__file__).resolve().parents[1] / "franka_gello_state_publisher/driver.py"
+    )
     rc = main(argv=[".", "test", "--exclude", str(excluded_file)])
     assert rc == 0, "Found code style errors / warnings"
