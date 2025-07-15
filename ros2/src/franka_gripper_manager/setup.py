@@ -1,6 +1,5 @@
-import glob
-
 from setuptools import find_packages, setup
+import glob
 
 package_name = "franka_gripper_manager"
 

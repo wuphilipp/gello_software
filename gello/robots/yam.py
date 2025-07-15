@@ -13,16 +13,6 @@ class YAMRobot(Robot):
 
         self.robot = get_yam_robot(channel=channel)
 
-        # YAM has 7 joints (6 arm joints + 1 gripper)
-        self._joint_names = [
-            "joint1",
-            "joint2",
-            "joint3",
-            "joint4",
-            "joint5",
-            "joint6",
-            "gripper",
-        ]
         self._joint_state = np.zeros(7)  # 7 joints
         self._joint_velocities = np.zeros(7)  # 7 joints
         self._gripper_state = 0.0

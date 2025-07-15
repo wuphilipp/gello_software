@@ -113,14 +113,6 @@ python scripts/gello_get_offset.py \
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!
 
-# Robot-Specifc Setup Information
-
-You will need to install the relevant packages for your robot.
-
-For example, you would need to:
- - Clone the [i2rt repo](https://github.com/i2rt-robotics/i2rt)
- - Run the following to install: `uv pip install -e third_party/i2rt`
-
 
 # Using GELLO to control a robot!
 
@@ -163,7 +155,7 @@ For the YAM append start joint position to run:
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=yam
-# run the enviroment loop
+# run the enviroment loop, the last start joint is 1 to set the gripper open
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 
 ```

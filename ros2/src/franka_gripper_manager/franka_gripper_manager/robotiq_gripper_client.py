@@ -1,7 +1,7 @@
 import rclpy
+from rclpy.node import Node
 from control_msgs.action import GripperCommand
 from rclpy.action import ActionClient
-from rclpy.node import Node
 from std_msgs.msg import Float32
 
 DEFAULT_GRIPPER_COMMAND_TOPIC = "/gripper_client/target_gripper_width_percent"
@@ -15,9 +15,7 @@ class RobotiqGripperClient(Node):
         self.gripper_state_callback = self.create_subscription(
             Float32, DEFAULT_GRIPPER_COMMAND_TOPIC, self.gripper_state_callback, 10
         )
-        self.action_client = ActionClient(
-            self, GripperCommand, DEFAULT_MOVE_ACTION_TOPIC
-        )
+        self.action_client = ActionClient(self, GripperCommand, DEFAULT_MOVE_ACTION_TOPIC)
         self.action_client.wait_for_server()
         self.last_width = -1.0
         self.get_logger().info("Gripper action server is up and running")
