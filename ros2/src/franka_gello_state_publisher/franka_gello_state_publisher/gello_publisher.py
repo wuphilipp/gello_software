@@ -98,7 +98,7 @@ class GelloPublisher(Node):
             gripper_position = current_joints[-1]
             gripper_joint_states.data = self.gripper_readout_to_percent(gripper_position)
         else:
-            gripper_joint_states.position = 0.0
+            gripper_joint_states.data = 0.0
         self.robot_joint_publisher.publish(robot_joint_states)
         self.gripper_joint_publisher.publish(gripper_joint_states)
 
