@@ -124,7 +124,7 @@ colcon build
 
 #### Step 3: Launch the GELLO publisher:  
 
-Create a configuration file in `src/franka_gello_state_publisher/config/` or modify one of the provided example configuration files. Then launch the Gello state publisher node to read input from the Gello and publish it as ROS 2 messages:
+Create a configuration file in `src/franka_gello_state_publisher/config/` or modify one of the provided example configuration files. Then launch the node to read input from the Gello and publish it as ROS 2 messages:
 
 ```bash
 ros2 launch franka_gello_state_publisher main.launch.py [config_file:=your_config.yaml]

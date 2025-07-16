@@ -36,7 +36,7 @@ class GelloPublisher(Node):
             self.get_parameter("best_offsets").get_parameter_value().double_array_value
         )
 
-        self.get_values_from_config()
+        self.initialize_gello_driver()
 
         self.robot_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
         self.gripper_joint_publisher = self.create_publisher(
@@ -64,7 +64,7 @@ class GelloPublisher(Node):
             self.get_logger().warn("No com_ports detected. Please specify the com_port manually.")
             return "INVALID_COM_PORT"
 
-    def get_values_from_config(self: str):
+    def initialize_gello_driver(self: str):
         joint_ids = list(range(1, self.num_joints + 1))
         self.add_dynamixel_driver_path()
         from gello.dynamixel.driver import DynamixelDriver
