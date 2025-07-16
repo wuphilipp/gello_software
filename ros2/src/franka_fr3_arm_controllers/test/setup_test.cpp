@@ -100,7 +100,7 @@ TEST_F(JointImpedanceControllerTest, TestCommandInterfaceConfiguration) {
   EXPECT_EQ(config.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   ASSERT_EQ(config.names.size(), command_interfaces_.size());
   for (size_t i = 0; i < command_interfaces_.size(); i++) {
-    EXPECT_EQ(config.names[i], joint_names_[i] + "/" + HW_IF_EFFORT);
+    EXPECT_EQ(config.names[i], kNamespace_ + "_" + joint_names_[i] + "/" + HW_IF_EFFORT);
   }
 }
 
@@ -113,7 +113,7 @@ TEST_F(JointImpedanceControllerTest, TestStateInterfaceConfiguration) {
   EXPECT_EQ(config.type, controller_interface::interface_configuration_type::INDIVIDUAL);
   ASSERT_EQ(config.names.size(), state_interfaces_.size());
   for (size_t i = 0; i < joint_names_.size(); ++i) {
-    EXPECT_EQ(config.names[2 * i], joint_names_[i] + "/" + HW_IF_POSITION);
-    EXPECT_EQ(config.names[2 * i + 1], joint_names_[i] + "/" + HW_IF_VELOCITY);
+    EXPECT_EQ(config.names[2 * i], kNamespace_ + "_" + joint_names_[i] + "/" + HW_IF_POSITION);
+    EXPECT_EQ(config.names[2 * i + 1], kNamespace_ + "_" + joint_names_[i] + "/" + HW_IF_VELOCITY);
   }
 }

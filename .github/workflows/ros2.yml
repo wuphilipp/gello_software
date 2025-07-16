@@ -20,6 +20,7 @@ jobs:
         with:
           subFolder: ./ros2
           runCmd: |
-            colcon build
+            cd ros2
+            colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
             colcon test
             colcon test-result --verbose

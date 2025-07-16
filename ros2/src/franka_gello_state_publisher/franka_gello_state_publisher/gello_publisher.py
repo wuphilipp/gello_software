@@ -1,14 +1,11 @@
 import os
 import sys
 import glob
-from typing import Tuple
 import rclpy
 from rclpy.node import Node
-import numpy as np
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
-import yaml
-from ament_index_python.packages import get_package_share_directory, get_package_prefix
+from ament_index_python.packages import get_package_prefix
 
 
 class GelloPublisher(Node):

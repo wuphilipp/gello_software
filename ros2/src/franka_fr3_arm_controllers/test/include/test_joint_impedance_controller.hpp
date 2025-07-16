@@ -57,6 +57,15 @@ class JointImpedanceControllerTest : public ::testing::Test {
   bool done_;
 
   /**
+   * @brief robot configuration
+   */
+  const std::string kArmId_ = "fr3";
+  const std::string kNamespace_ = "test_ns";
+  const std::vector<double> kKGains_ = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
+  const std::vector<double> kDGains_ = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
+  static constexpr double kKAlpha_ = 0.5;
+
+  /**
    * @brief Current state of the "robot"
    */
   static constexpr size_t num_joints = 7;
