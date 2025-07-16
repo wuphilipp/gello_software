@@ -114,9 +114,12 @@ CallbackReturn JointImpedanceController::on_init() {
 CallbackReturn JointImpedanceController::on_configure(
     const rclcpp_lifecycle::State& /*previous_state*/) {
   arm_id_ = get_node()->get_parameter("arm_id").as_string();
-  namespace_prefix_ = get_node()->get_parameter("namespace").as_string();
-  if (namespace_prefix_ != "") {
-    namespace_prefix_ = namespace_prefix_ + "_";
+  namespace_prefix_ = get_node()->get_namespace();
+  if (namespace_prefix_ == "/" || namespace_prefix_.empty()) {
+    namespace_prefix_.clear();
+  } else {
+    // Remove leading slash and add trailing underscore
+    namespace_prefix_ = namespace_prefix_.substr(1) + "_";
   }
 
   auto k_gains = get_node()->get_parameter("k_gains").as_double_array();

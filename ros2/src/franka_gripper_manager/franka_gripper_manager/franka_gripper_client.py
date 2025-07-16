@@ -7,36 +7,31 @@ from sensor_msgs.msg import JointState
 from rclpy.action import ActionClient
 from std_msgs.msg import Float32
 
-DEFAULT_MOVE_ACTION_TOPIC = "/franka_gripper/move"
-DEFAULT_HOMING_ACTION_TOPIC = "/franka_gripper/homing"
-DEFAULT_JOINT_STATES_TOPIC = "/franka_gripper/joint_states"
-DEFAULT_GRIPPER_COMMAND_TOPIC = "/gripper/gripper_client/target_gripper_width_percent"
+DEFAULT_MOVE_ACTION_TOPIC = "franka_gripper/move"
+DEFAULT_HOMING_ACTION_TOPIC = "franka_gripper/homing"
+DEFAULT_JOINT_STATES_TOPIC = "franka_gripper/joint_states"
+DEFAULT_GRIPPER_COMMAND_TOPIC = "gripper/gripper_client/target_gripper_width_percent"
 
 
 class GripperClient(Node):
     def __init__(self):
         super().__init__("gripper_client")
 
-        self.declare_parameter("namespace", "")
         self.declare_parameter("move_action_topic", DEFAULT_MOVE_ACTION_TOPIC)
         self.declare_parameter("homing_action_topic", DEFAULT_HOMING_ACTION_TOPIC)
         self.declare_parameter("gripper_command_topic", DEFAULT_GRIPPER_COMMAND_TOPIC)
         self.declare_parameter("joint_states_topic", DEFAULT_JOINT_STATES_TOPIC)
 
-        namespace = self.get_parameter("namespace").get_parameter_value().string_value
-        if namespace != "":
-            namespace = "/" + namespace
-
-        move_action_topic = namespace + (
+        move_action_topic = (
             self.get_parameter("move_action_topic").get_parameter_value().string_value
         )
-        homing_action_topic = namespace + (
+        homing_action_topic = (
             self.get_parameter("homing_action_topic").get_parameter_value().string_value
         )
-        gripper_command_topic = namespace + (
+        gripper_command_topic = (
             self.get_parameter("gripper_command_topic").get_parameter_value().string_value
         )
-        joint_states_topic = namespace + (
+        joint_states_topic = (
             self.get_parameter("joint_states_topic").get_parameter_value().string_value
         )
 

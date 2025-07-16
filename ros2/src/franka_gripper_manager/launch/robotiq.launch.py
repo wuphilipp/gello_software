@@ -173,7 +173,7 @@ def generate_nodes(context: LaunchContext):
         executable="robotiq_gripper_client",
         name="robotiq_gripper_client",
         output="screen",
-        parameters=[{"namespace": namespace}],
+        namespace=namespace,
     )
 
     nodes = [
