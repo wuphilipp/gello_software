@@ -1,0 +1,67 @@
+# Motor configuration for Dynamixel XL330-M288-T and XL330-M077-T
+# Reference: https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/
+
+pulses_per_revolution: 4095
+control_table:
+  model_number:           { addr: 0, len: 2, read_only: true }
+  model_information:      { addr: 2, len: 4, read_only: true }
+  firmware_version:       { addr: 6, len: 1, read_only: true }
+  id:                     { addr: 7, len: 1, min: 0, max: 252 }
+  baud_rate:              { addr: 8, len: 1, min: 0, max: 6 }
+  return_delay_time:      { addr: 9, len: 1, min: 0, max: 254, unit: "2 [μsec]" }
+  drive_mode:             { addr: 10, len: 1, min: 0, max: 13 }
+  operating_mode:         { addr: 11, len: 1, min: 0, max: 16 }
+  secondary_id:           { addr: 12, len: 1, min: 0, max: 252 }
+  protocol_type:          { addr: 13, len: 1, min: 2, max: 22 }
+  homing_offset:          { addr: 20, len: 4, min: -1044479, max: 1044479, unit: "1 [pulse]" }
+  moving_threshold:       { addr: 24, len: 4, min: 0, max: 1023, unit: "0.229 [rev/min]" }
+  temperature_limit:      { addr: 31, len: 1, min: 0, max: 100, unit: "1 [°C]" }
+  max_voltage_limit:      { addr: 32, len: 2, min: 31, max: 70, unit: "0.1 [V]" }
+  min_voltage_limit:      { addr: 34, len: 2, min: 31, max: 70, unit: "0.1 [V]" }
+  pwm_limit:              { addr: 36, len: 2, min: 0, max: 885, unit: "0.113 [%]" }
+  current_limit:          { addr: 38, len: 2, min: 0, max: 1750, unit: "1 [mA]" }
+  velocity_limit:         { addr: 44, len: 4, min: 0, max: 2047, unit: "0.229 [rev/min]" }
+  max_position_limit:     { addr: 48, len: 4, min: 0, max: 4095, unit: "1 [pulse]" }
+  min_position_limit:     { addr: 52, len: 4, min: 0, max: 4095, unit: "1 [pulse]" }
+  startup_configuration:  { addr: 60, len: 1, min: 0, max: 3 }
+  pwm_slope:              { addr: 62, len: 1, min: 1, max: 255, unit: "1.977 [mV/msec]" }
+  shutdown:               { addr: 63, len: 1 }
+  torque_enable:          { addr: 64, len: 1, min: 0, max: 1}
+  led:                    { addr: 65, len: 1, min: 0, max: 1 }
+  status_return_level:    { addr: 68, len: 1, min: 0, max: 2 }
+  registered_instruction: { addr: 69, len: 1, min: 0, max: 1, read_only: true }
+  hardware_error_status:  { addr: 70, len: 1, read_only: true }
+  velocity_i_gain:        { addr: 76, len: 2, min: 0, max: 16383 }
+  velocity_p_gain:        { addr: 78, len: 2, min: 0, max: 16383 }
+  kp_d:                   { addr: 80, len: 2, min: 0, max: 16383 }
+  kp_i:                   { addr: 82, len: 2, min: 0, max: 16383 }
+  kp_p:                   { addr: 84, len: 2, min: 0, max: 16383 }
+  feedforward_2nd_gain:   { addr: 88, len: 2, min: 0, max: 16383 }
+  feedforward_1st_gain:   { addr: 90, len: 2, min: 0, max: 16383 }
+  bus_watchdog:           { addr: 98, len: 1, min: 1, max: 127, unit: "20 [msec]" }
+  goal_pwm:               { addr: 100, len: 2 }
+  goal_current:           { addr: 102, len: 2, unit: "1 [mA]"}
+  goal_velocity:          { addr: 104, len: 4, unit: "0.229 [rev/min]" }
+  profile_acceleration:   { addr: 108, len: 4, min: 0, max: 32767, unit: "214.577 [rev/min2]" }
+  profile_velocity:       { addr: 112, len: 4, min: 0, max: 32767, unit: "0.229 [rev/min]" }
+  goal_position:          { addr: 116, len: 4, unit: "1 [pulse]"}
+  realtime_tick:          { addr: 120, len: 2, min: 0, max: 32767, unit: "1 [msec]", read_only: true }
+  moving:                 { addr: 122, len: 1, min: 0, max: 1, read_only: true }
+  moving_status:          { addr: 123, len: 1, read_only: true }
+  present_pwm:            { addr: 124, len: 2, read_only: true }
+  present_current:        { addr: 126, len: 2, unit: "1 [mA]", read_only: true }
+  present_velocity:       { addr: 128, len: 4, unit: "0.229 [rev/min]", read_only: true }
+  present_position:       { addr: 132, len: 4, unit: "1 [pulse]", read_only: true }
+  velocity_trajectory:    { addr: 136, len: 4, unit: "0.229 [rev/min]", read_only: true }
+  position_trajectory:    { addr: 140, len: 4, unit: "1 [pulse]", read_only: true }
+  present_input_voltage:  { addr: 144, len: 2, unit: "0.1 [V]", read_only: true }
+  present_temperature:    { addr: 146, len: 1, unit: "1 [°C]", read_only: true }
+  backup_ready:           { addr: 147, len: 1, min: 0, max: 1, read_only: true }
+eeprom_area_end: 63
+operating_modes:
+  0: "Current Control Mode"
+  1: "Velocity Control Mode"
+  3: "Position Control Mode (Default)"
+  4: "Extended Position Control Mode"
+  5: "Current-based Position Control Mode"
+  6: "PWM Control Mode"
