@@ -32,11 +32,16 @@ def generate_robot_nodes(context):
                 parameters=[
                     {"com_port": "/dev/serial/by-id/" + config["com_port"]},
                     {"gello_name": item_name},
-                    {"num_joints": config["num_joints"]},
+                    {"num_arm_joints": config["num_arm_joints"]},
                     {"joint_signs": config["joint_signs"]},
                     {"gripper": config["gripper"]},
                     {"gripper_range_rad": config["gripper_range_rad"]},
                     {"best_offsets": config["best_offsets"]},
+                    {"dynamixel_kp_p": config["dynamixel_kp_p"]},
+                    {"dynamixel_kp_i": config["dynamixel_kp_i"]},
+                    {"dynamixel_kp_d": config["dynamixel_kp_d"]},
+                    {"dynamixel_goal_position": config["dynamixel_goal_position"]},
+                    {"dynamixel_torque_enable": config["dynamixel_torque_enable"]},
                 ],
             )
         )
