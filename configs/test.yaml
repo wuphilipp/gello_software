@@ -1,0 +1,10 @@
+robot:
+  _target_: gello.robots.yam.YAMRobot
+  channel: "can0"
+
+agent:
+  _target_: gello.agents.agent.DummyAgent
+  num_dofs: 7
+
+hz: 30
+max_steps: 1000
