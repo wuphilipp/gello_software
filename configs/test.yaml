@@ -3,8 +3,15 @@ robot:
   channel: "can0"
 
 agent:
-  _target_: gello.agents.agent.DummyAgent
-  num_dofs: 7
+  _target_: gello.agents.gello_agent.GelloAgent
+  port: "/dev/ttyUSB0"
+  dynamixel_config:
+    _target_: gello.agents.gello_agent.DynamixelRobotConfig
+    joint_ids: [1, 2, 3, 4, 5, 6, 7]
+    joint_offsets: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    joint_signs: [1, 1, 1, 1, 1, 1, 1]
+    gripper_config: [8, 195, 152]
+  start_joints: [0, 0, 0, 0, 0, 0, 1]  
 
 hz: 30
 max_steps: 1000
