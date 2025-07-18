@@ -30,8 +30,8 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
   && cd ../../ && rm -r libfranka"
 
 # Install franka_ros2
-ARG FRANKA_ROS2_VERSION=v1.0.0
-ARG FRANKA_DESCRIPTION_VERSION=0.4.0
+ARG FRANKA_ROS2_VERSION=v2.0.1
+ARG FRANKA_DESCRIPTION_VERSION=1.0.0
 RUN /bin/bash -c 'source /opt/ros/humble/setup.bash && \
   mkdir -p /tmp/franka_ros2 && cd /tmp/franka_ros2 && \
   git clone --recursive https://github.com/frankarobotics/franka_ros2.git --branch ${FRANKA_ROS2_VERSION} && \

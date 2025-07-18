@@ -7,10 +7,10 @@ from sensor_msgs.msg import JointState
 from rclpy.action import ActionClient
 from std_msgs.msg import Float32
 
-DEFAULT_MOVE_ACTION_TOPIC = "/fr3_gripper/move"
-DEFAULT_HOMING_ACTION_TOPIC = "/fr3_gripper/homing"
-DEFAULT_JOINT_STATES_TOPIC = "/fr3_gripper/joint_states"
-DEFAULT_GRIPPER_COMMAND_TOPIC = "/gripper_client/target_gripper_width_percent"
+DEFAULT_MOVE_ACTION_TOPIC = "franka_gripper/move"
+DEFAULT_HOMING_ACTION_TOPIC = "franka_gripper/homing"
+DEFAULT_JOINT_STATES_TOPIC = "franka_gripper/joint_states"
+DEFAULT_GRIPPER_COMMAND_TOPIC = "gripper/gripper_client/target_gripper_width_percent"
 
 
 class GripperClient(Node):

@@ -1,0 +1,8 @@
+robot1:
+  com_port: "usb-FTDI_USB__-__Serial_Converter_FT9MFR6C-if00-port0"
+  namespace: ""
+  num_joints: 7
+  joint_signs: [1, 1, 1, 1, 1, -1, 1]
+  gripper: true
+  best_offsets: [3.142, 3.142, -3.142, 4.712, 3.142, 4.712, 1.571]
+  gripper_range_rad: [2.77856, 3.50931]

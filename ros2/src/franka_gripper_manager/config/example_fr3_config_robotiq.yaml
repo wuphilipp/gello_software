@@ -1,0 +1,3 @@
+robot1:
+  com_port: "/dev/serial/by-id/usb-FTDI_USB_TO_RS-485_DA8BU5F3-if00-port0"
+  namespace: "gripper"

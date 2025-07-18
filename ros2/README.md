@@ -28,7 +28,7 @@ This package provides a ROS 2 node that reads input from the GELLO and publishes
 This package provides a ROS 2 node for managing the gripper connected to the Franka robot. Supported grippers are either the `Franka Hand` or the `Robotiq 2F-85`. It allows sending commands to control the gripper's width and perform homing actions. 
 
 #### Key Features:
-- Subscribes to `/gripper_client/target_gripper_width_percent` for gripper width commands.
+- Subscribes to `/gripper/gripper_client/target_gripper_width_percent` for gripper width commands.
 - Supports homing and move actions for the gripper.
 
 #### Launch Files:
@@ -123,40 +123,57 @@ colcon build
 ```
 
 #### Step 3: Launch the GELLO publisher:  
-Launch the GELLO publisher node with the appropriate `com_port` parameter:
+
+Create a configuration file in `src/franka_gello_state_publisher/config/` or modify one of the provided example configuration files. Then launch the node to read input from the Gello and publish it as ROS 2 messages:
 
 ```bash
-ros2 launch franka_gello_state_publisher main.launch.py com_port:=/dev/serial/by-id/<GELLO_USB_ID>
+ros2 launch franka_gello_state_publisher main.launch.py [config_file:=your_config.yaml]
 ```
 
-### 2. **Launch the Joint Impedance Controller**  
-   
-   Launch the controller to send torque commands to the Franka robot:  
-   ```bash
-   ros2 launch franka_fr3_arm_controllers franka_fr3_arm_controllers.launch.py robot_ip:=<robot-ip> load_gripper:=<true_or_false>
-   ```
+The `config_file` argument is **optional**. If not provided, it defaults to `example_fr3_config.yaml` in the `franka_gello_state_publisher/config/` directory.
 
-   - `robot_ip:` Replace `<robot-ip>` with the IP address of your Franka robot.
-   - `load_gripper`: A boolean parameter (true or false) that specifies whether to load the Franka Hand:
-      - Set load_gripper:=true if you are using the Franka Hand.
-      - Set load_gripper:=false if you are not using the Franka Hand.
+**Configuration parameters:**
+
+- `com_port`: the previously determined <GELLO_USB_ID>
+- `namespace`: ROS 2 namespace (must match the robot and the gripper).
+- `num_joints`: 7 for Franka FR3
+- `joint_signs`: as used for calibration
+- `gripper`: true if Gello gripper state shall be used
+- `best_offsets` and `gripper_range_rad`: as determined with calibration routine
+
+### 2. **Launch the Joint Impedance Controller**  
+
+Create a configuration file in `src/franka_fr3_arm_controllers/config/` or modify one of the provided example configuration files. Then launch the controller to send torque commands to the Franka robot:
+
+```bash
+   ros2 launch franka_fr3_arm_controllers franka_fr3_arm_controllers.launch.py [robot_config_file:=your_config.yaml]
+```
+
+The `robot_config_file` argument is **optional**. If not provided, it defaults to `example_fr3_config.yaml` in the `franka_fr3_arm_controllers/config/` directory.
+
+**Configuration parameters:**
+- The parameters are documented in [`franka.launch.py`](src/franka_fr3_arm_controllers/launch/franka.launch.py) (see line 16 and following).
   
 ### 3. **Launch the Gripper Manager**
-   
-   To control the gripper, use the appropriate launch file based on the gripper type:
 
-   - **For the Franka Hand**:  
+Create a configuration file in `src/franka_gripper_manager/config/` or modify one of the provided example configuration files. Then launch the gripper manager node to control the gripper:
+
+- **For the Franka Hand**:  
      ```bash
-     ros2 launch franka_gripper_manager franka_gripper_client.launch.py
+     ros2 launch franka_gripper_manager franka_gripper_client.launch.py [config_file:=your_config.yaml]
      ```
 
-   - **For the Robotiq 2F-85**:  
-     ```bash
-     ros2 launch franka_gripper_manager robotiq_gripper_controller_client.launch.py com_port:=/dev/serial/by-id/<ROBOTIQ_USB_ID>
-     ```
+ - **For the Robotiq 2F-85**:  
+   ```bash
+   ros2 launch franka_gripper_manager robotiq_gripper_controller_client.launch.py [config_file:=your_config.yaml]
+   ```
 
-     The `ROBOTIQ_USB_ID` can be determined by `ls /dev/serial/by-id`.
+The `config_file` argument is **optional**. If not provided, it defaults either to `example_fr3_config_franka_hand.yaml` or `example_fr3_config_robotiq.yaml` in the `franka_gripper_manager/config/` directory.
 
+**Configuration parameters:**
+
+- `namespace`: ROS 2 namespace (must match the robot and the Gello state publisher).
+- `com_port`: **(Robotiq only)** The `ROBOTIQ_USB_ID` can be determined by `ls /dev/serial/by-id`
 
 ## Troubleshooting
 

@@ -43,6 +43,7 @@ class JointImpedanceController : public controller_interface::ControllerInterfac
 
  private:
   std::string arm_id_;
+  std::string namespace_prefix_;
   std::string robot_description_;
   const int num_joints = 7;
   Vector7d q_;
