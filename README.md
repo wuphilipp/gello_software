@@ -12,12 +12,19 @@ cd gello_software
 
 
 ## Use your own virtual enviroment
+## Create a vitual environment
+First, install uv if you do not already have it installed
+`curl -LsSf https://astral.sh/uv/install.sh | sh`
+
+Create a uv virtual environment and use uv pip to install the necessary packages
 ```
+uv venv --python 3.11
+source .venv/bin/activate # run this every time you open a new shell
 git submodule init
 git submodule update
-pip install -r requirements.txt
-pip install -e .
-pip install -e third_party/DynamixelSDK/python
+uv pip install -r requirements.txt
+uv pip install -e .
+uv pip install -e third_party/DynamixelSDK/python
 ```
 
 ## Use with Docker
@@ -107,6 +114,7 @@ python scripts/gello_get_offset.py \
 
 The script prints out a list of joint offsets. Go to `gello/agents/gello_agent.py` and add a DynamixelRobotConfig to the PORT_CONFIG_MAP. You are now ready to run your GELLO!
 
+
 # Using GELLO to control a robot!
 
 The code provided here is simple and only relies on python packages. The code does NOT use ROS, but a ROS wrapper can easily be adapted from this code.
@@ -149,6 +157,7 @@ For the YAM append start joint position to run:
 # Launch all of the node
 python experiments/launch_nodes.py --robot=yam
 # run the environment loop
+# run the enviroment loop, the last start joint is 1 to set the gripper open
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 
 ```
@@ -184,7 +193,7 @@ Please make a PR if you would like to contribute! The goal of this project is to
 
 You can optionally install some dev packages.
 ```
-pip install -r requirements_dev.txt
+uv pip install -r requirements_dev.txt
 ```
 
 The code is organized as follows:
@@ -203,7 +212,7 @@ The code is organized as follows:
 This code base uses `isort` and `black` for code formatting.
 pre-commits hooks are great. This will automatically do some checking/formatting. To use the pre-commit hooks, run the following:
 ```
-pip install pre-commit
+uv pip install pre-commit
 pre-commit install
 ```
 

@@ -32,3 +32,6 @@ MUJOCO_LOG.TXT
 ros2/build/
 ros2/install/
 ros2/log/
+
+# robot packages
+third_party/i2rt/
