@@ -1,5 +1,6 @@
 # keep in alphabetical order
 dm_control
+omegaconf==2.3.0
 Pillow
 pygame
 pyspacemouse

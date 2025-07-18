@@ -11,7 +11,7 @@ cd gello_software
 </p>
 
 
-## Use your own enviroment
+## Use your own virtual enviroment
 ```
 git submodule init
 git submodule update
@@ -139,7 +139,7 @@ The supported robots are in `gello/robots`.
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=<your robot>
-# run the enviroment loop
+# run the environment loop
 python experiments/run_env.py --agent=gello 
 
 ```
@@ -148,7 +148,7 @@ For the YAM append start joint position to run:
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=yam
-# run the enviroment loop
+# run the environment loop
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 
 ```
