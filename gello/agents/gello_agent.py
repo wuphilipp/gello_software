@@ -115,6 +115,9 @@ class GelloAgent(Agent):
         dynamixel_config: Optional[DynamixelRobotConfig] = None,
         start_joints: Optional[np.ndarray] = None,
     ):
+        # Ensure start_joints is a numpy array if provided
+        if start_joints is not None and not isinstance(start_joints, np.ndarray):
+            start_joints = np.array(start_joints)
         if dynamixel_config is not None:
             self._robot = dynamixel_config.make_robot(
                 port=port, start_joints=start_joints

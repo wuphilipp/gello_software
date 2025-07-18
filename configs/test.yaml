@@ -1,6 +1,6 @@
 robot:
   _target_: gello.robots.yam.YAMRobot
-  channel: "can0"
+  channel: "can_left"
 
 agent:
   _target_: gello.agents.gello_agent.GelloAgent
@@ -10,7 +10,7 @@ agent:
     joint_ids: [1, 2, 3, 4, 5, 6, 7]
     joint_offsets: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
     joint_signs: [1, 1, 1, 1, 1, 1, 1]
-    gripper_config: [8, 195, 152]
+    gripper_config: null
   start_joints: [0, 0, 0, 0, 0, 0, 1]  
 
 hz: 30

@@ -1,6 +1,7 @@
 import time
 import importlib
 from omegaconf import OmegaConf
+import numpy as np
 
 def instantiate(cfg):
     if isinstance(cfg, dict) and '_target_' in cfg:
