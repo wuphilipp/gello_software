@@ -1,5 +1,6 @@
 import time
 import importlib
+import threading
 from omegaconf import OmegaConf
 import numpy as np
 
@@ -29,19 +30,91 @@ def main():
     if isinstance(robot_cfg.get('config'), str):
         robot_cfg['config'] = OmegaConf.to_container(OmegaConf.load(robot_cfg['config']), resolve=True)
 
+    # Instantiate robot
     robot = instantiate(robot_cfg)
+    
+    # Handle different robot types
+    if hasattr(robot, 'serve'):  # MujocoRobotServer or ZMQServerRobot
+        print("Starting robot server...")
+        from gello.zmq_core.robot_node import ZMQClientRobot
+        from gello.env import RobotEnv
+        
+        # Start server in background
+        server_thread = threading.Thread(target=robot.serve, daemon=True)
+        server_thread.start()
+        time.sleep(2)  # Give server time to start
+        
+        # Create client to communicate with server
+        robot_client = ZMQClientRobot(port=robot.port, host=robot.host)
+    else:  # Direct robot (hardware)
+        from gello.zmq_core.robot_node import ZMQServerRobot, ZMQClientRobot
+        from gello.env import RobotEnv
+        
+        # Create ZMQ server for the hardware robot
+        server = ZMQServerRobot(robot, port=6001, host="127.0.0.1")
+        server_thread = threading.Thread(target=server.serve, daemon=True)
+        server_thread.start()
+        time.sleep(1)
+        
+        # Create client to communicate with hardware
+        robot_client = ZMQClientRobot(port=6001, host="127.0.0.1")
+
+    # Create environment and agent
+    env = RobotEnv(robot_client, control_rate_hz=cfg.get('hz', 30))
     agent = instantiate(cfg['agent'])
-    hz = cfg.get('hz', 30)
-    max_steps = cfg.get('max_steps', 1000)
-
+    
     print(f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}")
-    print(f"Control loop: {hz} Hz, max_steps: {max_steps}")
+    print(f"Control loop: {cfg.get('hz', 30)} Hz, max_steps: {cfg.get('max_steps', 1000)}")
 
+    # Start teleop loop like in run_env.py
+    print("Going to start position")
+    start_pos = agent.act(env.get_obs())
+    obs = env.get_obs()
+    joints = obs["joint_positions"]
+
+    abs_deltas = np.abs(start_pos - joints)
+    id_max_joint_delta = np.argmax(abs_deltas)
+
+    max_joint_delta = 0.8
+    if abs_deltas[id_max_joint_delta] > max_joint_delta:
+        id_mask = abs_deltas > max_joint_delta
+        print()
+        ids = np.arange(len(id_mask))[id_mask]
+        for i, delta, joint, current_j in zip(
+            ids,
+            abs_deltas[id_mask],
+            start_pos[id_mask],
+            joints[id_mask],
+        ):
+            print(
+                f"joint[{i}]: \t delta: {delta:4.3f} , leader: \t{joint:4.3f} , follower: \t{current_j:4.3f}"
+            )
+        return
+
+    print(f"Start pos: {len(start_pos)}", f"Joints: {len(joints)}")
+    assert len(start_pos) == len(
+        joints
+    ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
+
+    # Smooth transition to start position
+    max_delta = 0.05
+    for _ in range(25):
+        obs = env.get_obs()
+        command_joints = agent.act(obs)
+        current_joints = obs["joint_positions"]
+        delta = command_joints - current_joints
+        max_joint_delta = np.abs(delta).max()
+        if max_joint_delta > max_delta:
+            delta = delta / max_joint_delta * max_delta
+        env.step(current_joints + delta)
+
+    # Main teleop loop
+    max_steps = cfg.get('max_steps', 1000)
     for step in range(max_steps):
-        obs = robot.get_observations()
+        obs = env.get_obs()
         action = agent.act(obs)
-        robot.command_joint_state(action)
-        time.sleep(1.0 / hz)
+        env.step(action)
+        
         if step % 100 == 0:
             print(f"Step {step}/{max_steps}")
 
