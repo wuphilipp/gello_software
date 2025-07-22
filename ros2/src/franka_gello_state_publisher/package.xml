@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>franka_gello_state_publisher</name>
-  <version>0.1.0</version>
+  <version>0.2.0</version>
   <description>Publisher of joint states of gello</description>
   <maintainer email="support@franka.de">Franka Robotics GmbH</maintainer>
   <license>MIT</license>

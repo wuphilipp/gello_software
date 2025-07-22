@@ -1,0 +1,7 @@
+LEFT:
+  com_port: "/dev/serial/by-id/usb-FTDI_USB_TO_RS-485_DA8BS24U-if00-port0"
+  namespace: "left/gripper"
+
+RIGHT:
+  com_port: "/dev/serial/by-id/usb-FTDI_USB_TO_RS-485_DA8BU5F3-if00-port0"
+  namespace: "right/gripper"
