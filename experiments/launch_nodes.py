@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
+import signal
 
 import tyro
 
@@ -17,6 +18,7 @@ class Args:
 
 def launch_robot_server(args: Args):
     port = args.robot_port
+    robot = None
     if args.robot == "sim_ur":
         MENAGERIE_ROOT: Path = (
             Path(__file__).parent.parent / "third_party" / "mujoco_menagerie"
@@ -28,7 +30,6 @@ def launch_robot_server(args: Args):
         server = MujocoRobotServer(
             xml_path=xml, gripper_xml_path=gripper_xml, port=port, host=args.hostname
         )
-        server.serve()
     elif args.robot == "sim_panda":
         from gello.robots.sim_robot import MujocoRobotServer
 
@@ -40,7 +41,6 @@ def launch_robot_server(args: Args):
         server = MujocoRobotServer(
             xml_path=xml, gripper_xml_path=gripper_xml, port=port, host=args.hostname
         )
-        server.serve()
     elif args.robot == "sim_xarm":
         from gello.robots.sim_robot import MujocoRobotServer
 
@@ -52,8 +52,6 @@ def launch_robot_server(args: Args):
         server = MujocoRobotServer(
             xml_path=xml, gripper_xml_path=gripper_xml, port=port, host=args.hostname
         )
-        server.serve()
-
     else:
         if args.robot == "xarm":
             from gello.robots.xarm_robot import XArmRobot
@@ -74,6 +72,10 @@ def launch_robot_server(args: Args):
             _robot_l = URRobot(robot_ip="192.168.2.10")
             _robot_r = URRobot(robot_ip="192.168.1.10")
             robot = BimanualRobot(_robot_l, _robot_r)
+        elif args.robot == "viperx":
+            from gello.robots.viperx import ViperXRobot
+
+            robot = ViperXRobot(robot_ip=args.robot_ip)
         elif args.robot == "none" or args.robot == "print":
             robot = PrintRobot(8)
 
@@ -83,7 +85,15 @@ def launch_robot_server(args: Args):
             )
         server = ZMQServerRobot(robot, port=port, host=args.hostname)
         print(f"Starting robot server on port {port}")
+
+    def sigint(sig, frame):
+        server.stop()
+    signal.signal(signal.SIGINT, sigint)
+    try:
         server.serve()
+    finally:
+        if robot is not None and hasattr(robot, 'stop'):
+            robot.stop()
 
 
 def main(args):

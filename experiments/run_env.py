@@ -9,7 +9,7 @@ import numpy as np
 import tyro
 
 from gello.agents.agent import BimanualAgent, DummyAgent
-from gello.agents.gello_agent import GelloAgent
+from gello.agents.gello_agent import GelloAgent, known_gello_port
 from gello.data_utils.format_obs import save_frame
 from gello.env import RobotEnv
 from gello.robots.robot import PrintRobot
@@ -108,8 +108,10 @@ def main(args):
             if gello_port is None:
                 usb_ports = glob.glob("/dev/serial/by-id/*")
                 print(f"Found {len(usb_ports)} ports")
-                if len(usb_ports) > 0:
-                    gello_port = usb_ports[0]
+                # Need to filter out non-gello Dynamixel based robots
+                gello_ports = [port for port in usb_ports if known_gello_port(port)]
+                if len(gello_ports) > 0:
+                    gello_port = gello_ports[0]
                     print(f"using port {gello_port}")
                 else:
                     raise ValueError(
