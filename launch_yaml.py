@@ -44,8 +44,11 @@ def main():
         server_thread.start()
         time.sleep(2)  # Give server time to start
         
-        # Create client to communicate with server
-        robot_client = ZMQClientRobot(port=robot.port, host=robot.host)
+        # Create client to communicate with server using port and host from config
+        robot_client = ZMQClientRobot(
+            port=robot_cfg.get('port', 5556),
+            host=robot_cfg.get('host', '127.0.0.1'),
+        )
     else:  # Direct robot (hardware)
         from gello.zmq_core.robot_node import ZMQServerRobot, ZMQClientRobot
         from gello.env import RobotEnv
