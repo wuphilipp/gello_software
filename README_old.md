@@ -1,11 +1,16 @@
-# GELLO: General, Low-Cost, and Intuitive Teleoperation Framework
+# GELLO
+This is the central repo that holds the all the software for GELLO. See the website for the paper and other resources for GELLO https://wuphilipp.github.io/gello_site/
+See the GELLO hardware repo for the STL files and hardware instructions for building your own GELLO https://github.com/wuphilipp/gello_mechanical
+```
+git clone https://github.com/wuphilipp/gello_software.git
+cd gello_software
+```
 
 <p align="center">
   <img src="imgs/title.png" />
 </p>
 
 
-## Use your own virtual enviroment
 ## Create a vitual environment
 First, install uv if you do not already have it installed
 `curl -LsSf https://astral.sh/uv/install.sh | sh`
@@ -19,17 +24,19 @@ git submodule update
 uv pip install -r requirements.txt
 uv pip install -e .
 uv pip install -e third_party/DynamixelSDK/python
-uv pip install -r requirements.txt
-uv pip install -e .
-uv pip install -e third_party/DynamixelSDK/python
 ```
 
-### Option 2: Docker
+## Use with Docker
+First install ```docker``` following this [link](https://docs.docker.com/engine/install/ubuntu/) on your host machine.
+Then you can clone the repo and build the corresponding docker environment
 
-Install [Docker](https://docs.docker.com/engine/install/ubuntu/) on your host machine, then:
-
-```bash
+Build the docker image and tag it as gello:latest. If you are going to name it differently, you need to change the launch.py image name
+```
 docker build . -t gello:latest
+```
+
+We have provided an entry point into the docker container
+```
 python scripts/launch.py
 ```
 
@@ -72,15 +79,15 @@ We have created a simple script to automatically detect the joint offset:
 * For the UR run 
 ```
 python scripts/gello_get_offset.py \
-    --start-joints 0 -1.57 1.57 -1.57 -1.57 0 \
+    --start-joints 0 -1.57 1.57 -1.57 -1.57 0 \ # in radians
     --joint-signs 1 1 -1 1 1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
+# replace values with your own
 ```
-
-**Franka FR3:**
-```bash
+* For the Franka FR3 run
+```
 python scripts/gello_get_offset.py \
-    --start-joints 0 0 0 -1.57 0 1.57 0 \
+    --start-joints 0 0 0 -1.57 0 1.57 0 \ # in radians
     --joint-signs 1 1 1 1 1 -1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6
 # replace values with your own
@@ -139,7 +146,7 @@ The supported robots are in `gello/robots`.
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=<your robot>
-# run the environment loop
+# run the enviroment loop
 python experiments/run_env.py --agent=gello 
 
 ```
@@ -148,51 +155,30 @@ For the YAM append start joint position to run:
 ```
 # Launch all of the node
 python experiments/launch_nodes.py --robot=yam
-# run the environment loop
 # run the enviroment loop, the last start joint is 1 to set the gripper open
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 
 ```
 
-**YAM Robot Specific:**
-```bash
-python experiments/launch_nodes.py --robot=yam
-python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
+Ideally you can start your GELLO near a known configuration each time. If this is possible, you can set the `--start-joint` flag with GELLO's known starting configuration. This also enables the robot to reset before you begin teleoperation.
+
+## Collect data
+We have provided a simple example for collecting data with gello.
+To save trajectories with the keyboard, add the following flag `--use-save-interface`
+
+Data can then be processed using the demo_to_gdict script.
+```
+python gello/data_utils/demo_to_gdict.py --source-dir=<source dir location>
 ```
 
-### Optional: Known Starting Configuration
+## Running a bimanual system with GELLO
+GELLO also be used in bimanual configurations.
+For an example, see the `bimanual_ur` robot in `launch_nodes.py` and `--bimanual` flag in the `run_env.py` script.
 
-Use `--start-joints` to specify GELLO's starting configuration for automatic robot reset:
-```bash
-python experiments/run_env.py --agent=gello --start-joints <joint_angles>
+## Notes
+Due to the use of multiprocessing, sometimes python process are not killed properly. We have provided the kill_nodes script which will kill the
+python processes.
 ```
-
-## Data Collection
-
-Collect teleoperation demonstrations with keyboard controls:
-```bash
-python experiments/run_env.py --agent=gello --use-save-interface
-```
-
-Process collected data:
-```bash
-python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
-```
-
-## Advanced Features
-
-### Bimanual Operation
-
-GELLO supports bimanual robot control:
-```bash
-python experiments/launch_nodes.py --robot=bimanual_ur
-python experiments/run_env.py --agent=gello --bimanual
-```
-
-### Process Management
-
-Kill all Python processes if needed:
-```bash
 ./kill_nodes.sh
 ```
 
@@ -228,15 +214,9 @@ uv pip install pre-commit
 pre-commit install
 ```
 
-The codebase uses `isort` and `black` for code formatting.
+# Citation
 
-### Contributing
-
-We welcome contributions! Please submit pull requests to help make teleoperation more accessible and higher quality.
-
-## Citation
-
-```bibtex
+```
 @misc{wu2023gello,
     title={GELLO: A General, Low-Cost, and Intuitive Teleoperation Framework for Robot Manipulators},
     author={Philipp Wu and Yide Shentu and Zhongke Yi and Xingyu Lin and Pieter Abbeel},
@@ -244,11 +224,10 @@ We welcome contributions! Please submit pull requests to help make teleoperation
 }
 ```
 
-## License & Acknowledgements
+# License & Acknowledgements
+This source code is licensed under the MIT license found in the LICENSE file. in the root directory of this source tree.
 
-This project is licensed under the MIT License (see LICENSE file).
-
-### Third-Party Dependencies
-- [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie): Robot models for MuJoCo
-- [brentyi/tyro](https://github.com/brentyi/tyro): Argument parsing and configuration
-- [ZMQ](https://zeromq.org/): Multiprocessing communication framework
+This project builds on top of or utilizes the following third party dependencies.
+ * [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie): Prebuilt robot models for mujoco
+ * [brentyi/tyro](https://github.com/brentyi/tyro): Argument parsing and configuration
+ * [ZMQ](https://zeromq.org/): Enables easy create of node like processes in python.
