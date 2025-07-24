@@ -239,8 +239,7 @@ Kill all Python processes if needed:
 ### Code Organization
 
 - `scripts/`: Helpful Python scripts
-- `experiments/`: Entry points into GELLO codeYAM
-uv pip install -r requirements_dev.txt
+- `experiments/`: Entry points into GELLO code
 ```
 
 Set up pre-commit hooks:
