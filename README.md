@@ -179,6 +179,12 @@ hz: 30
 max_steps: 1000
 ```
 
+#### Generating Configuration Files
+
+Configuration file generation is only currently supported for the YAM Gello. Generating a config file through this process allows you to skip the manual joint angle calibration process.
+
+Run `python scripts/generate_yam_config.py`
+
 #### Using Configuration Files
 
 Launch GELLO with a configuration file:
