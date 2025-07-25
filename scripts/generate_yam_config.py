@@ -124,6 +124,13 @@ def get_joint_offsets(args: Args, port: str) -> Tuple[list, Optional[Tuple[float
     return best_offsets, gripper_config
 
 
+class FlowStyleList(list):
+    """Custom list class to force flow style in YAML output"""
+    pass
+
+def flow_style_representer(dumper, data):
+    return dumper.represent_sequence('tag:yaml.org,2002:seq', data, flow_style=True)
+
 def update_config_with_offsets(template_config: dict, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
     """Update a template config with detected offsets and port."""
     import copy
@@ -132,12 +139,19 @@ def update_config_with_offsets(template_config: dict, port: str, joint_offsets: 
     # Update port
     config['agent']['port'] = port
     
-    # Update joint offsets
-    config['agent']['dynamixel_config']['joint_offsets'] = [round(offset, 5) for offset in joint_offsets]
+    # Update joint offsets - convert numpy values to plain Python floats and use flow style
+    offsets = [float(round(offset, 5)) for offset in joint_offsets]
+    config['agent']['dynamixel_config']['joint_offsets'] = FlowStyleList(offsets)
     
-    # Update gripper config if detected
+    # Update gripper config if detected - convert numpy values to plain Python floats and use flow style
     if gripper_config and 'gripper_config' in config['agent']['dynamixel_config']:
-        config['agent']['dynamixel_config']['gripper_config'] = [7, gripper_config[1], gripper_config[0]]
+        gripper_vals = [7, float(gripper_config[1]), float(gripper_config[0])]
+        config['agent']['dynamixel_config']['gripper_config'] = FlowStyleList(gripper_vals)
+    
+    # Convert other lists to flow style too for consistency
+    config['agent']['dynamixel_config']['joint_ids'] = FlowStyleList(config['agent']['dynamixel_config']['joint_ids'])
+    config['agent']['dynamixel_config']['joint_signs'] = FlowStyleList(config['agent']['dynamixel_config']['joint_signs'])
+    config['agent']['start_joints'] = FlowStyleList(config['agent']['start_joints'])
     
     return config
 
@@ -220,15 +234,18 @@ def main(args: Args) -> None:
     else:
         sim_output_path = Path(args.sim_output_path)
     
+    # Register custom representer for flow style lists
+    yaml.add_representer(FlowStyleList, flow_style_representer)
+    
     # Save hardware config
     hardware_output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(hardware_output_path, 'w') as f:
-        yaml.dump(hardware_config, f, default_flow_style=False, indent=2, sort_keys=False)
+        yaml.dump(hardware_config, f, default_flow_style=False, indent=2, sort_keys=False, width=1000)
     
     # Save simulation config  
     sim_output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(sim_output_path, 'w') as f:
-        yaml.dump(sim_config, f, default_flow_style=False, indent=2, sort_keys=False)
+        yaml.dump(sim_config, f, default_flow_style=False, indent=2, sort_keys=False, width=1000)
     
     print(f"Hardware configuration saved to: {hardware_output_path}")
     print(f"Simulation configuration saved to: {sim_output_path}")
