@@ -175,7 +175,13 @@ python launch_yaml.py --config-path configs/yam_auto_generated_sim.yaml     # Si
 
 ## Usage
 
-If you are not using `scripts/launch_yaml.py`, you will need to follow these procedures:
+Install robot-specific dependencies:
+- **UR**: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
+- **Panda**: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html)
+- **xArm**: [xArm Python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
+- **YAM**: [i2rt](https://github.com/i2rt-robotics/i2rt)
+
+If you are using a .yaml config, simply run `scripts/launch_yaml.py` with your config. Otherwise, follow these procedures:
 
 ### Testing in Simulation
 
@@ -190,12 +196,6 @@ python experiments/run_env.py --agent=gello
 ```
 
 ### Real Robot Operation
-
-Install robot-specific dependencies:
-- **UR**: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
-- **Panda**: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html)
-- **xArm**: [xArm Python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
-- **YAM**: [i2rt](https://github.com/i2rt-robotics/i2rt)
 
 Launch the system:
 ```bash
