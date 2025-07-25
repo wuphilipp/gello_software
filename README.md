@@ -64,7 +64,9 @@ Each Dynamixel motor defaults to ID 1. For multiple motors on one U2D2 controlle
 4. Change the ID address to the appropriate number
 5. Repeat for each motor in order (base to gripper)
 
-### 2. Extract Joint Offsets
+### 2.1 Extract Joint Offsets
+
+If you are using a GELLO for the I2RT YAM, you can use `python scripts/generate_yam_config.py` to skip the rest of this section!
 
 Set GELLO to a known configuration and run the offset detection script:
 
@@ -108,7 +110,72 @@ python scripts/gello_get_offset.py \
 
 Add the generated joint offsets to `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP` or use the YAML method.
 
+## 2.2 Configuration System
+
+### YAML Configuration Files
+
+GELLO supports configuration-driven operation through YAML files in the `configs/` directory. This approach provides a flexible way to configure different robot setups, simulation environments, and teleoperation parameters.
+
+#### Configuration Structure
+
+Configuration files use a dependency injection pattern with `_target_` keys to specify Python classes:
+
+```yaml
+robot:
+  _target_: gello.robots.yam.YAMRobot
+  channel: "can_left"
+
+agent:
+  _target_: gello.agents.gello_agent.GelloAgent
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
+  dynamixel_config:
+    _target_: gello.agents.gello_agent.DynamixelRobotConfig
+    joint_ids: [1, 2, 3, 4, 5, 6]
+    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
+    joint_signs: [1, 1, -1, -1, 1, 1]
+    gripper_config: [7, -30, 24]
+  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+hz: 30
+max_steps: 1000
+```
+
+#### Generating Configuration Files
+
+Automatic config file generation is only currently supported for the YAM Gello. Generating a config file through this process allows you to skip the manual joint angle calibration process.
+
+Run `python scripts/generate_yam_config.py` while the arm is in the default build position and follow the instructions in the terminal.
+
+#### Using Configuration Files
+
+Launch GELLO with a configuration file:
+```bash
+python launch_yaml.py --config-path configs/yam_auto_generated.yaml         # Hardware robot
+python launch_yaml.py --config-path configs/yam_auto_generated_sim.yaml     # Simulation
+```
+
+#### Creating Custom Configurations
+
+1. Copy an existing config from `configs/` as a template
+2. Modify the robot `_target_` and parameters for your setup:
+   - For hardware: `gello.robots.yam.YAMRobot`, `gello.robots.ur.URRobot`, etc.
+   - For simulation: `gello.robots.sim_robot.MujocoRobotServer`
+3. Update the agent configuration with your GELLO device settings:
+   - `port`: Your U2D2 device path
+   - `joint_offsets`: From the offset detection script
+   - `joint_signs`: Based on your robot type
+   - `start_joints`: Your GELLO's starting position
+
+#### Configuration Components
+
+- **Robot Config**: Defines robot type, communication parameters, and physical settings
+- **Agent Config**: Defines GELLO device settings, joint mappings, and calibration
+- **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper
+- **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings
+
 ## Usage
+
+If you are not using `scripts/launch_yaml.py`, you will need to follow these procedures:
 
 ### Testing in Simulation
 
@@ -149,68 +216,6 @@ Use `--start-joints` to specify GELLO's starting configuration for automatic rob
 python experiments/run_env.py --agent=gello --start-joints <joint_angles>
 ```
 
-## Configuration System
-
-### YAML Configuration Files
-
-GELLO supports configuration-driven operation through YAML files in the `configs/` directory. This approach provides a flexible way to configure different robot setups, simulation environments, and teleoperation parameters.
-
-#### Configuration Structure
-
-Configuration files use a dependency injection pattern with `_target_` keys to specify Python classes:
-
-```yaml
-robot:
-  _target_: gello.robots.yam.YAMRobot
-  channel: "can_left"
-
-agent:
-  _target_: gello.agents.gello_agent.GelloAgent
-  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
-  dynamixel_config:
-    _target_: gello.agents.gello_agent.DynamixelRobotConfig
-    joint_ids: [1, 2, 3, 4, 5, 6]
-    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
-    joint_signs: [1, 1, -1, -1, 1, 1]
-    gripper_config: [7, -30, 24]
-  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-
-hz: 30
-max_steps: 1000
-```
-
-#### Generating Configuration Files
-
-Configuration file generation is only currently supported for the YAM Gello. Generating a config file through this process allows you to skip the manual joint angle calibration process.
-
-Run `python scripts/generate_yam_config.py`
-
-#### Using Configuration Files
-
-Launch GELLO with a configuration file:
-```bash
-python launch_yaml.py --config-path configs/yam_auto_generated.yaml         # Hardware robot
-python launch_yaml.py --config-path configs/yam_auto_generated_sim.yaml     # Simulation
-```
-
-#### Creating Custom Configurations
-
-1. Copy an existing config from `configs/` as a template
-2. Modify the robot `_target_` and parameters for your setup:
-   - For hardware: `gello.robots.yam.YAMRobot`, `gello.robots.ur.URRobot`, etc.
-   - For simulation: `gello.robots.sim_robot.MujocoRobotServer`
-3. Update the agent configuration with your GELLO device settings:
-   - `port`: Your U2D2 device path
-   - `joint_offsets`: From the offset detection script
-   - `joint_signs`: Based on your robot type
-   - `start_joints`: Your GELLO's starting position
-
-#### Configuration Components
-
-- **Robot Config**: Defines robot type, communication parameters, and physical settings
-- **Agent Config**: Defines GELLO device settings, joint mappings, and calibration
-- **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper
-- **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings
 
 ## Advanced Features
 

@@ -34,7 +34,7 @@ class Args:
     start_joints: Tuple[float, ...] = (0, 0, 0, 0, 0, 0)
     """The joint angles that the GELLO should be placed in (in radians). Default is YAM known position."""
 
-    joint_signs: Tuple[float, ...] = (1, 1, -1, -1, 1, 1)
+    joint_signs: Tuple[float, ...] = (1, -1, -1, -1, 1, 1)
     """The joint signs for YAM arm."""
 
     gripper: bool = True
