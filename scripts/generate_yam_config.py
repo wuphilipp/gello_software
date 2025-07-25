@@ -27,6 +27,9 @@ class Args:
     output_path: Optional[str] = None
     """Output path for the generated YAML config. If not provided, will use configs/yam_auto_generated.yaml"""
     
+    sim_output_path: Optional[str] = None
+    """Output path for the simulation YAML config. If not provided, will use configs/yam_auto_generated_sim.yaml"""
+    
     port: Optional[str] = None
     """The port that GELLO is connected to. If not provided, will auto-detect."""
     
@@ -121,8 +124,8 @@ def get_joint_offsets(args: Args, port: str) -> Tuple[list, Optional[Tuple[float
     return best_offsets, gripper_config
 
 
-def generate_yaml_config(args: Args, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
-    """Generate the YAML configuration dictionary."""
+def generate_hardware_config(args: Args, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
+    """Generate the hardware YAML configuration dictionary."""
     config = {
         'robot': {
             '_target_': 'gello.robots.yam.YAMRobot',
@@ -142,6 +145,37 @@ def generate_yaml_config(args: Args, port: str, joint_offsets: list, gripper_con
         },
         'hz': 30,
         'max_steps': 1000
+    }
+    
+    if not args.gripper:
+        del config['agent']['dynamixel_config']['gripper_config']
+    
+    return config
+
+
+def generate_sim_config(args: Args, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
+    """Generate the simulation YAML configuration dictionary."""
+    config = {
+        'robot': {
+            '_target_': 'gello.robots.sim_robot.MujocoRobotServer',
+            'xml_path': 'third_party/mujoco_menagerie/i2rt_yam/yam.xml',
+            'gripper_xml_path': None,
+            'host': '127.0.0.1',
+            'port': 6001
+        },
+        'agent': {
+            '_target_': 'gello.agents.gello_agent.GelloAgent',
+            'port': port,
+            'dynamixel_config': {
+                '_target_': 'gello.agents.gello_agent.DynamixelRobotConfig',
+                'joint_ids': list(range(1, args.num_joints + 1)),
+                'joint_offsets': [round(offset, 5) for offset in joint_offsets],
+                'joint_signs': list(args.joint_signs),
+                'gripper_config': [7, gripper_config[1], gripper_config[0]] if gripper_config else None
+            },
+            'start_joints': list(args.start_joints) + ([0.0] if args.gripper else [])
+        },
+        'hz': 30
     }
     
     if not args.gripper:
@@ -192,27 +226,45 @@ def main(args: Args) -> None:
         print("Please check your connection and try again.")
         sys.exit(1)
     
-    # Step 4: Generate config
-    print("⚙️  Generating YAML configuration...")
-    config = generate_yaml_config(args, port, joint_offsets, gripper_config)
+    # Step 4: Generate configs
+    print("⚙️  Generating YAML configurations...")
     
-    # Step 5: Save config
+    # Generate hardware config
+    hardware_config = generate_hardware_config(args, port, joint_offsets, gripper_config)
+    
+    # Generate simulation config  
+    sim_config = generate_sim_config(args, port, joint_offsets, gripper_config)
+    
+    # Step 5: Save configs
     if args.output_path is None:
-        output_path = Path(__file__).parent.parent / "configs" / "yam_auto_generated.yaml"
+        hardware_output_path = Path(__file__).parent.parent / "configs" / "yam_auto_generated.yaml"
     else:
-        output_path = Path(args.output_path)
+        hardware_output_path = Path(args.output_path)
     
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if args.sim_output_path is None:
+        sim_output_path = Path(__file__).parent.parent / "configs" / "yam_auto_generated_sim.yaml"
+    else:
+        sim_output_path = Path(args.sim_output_path)
     
-    with open(output_path, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False, indent=2)
+    # Save hardware config
+    hardware_output_path.parent.mkdir(parents=True, exist_ok=True)
+    with open(hardware_output_path, 'w') as f:
+        yaml.dump(hardware_config, f, default_flow_style=False, indent=2)
     
-    print(f"✅ Configuration saved to: {output_path}")
+    # Save simulation config
+    sim_output_path.parent.mkdir(parents=True, exist_ok=True) 
+    with open(sim_output_path, 'w') as f:
+        f.write("# Simulation configuration for YAM robot - equivalent to sim_yam + gello\n")
+        yaml.dump(sim_config, f, default_flow_style=False, indent=2)
+    
+    print(f"✅ Hardware configuration saved to: {hardware_output_path}")
+    print(f"✅ Simulation configuration saved to: {sim_output_path}")
     print()
     print("🚀 You can now run GELLO with:")
-    print(f"   python launch_yaml.py --config-path {output_path}")
+    print(f"   Hardware: python launch_yaml.py --config-path {hardware_output_path}")
+    print(f"   Simulation: python launch_yaml.py --config-path {sim_output_path}")
     print()
-    print("Configuration generated successfully! 🎉")
+    print("Configuration files generated successfully! 🎉")
 
 
 if __name__ == "__main__":
