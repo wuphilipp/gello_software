@@ -74,7 +74,7 @@ Set GELLO to a known configuration and run the offset detection script:
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
   <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
-  <img src="imgs/YAM_known_position.jpg" width="31%">
+  <img src="imgs/yam_default.JPG" width="42%">
 </p>
 
 **UR Robot:**
