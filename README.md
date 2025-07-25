@@ -95,7 +95,7 @@ python scripts/gello_get_offset.py \
 ```bash
 python scripts/gello_get_offset.py \
     --start-joints 0 0 0 0 0 0 \
-    --joint-signs 1 1 -1 -1 1 1 \
+    --joint-signs 1 -1 -1 -1 1 1 \
     --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAAMLV6-if00-port0
 ```
 
@@ -104,9 +104,9 @@ python scripts/gello_get_offset.py \
 - Panda: `1 -1 1 1 1 -1 1`
 - FR3: `1 1 1 1 1 -1 1`
 - xArm: `1 1 1 1 1 1 1`
-- YAM: `1 1 -1 -1 1 1`
+- YAM: `1 -1 -1 -1 1 1`
 
-Add the generated joint offsets to `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP`.
+Add the generated joint offsets to `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP` or use the YAML method.
 
 ## Usage
 

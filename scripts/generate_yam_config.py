@@ -151,7 +151,12 @@ def update_config_with_offsets(template_config: dict, port: str, joint_offsets: 
     # Convert other lists to flow style too for consistency
     config['agent']['dynamixel_config']['joint_ids'] = FlowStyleList(config['agent']['dynamixel_config']['joint_ids'])
     config['agent']['dynamixel_config']['joint_signs'] = FlowStyleList(config['agent']['dynamixel_config']['joint_signs'])
-    config['agent']['start_joints'] = FlowStyleList(config['agent']['start_joints'])
+    
+    # For YAM, ensure gripper start position is 1.0 (closed) in both hardware and sim configs
+    start_joints = list(config['agent']['start_joints'])
+    if len(start_joints) == 7:  # Has gripper joint
+        start_joints[6] = 1.0  # Set gripper to closed position
+    config['agent']['start_joints'] = FlowStyleList(start_joints)
     
     return config
 

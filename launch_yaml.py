@@ -63,6 +63,19 @@ def main():
     env = RobotEnv(robot_client, control_rate_hz=cfg.get('hz', 30))
     agent = instantiate(cfg['agent'])
     
+    # Move robot to start_joints position if specified in config
+    if 'start_joints' in cfg['agent'] and cfg['agent']['start_joints'] is not None:
+        reset_joints = np.array(cfg['agent']['start_joints'])
+        curr_joints = env.get_obs()["joint_positions"]
+        if reset_joints.shape == curr_joints.shape:
+            max_delta = (np.abs(curr_joints - reset_joints)).max()
+            steps = min(int(max_delta / 0.01), 100)
+            
+            print(f"Moving robot to start position: {reset_joints}")
+            for jnt in np.linspace(curr_joints, reset_joints, steps):
+                env.step(jnt)
+                time.sleep(0.001)
+    
     print(f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}")
     print(f"Control loop: {cfg.get('hz', 30)} Hz, max_steps: {cfg.get('max_steps', 1000)}")
 
