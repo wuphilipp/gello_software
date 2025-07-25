@@ -11,9 +11,8 @@ class YAMRobot(Robot):
     def __init__(self, channel="can0" #, motor_timeout_enabled=True
     ):
         from i2rt.robots.get_robot import get_yam_robot
-        # self.robot = get_yam_robot(channel=channel, motor_timeout_enabled=motor_timeout_enabled)
+        self.robot = get_yam_robot(channel=channel, motor_timeout_enabled=motor_timeout_enabled)
         self.robot = get_yam_robot(channel=channel)
-        # If you need to re-enable motor_timeout_enabled, uncomment above and pass the argument
 
         # YAM has 7 joints (6 arm joints + 1 gripper)
         self._joint_names = ["joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "gripper"]
