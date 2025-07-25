@@ -35,9 +35,9 @@ agent:
   dynamixel_config:
     _target_: gello.agents.gello_agent.DynamixelRobotConfig
     joint_ids: [1, 2, 3, 4, 5, 6]
-    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
+    joint_offsets: [3.14159, 4.14159, 6.28318, 3.14159, 5.23599, 3.14159]
     joint_signs: [1, 1, -1, -1, 1, 1]
     gripper_config: [7, -30, 24]
-  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 hz: 30

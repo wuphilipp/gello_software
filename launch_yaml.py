@@ -25,12 +25,10 @@ def main():
 
     cfg = OmegaConf.to_container(OmegaConf.load(args.config_path), resolve=True)
 
-    # If robot config is a path, load it
     robot_cfg = cfg['robot']
     if isinstance(robot_cfg.get('config'), str):
         robot_cfg['config'] = OmegaConf.to_container(OmegaConf.load(robot_cfg['config']), resolve=True)
 
-    # Instantiate robot
     robot = instantiate(robot_cfg)
     
     # Handle different robot types
@@ -62,14 +60,12 @@ def main():
         # Create client to communicate with hardware
         robot_client = ZMQClientRobot(port=6001, host="127.0.0.1")
 
-    # Create environment and agent
     env = RobotEnv(robot_client, control_rate_hz=cfg.get('hz', 30))
     agent = instantiate(cfg['agent'])
     
     print(f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}")
     print(f"Control loop: {cfg.get('hz', 30)} Hz, max_steps: {cfg.get('max_steps', 1000)}")
 
-    # Start teleop loop like in run_env.py
     print("Going to start position")
     start_pos = agent.act(env.get_obs())
     obs = env.get_obs()
@@ -99,7 +95,6 @@ def main():
         joints
     ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
 
-    # Smooth transition to start position
     max_delta = 0.05
     for _ in range(25):
         obs = env.get_obs()
@@ -111,15 +106,12 @@ def main():
             delta = delta / max_joint_delta * max_delta
         env.step(current_joints + delta)
 
-    # Main teleop loop
-    max_steps = cfg.get('max_steps', 1000)
-    for step in range(max_steps):
+    
+    while True:
         obs = env.get_obs()
         action = agent.act(obs)
         env.step(action)
+    
         
-        if step % 100 == 0:
-            print(f"Step {step}/{max_steps}")
-
 if __name__ == '__main__':
     main()
