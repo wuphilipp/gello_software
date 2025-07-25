@@ -209,6 +209,10 @@ python experiments/launch_nodes.py --robot=yam
 python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 ```
 
+### Troubleshooting
+
+If some joints in your arm are not behaving as expected, you may need to modify the joint signs of your configuration. Simply invert the affected joint sign(s) in your .yaml or `gello_agent.py` or physically reverse the installation of the servo.
+
 ### Optional: Starting Configuration
 
 Use `--start-joints` to specify GELLO's starting configuration for automatic robot reset:
