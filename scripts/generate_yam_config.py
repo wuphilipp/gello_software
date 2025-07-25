@@ -124,62 +124,20 @@ def get_joint_offsets(args: Args, port: str) -> Tuple[list, Optional[Tuple[float
     return best_offsets, gripper_config
 
 
-def generate_hardware_config(args: Args, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
-    """Generate the hardware YAML configuration dictionary."""
-    config = {
-        'robot': {
-            '_target_': 'gello.robots.yam.YAMRobot',
-            'channel': args.channel
-        },
-        'agent': {
-            '_target_': 'gello.agents.gello_agent.GelloAgent',
-            'port': port,
-            'dynamixel_config': {
-                '_target_': 'gello.agents.gello_agent.DynamixelRobotConfig',
-                'joint_ids': list(range(1, args.num_joints + 1)),
-                'joint_offsets': [round(offset, 5) for offset in joint_offsets],
-                'joint_signs': list(args.joint_signs),
-                'gripper_config': [7, gripper_config[1], gripper_config[0]] if gripper_config else None
-            },
-            'start_joints': list(args.start_joints) + ([1.0] if args.gripper else [])
-        },
-        'hz': 30,
-        'max_steps': 1000
-    }
+def update_config_with_offsets(template_config: dict, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
+    """Update a template config with detected offsets and port."""
+    import copy
+    config = copy.deepcopy(template_config)
     
-    if not args.gripper:
-        del config['agent']['dynamixel_config']['gripper_config']
+    # Update port
+    config['agent']['port'] = port
     
-    return config
-
-
-def generate_sim_config(args: Args, port: str, joint_offsets: list, gripper_config: Optional[Tuple[float, float]]) -> dict:
-    """Generate the simulation YAML configuration dictionary."""
-    config = {
-        'robot': {
-            '_target_': 'gello.robots.sim_robot.MujocoRobotServer',
-            'xml_path': 'third_party/mujoco_menagerie/i2rt_yam/yam.xml',
-            'gripper_xml_path': None,
-            'host': '127.0.0.1',
-            'port': 6001
-        },
-        'agent': {
-            '_target_': 'gello.agents.gello_agent.GelloAgent',
-            'port': port,
-            'dynamixel_config': {
-                '_target_': 'gello.agents.gello_agent.DynamixelRobotConfig',
-                'joint_ids': list(range(1, args.num_joints + 1)),
-                'joint_offsets': [round(offset, 5) for offset in joint_offsets],
-                'joint_signs': list(args.joint_signs),
-                'gripper_config': [7, gripper_config[1], gripper_config[0]] if gripper_config else None
-            },
-            'start_joints': list(args.start_joints) + ([0.0] if args.gripper else [])
-        },
-        'hz': 30
-    }
+    # Update joint offsets
+    config['agent']['dynamixel_config']['joint_offsets'] = [round(offset, 5) for offset in joint_offsets]
     
-    if not args.gripper:
-        del config['agent']['dynamixel_config']['gripper_config']
+    # Update gripper config if detected
+    if gripper_config and 'gripper_config' in config['agent']['dynamixel_config']:
+        config['agent']['dynamixel_config']['gripper_config'] = [7, gripper_config[1], gripper_config[0]]
     
     return config
 
@@ -192,18 +150,18 @@ def main(args: Args) -> None:
         print("Detecting GELLO port...")
         port = find_gello_port()
         if port is None:
-            print("❌ No FTDI USB-Serial converter found!")
+            print("No FTDI USB-Serial converter found!")
             print("Please ensure your GELLO device is connected and try again.")
             sys.exit(1)
-        print(f"✅ Found GELLO at: {port}\n")
+        print(f"Found GELLO at: {port}\n")
     else:
         port = args.port
         print(f"Using specified port: {port}\n")
     
     # Step 2: Physical setup instructions
-    print("📋 SETUP INSTRUCTIONS:")
-    print("1. Position your YAM arm in the known configuration:")
-    print("   - All joints at 0 degrees (straight up position)")
+    print("SETUP INSTRUCTIONS:")
+    print("1. Position your YAM arm in the build configuration:")
+    print("   - All joints at 0 degrees (resting position)")
     print("   - Match the position shown in the documentation image")
     print("2. Ensure all Dynamixel motors are powered and connected")
     print("3. Make sure the gripper is attached (if using)")
@@ -213,58 +171,73 @@ def main(args: Args) -> None:
     print()
     
     # Step 3: Detect offsets
-    print("🔍 Detecting joint offsets...")
+    print("Detecting joint offsets...")
     try:
         joint_offsets, gripper_config = get_joint_offsets(args, port)
-        print("✅ Joint offsets detected successfully!")
+        print("Joint offsets detected successfully!")
         print(f"   Offsets: {[f'{x:.3f}' for x in joint_offsets]}")
         if gripper_config:
             print(f"   Gripper: open={gripper_config[0]:.1f}°, close={gripper_config[1]:.1f}°")
         print()
     except Exception as e:
-        print(f"❌ Error detecting offsets: {e}")
+        print(f"Error detecting offsets: {e}")
         print("Please check your connection and try again.")
         sys.exit(1)
     
-    # Step 4: Generate configs
-    print("⚙️  Generating YAML configurations...")
+    # Step 4: Load template configs and update with offsets
+    print("Loading template configurations and updating with detected offsets...")
     
-    # Generate hardware config
-    hardware_config = generate_hardware_config(args, port, joint_offsets, gripper_config)
+    config_dir = Path(__file__).parent.parent / "configs"
+    hardware_template_path = config_dir / "test.yaml"
+    sim_template_path = config_dir / "test_sim.yaml"
     
-    # Generate simulation config  
-    sim_config = generate_sim_config(args, port, joint_offsets, gripper_config)
+    try:
+        # Load hardware template
+        with open(hardware_template_path, 'r') as f:
+            hardware_template = yaml.safe_load(f)
+        
+        # Load simulation template  
+        with open(sim_template_path, 'r') as f:
+            sim_template = yaml.safe_load(f)
+            
+        # Update configs with detected offsets
+        hardware_config = update_config_with_offsets(hardware_template, port, joint_offsets, gripper_config)
+        sim_config = update_config_with_offsets(sim_template, port, joint_offsets, gripper_config)
+        
+    except FileNotFoundError as e:
+        print(f"Error: Template config file not found: {e}")
+        print("Please ensure test.yaml and test_sim.yaml exist in the configs/ directory.")
+        sys.exit(1)
     
-    # Step 5: Save configs
+    # Step 5: Save updated configs
     if args.output_path is None:
-        hardware_output_path = Path(__file__).parent.parent / "configs" / "yam_auto_generated.yaml"
+        hardware_output_path = config_dir / "yam_auto_generated.yaml"
     else:
         hardware_output_path = Path(args.output_path)
     
     if args.sim_output_path is None:
-        sim_output_path = Path(__file__).parent.parent / "configs" / "yam_auto_generated_sim.yaml"
+        sim_output_path = config_dir / "yam_auto_generated_sim.yaml"
     else:
         sim_output_path = Path(args.sim_output_path)
     
     # Save hardware config
     hardware_output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(hardware_output_path, 'w') as f:
-        yaml.dump(hardware_config, f, default_flow_style=False, indent=2)
+        yaml.dump(hardware_config, f, default_flow_style=False, indent=2, sort_keys=False)
     
-    # Save simulation config
-    sim_output_path.parent.mkdir(parents=True, exist_ok=True) 
+    # Save simulation config  
+    sim_output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(sim_output_path, 'w') as f:
-        f.write("# Simulation configuration for YAM robot - equivalent to sim_yam + gello\n")
-        yaml.dump(sim_config, f, default_flow_style=False, indent=2)
+        yaml.dump(sim_config, f, default_flow_style=False, indent=2, sort_keys=False)
     
-    print(f"✅ Hardware configuration saved to: {hardware_output_path}")
-    print(f"✅ Simulation configuration saved to: {sim_output_path}")
+    print(f"Hardware configuration saved to: {hardware_output_path}")
+    print(f"Simulation configuration saved to: {sim_output_path}")
     print()
-    print("🚀 You can now run GELLO with:")
+    print("You can now run GELLO with:")
     print(f"   Hardware: python launch_yaml.py --config-path {hardware_output_path}")
     print(f"   Simulation: python launch_yaml.py --config-path {sim_output_path}")
     print()
-    print("Configuration files generated successfully! 🎉")
+    print("Configuration files generated successfully!")
 
 
 if __name__ == "__main__":
