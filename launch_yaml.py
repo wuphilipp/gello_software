@@ -87,7 +87,7 @@ def main():
     abs_deltas = np.abs(start_pos - joints)
     id_max_joint_delta = np.argmax(abs_deltas)
 
-    max_joint_delta = 0.8
+    max_joint_delta = 1
     if abs_deltas[id_max_joint_delta] > max_joint_delta:
         id_mask = abs_deltas > max_joint_delta
         print()

@@ -207,8 +207,8 @@ def main(args: Args) -> None:
     print("Loading template configurations and updating with detected offsets...")
     
     config_dir = Path(__file__).parent.parent / "configs"
-    hardware_template_path = config_dir / "test.yaml"
-    sim_template_path = config_dir / "test_sim.yaml"
+    hardware_template_path = config_dir / "templates/yam_template.yaml"
+    sim_template_path = config_dir / "templates/yam_sim_template.yaml"
     
     try:
         # Load hardware template

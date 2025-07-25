@@ -189,8 +189,8 @@ Run `python scripts/generate_yam_config.py`
 
 Launch GELLO with a configuration file:
 ```bash
-python launch_yaml.py --config-path configs/test.yaml          # Hardware robot
-python launch_yaml.py --config-path configs/test_sim.yaml     # Simulation
+python launch_yaml.py --config-path configs/yam_auto_generated.yaml         # Hardware robot
+python launch_yaml.py --config-path configs/yam_auto_generated_sim.yaml     # Simulation
 ```
 
 #### Creating Custom Configurations
