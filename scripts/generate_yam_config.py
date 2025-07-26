@@ -141,35 +141,37 @@ def update_config_with_offsets(
     """Update a template config with detected offsets and port."""
     import copy
 
-    config = copy.deepcopy(template_config)
-
-    # Update port
-    config["agent"]["port"] = port
-
-    # Update joint offsets - convert numpy values to plain Python floats and use flow style
-    offsets = [float(round(offset, 5)) for offset in joint_offsets]
-    config["agent"]["dynamixel_config"]["joint_offsets"] = FlowStyleList(offsets)
-
-    # Update gripper config if detected - convert numpy values to plain Python floats and use flow style
-    if gripper_config and "gripper_config" in config["agent"]["dynamixel_config"]:
-        gripper_vals = [7, float(gripper_config[1]), float(gripper_config[0])]
-        config["agent"]["dynamixel_config"]["gripper_config"] = FlowStyleList(
-            gripper_vals
+    def to_flow_list(data):
+        """Convert data to FlowStyleList with proper type conversion."""
+        return FlowStyleList(
+            [float(x) if isinstance(x, (int, float, np.number)) else x for x in data]
         )
 
-    # Convert other lists to flow style too for consistency
-    config["agent"]["dynamixel_config"]["joint_ids"] = FlowStyleList(
-        config["agent"]["dynamixel_config"]["joint_ids"]
-    )
-    config["agent"]["dynamixel_config"]["joint_signs"] = FlowStyleList(
-        config["agent"]["dynamixel_config"]["joint_signs"]
+    config = copy.deepcopy(template_config)
+    dynamixel_config = config["agent"]["dynamixel_config"]
+
+    # Update basic config
+    config["agent"]["port"] = port
+
+    # Update offsets and convert to flow style
+    dynamixel_config["joint_offsets"] = to_flow_list(
+        [round(offset, 5) for offset in joint_offsets]
     )
 
-    # For YAM, ensure gripper start position is 1.0 (closed) in both hardware and sim configs
+    # Update gripper config if present
+    if gripper_config and "gripper_config" in dynamixel_config:
+        gripper_vals = [7, gripper_config[1], gripper_config[0]]
+        dynamixel_config["gripper_config"] = to_flow_list(gripper_vals)
+
+    # Convert existing lists to flow style
+    for key in ["joint_ids", "joint_signs"]:
+        dynamixel_config[key] = to_flow_list(dynamixel_config[key])
+
+    # Set gripper start position to open (1.0) if gripper exists
     start_joints = list(config["agent"]["start_joints"])
-    if len(start_joints) == 7:  # Has gripper joint
-        start_joints[6] = 1.0  # Set gripper to closed position
-    config["agent"]["start_joints"] = FlowStyleList(start_joints)
+    if len(start_joints) == 7:
+        start_joints[6] = 1.0
+    config["agent"]["start_joints"] = to_flow_list(start_joints)
 
     return config
 
