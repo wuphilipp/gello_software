@@ -117,8 +117,8 @@ def get_joint_offsets(
     gripper_config = None
     if args.gripper:
         gripper_current = np.rad2deg(driver.get_joints()[-1])
-        gripper_open = gripper_current - 0.2
-        gripper_close = gripper_current - 42
+        gripper_open = gripper_current
+        gripper_close = gripper_current - 59.5
         gripper_config = (gripper_open, gripper_close)
 
     return best_offsets, gripper_config
