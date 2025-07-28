@@ -1,6 +1,5 @@
-import glob
-
 from setuptools import find_packages, setup
+import glob
 
 package_name = "franka_gello_state_publisher"
 
@@ -22,8 +21,6 @@ setup(
     license="MIT",
     tests_require=["pytest"],
     entry_points={
-        "console_scripts": [
-            "gello_publisher = franka_gello_state_publisher.gello_publisher:main"
-        ],
+        "console_scripts": ["gello_publisher = franka_gello_state_publisher.gello_publisher:main"],
     },
 )
