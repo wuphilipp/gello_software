@@ -5,6 +5,65 @@ import time
 import numpy as np
 from omegaconf import OmegaConf
 
+import gello.dynamixel.driver
+
+# ------------- MONKEY-PATCH FOR DYNAMIXEL DRIVER STABILITY -------------
+# We are patching the DynamixelDriver's _read_joint_angles method at runtime
+# to prevent serial communication crashes. The original method in the driver
+# polls at 1000Hz and uses a group read command, which can be too aggressive
+# and unstable for some USB serial adapters.
+#
+# This new patch reads each motor's data individually, which is more robust
+# against transient communication errors. This change is applied only when
+# this script is run, leaving the core gello/dynamixel/driver.py file
+# untouched.
+
+
+def _more_robust_read_joint_angles(self):
+    """
+    A more robust version of _read_joint_angles.
+    - Polls at 1000Hz.
+    - Reads motors one-by-one instead of in a group for better stability.
+    - Catches exceptions on a per-motor basis to prevent thread crashes.
+    """
+    while not self._stop_thread.is_set():
+        time.sleep(0.001)  # 1000Hz polling
+        with self._lock:
+            temp_joint_angles = np.zeros(len(self._ids), dtype=int)
+            all_motors_ok = True
+            for i, dxl_id in enumerate(self._ids):
+                try:
+                    # Read each motor's position individually for greater stability
+                    angle, result, error = self._packetHandler.read4ByteTxRx(
+                        self._portHandler,
+                        dxl_id,
+                        gello.dynamixel.driver.ADDR_PRESENT_POSITION,
+                    )
+
+                    if result == gello.dynamixel.driver.COMM_SUCCESS and error == 0:
+                        temp_joint_angles[i] = np.int32(np.uint32(angle))
+                    else:
+                        print(
+                            f"Warning: Failed to read motor {dxl_id}. Comm: {result}, Err: {error}"
+                        )
+                        all_motors_ok = False
+                        break  # Stop this read cycle if one motor fails
+                except Exception as e:
+                    print(f"ERROR reading motor {dxl_id}: {e}")
+                    all_motors_ok = False
+                    break
+
+            # Only update the shared state if all motors were read successfully
+            if all_motors_ok:
+                self._joint_angles = temp_joint_angles
+
+
+# Apply the new patch
+gello.dynamixel.driver.DynamixelDriver._read_joint_angles = (
+    _more_robust_read_joint_angles
+)
+# --------------------- END OF MONKEY-PATCH -------------------------
+
 
 def instantiate(cfg):
     if isinstance(cfg, dict) and "_target_" in cfg:
@@ -138,7 +197,9 @@ def main():
                 print(f"Moving robot to start position: {reset_joints}")
                 for jnt in np.linspace(curr_joints, reset_joints, steps):
                     env.step(jnt)
-                    time.sleep(0.001)
+                    time.sleep(
+                        0.01
+                    )  # Reduced from 0.001 to prevent communication overload
 
     print(
         f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}"

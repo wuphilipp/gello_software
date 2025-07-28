@@ -14,4 +14,3 @@ agent:
   start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 hz: 30
-max_steps: 1000 
