@@ -184,7 +184,6 @@ def main(args: Args) -> None:
         print("Detecting GELLO port...")
         port = find_gello_port()
         if port is None:
-            print("No FTDI USB-Serial converter found!")
             print("Please ensure your GELLO device is connected and try again.")
             sys.exit(1)
         print(f"Found GELLO at: {port}\n")
@@ -194,9 +193,9 @@ def main(args: Args) -> None:
 
     # Step 2: Physical setup instructions
     print("SETUP INSTRUCTIONS:")
-    print("1. Position your YAM arm in the build configuration:")
-    print("   - All joints at 0 degrees (resting position)")
-    print("   - Match the position shown in the documentation image")
+    print(
+        "1. Position your YAM arm in the position shown in the build documentation image."
+    )
     print("2. Ensure all Dynamixel motors are powered and connected")
     print("3. Make sure the gripper is attached (if using)")
     print()

@@ -118,7 +118,7 @@ def main():
         joints
     ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
 
-    max_delta = 0.8
+    max_delta = 1.0
     for _ in range(25):
         obs = env.get_obs()
         command_joints = agent.act(obs)
