@@ -4,7 +4,7 @@ robot:
 
 agent:
   _target_: gello.agents.gello_agent.GelloAgent
-  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"  # Left Gello controller
   dynamixel_config:
     _target_: gello.agents.gello_agent.DynamixelRobotConfig
     joint_ids: [1, 2, 3, 4, 5, 6]
@@ -14,4 +14,4 @@ agent:
   start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
 
 hz: 30
-max_steps: 1000
+max_steps: 1000 

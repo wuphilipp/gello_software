@@ -24,18 +24,58 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--config-path", type=str, required=True)
+    parser.add_argument("--left-config-path", type=str, required=True)
+    parser.add_argument("--right-config-path", type=str, required=False)
     args = parser.parse_args()
 
-    cfg = OmegaConf.to_container(OmegaConf.load(args.config_path), resolve=True)
+    bimanual = args.right_config_path is not None
 
-    robot_cfg = cfg["robot"]
-    if isinstance(robot_cfg.get("config"), str):
-        robot_cfg["config"] = OmegaConf.to_container(
-            OmegaConf.load(robot_cfg["config"]), resolve=True
+    # Load configurations
+    left_cfg = OmegaConf.to_container(
+        OmegaConf.load(args.left_config_path), resolve=True
+    )
+    if bimanual:
+        right_cfg = OmegaConf.to_container(
+            OmegaConf.load(args.right_config_path), resolve=True
         )
 
-    robot = instantiate(robot_cfg)
+    # Create agent
+    if bimanual:
+        from gello.agents.agent import BimanualAgent
+
+        agent = BimanualAgent(
+            agent_left=instantiate(left_cfg["agent"]),
+            agent_right=instantiate(right_cfg["agent"]),
+        )
+    else:
+        agent = instantiate(left_cfg["agent"])
+
+    # Create robot(s)
+    left_robot_cfg = left_cfg["robot"]
+    if isinstance(left_robot_cfg.get("config"), str):
+        left_robot_cfg["config"] = OmegaConf.to_container(
+            OmegaConf.load(left_robot_cfg["config"]), resolve=True
+        )
+
+    left_robot = instantiate(left_robot_cfg)
+
+    if bimanual:
+        from gello.robots.robot import BimanualRobot
+
+        right_robot_cfg = right_cfg["robot"]
+        if isinstance(right_robot_cfg.get("config"), str):
+            right_robot_cfg["config"] = OmegaConf.to_container(
+                OmegaConf.load(right_robot_cfg["config"]), resolve=True
+            )
+
+        right_robot = instantiate(right_robot_cfg)
+        robot = BimanualRobot(left_robot, right_robot)
+
+        # For bimanual, use the left config for general settings (hz, etc.)
+        cfg = left_cfg
+    else:
+        robot = left_robot
+        cfg = left_cfg
 
     # Handle different robot types
     if hasattr(robot, "serve"):  # MujocoRobotServer or ZMQServerRobot
@@ -50,8 +90,8 @@ def main():
 
         # Create client to communicate with server using port and host from config
         robot_client = ZMQClientRobot(
-            port=robot_cfg.get("port", 5556),
-            host=robot_cfg.get("host", "127.0.0.1"),
+            port=cfg["robot"].get("port", 5556),
+            host=cfg["robot"].get("host", "127.0.0.1"),
         )
     else:  # Direct robot (hardware)
         from gello.env import RobotEnv
@@ -67,20 +107,36 @@ def main():
         robot_client = ZMQClientRobot(port=6001, host="127.0.0.1")
 
     env = RobotEnv(robot_client, control_rate_hz=cfg.get("hz", 30))
-    agent = instantiate(cfg["agent"])
 
     # Move robot to start_joints position if specified in config
-    if "start_joints" in cfg["agent"] and cfg["agent"]["start_joints"] is not None:
-        reset_joints = np.array(cfg["agent"]["start_joints"])
-        curr_joints = env.get_obs()["joint_positions"]
-        if reset_joints.shape == curr_joints.shape:
-            max_delta = (np.abs(curr_joints - reset_joints)).max()
-            steps = min(int(max_delta / 0.01), 100)
+    if bimanual:
+        # For bimanual, get start_joints from both arms and concatenate
+        left_start = left_cfg["agent"].get("start_joints")
+        right_start = right_cfg["agent"].get("start_joints")
+        if left_start is not None and right_start is not None:
+            reset_joints = np.concatenate([np.array(left_start), np.array(right_start)])
+            curr_joints = env.get_obs()["joint_positions"]
+            if reset_joints.shape == curr_joints.shape:
+                max_delta = (np.abs(curr_joints - reset_joints)).max()
+                steps = min(int(max_delta / 0.01), 100)
 
-            print(f"Moving robot to start position: {reset_joints}")
-            for jnt in np.linspace(curr_joints, reset_joints, steps):
-                env.step(jnt)
-                time.sleep(0.001)
+                print(f"Moving robot to start position: {reset_joints}")
+                for jnt in np.linspace(curr_joints, reset_joints, steps):
+                    env.step(jnt)
+                    time.sleep(0.001)
+    else:
+        # Single arm handling
+        if "start_joints" in cfg["agent"] and cfg["agent"]["start_joints"] is not None:
+            reset_joints = np.array(cfg["agent"]["start_joints"])
+            curr_joints = env.get_obs()["joint_positions"]
+            if reset_joints.shape == curr_joints.shape:
+                max_delta = (np.abs(curr_joints - reset_joints)).max()
+                steps = min(int(max_delta / 0.01), 100)
+
+                print(f"Moving robot to start position: {reset_joints}")
+                for jnt in np.linspace(curr_joints, reset_joints, steps):
+                    env.step(jnt)
+                    time.sleep(0.001)
 
     print(
         f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}"
