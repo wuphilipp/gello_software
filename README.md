@@ -226,10 +226,19 @@ python experiments/run_env.py --agent=gello --start-joints <joint_angles>
 ### Data Collection
 
 Collect teleoperation demonstrations with keyboard controls:
+For the YAM arm launched with `launch_yaml.py`, you can append the flag `--use-save-interface` to enable data saving. For example:
+
+```
+python scripts/launch_yaml.py --left-config-path configs/yam_passive.yaml --use-save-interface
+```
+After launching, you can begin saving with `s` and stop saving with `q`
+Data saved will be in the `data` directory in the root of the project.
+
+If you are not using `launch_yaml.py`, use the following:
+
 ```bash
 python experiments/run_env.py --agent=gello --use-save-interface
 ```
-
 Process collected data:
 ```bash
 python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
@@ -237,6 +246,11 @@ python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
 
 ### Bimanual Operation
 
+If using `launch_yaml.py`, you will always have one arm (the left arm) with a config passed in as `--left-config-path`. To use bimanual mode, simply pass in a `--right-config-path`. For example:
+```
+python scripts/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
+```
+If not using `launch_yaml.py`, use:
 ```bash
 python experiments/launch_nodes.py --robot=bimanual_ur
 python experiments/run_env.py --agent=gello --bimanual
