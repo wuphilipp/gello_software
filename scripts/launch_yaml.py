@@ -4,9 +4,12 @@ import importlib
 import signal
 import threading
 import time
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
+import tyro
 import zmq.error
 from omegaconf import OmegaConf
 
@@ -54,10 +57,7 @@ def wait_for_server_ready(port, host="127.0.0.1", timeout_seconds=5):
     attempts = int(timeout_seconds * 10)  # 0.1s intervals
     for attempt in range(attempts):
         try:
-            # Test connection
             ZMQClientRobot(port=port, host=host)
-            # If we get here, connection succeeded
-            # Don't close immediately as it might interfere with the test
             time.sleep(0.1)
             return True
         except (zmq.error.ZMQError, Exception):
@@ -66,31 +66,32 @@ def wait_for_server_ready(port, host="127.0.0.1", timeout_seconds=5):
                 raise RuntimeError(
                     f"Server failed to start on {host}:{port} within {timeout_seconds} seconds"
                 )
-
     return False
 
 
-def main():
-    import argparse
+@dataclass
+class Args:
+    left_config_path: str
+    """Path to the left arm configuration YAML file."""
 
+    right_config_path: Optional[str] = None
+    """Path to the right arm configuration YAML file (for bimanual operation)."""
+
+    use_save_interface: bool = False
+    """Enable saving data with keyboard interface."""
+
+
+def main():
     # Register cleanup handlers
     atexit.register(cleanup)
     signal.signal(signal.SIGINT, lambda s, f: (cleanup(), exit(0)))
     signal.signal(signal.SIGTERM, lambda s, f: (cleanup(), exit(0)))
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--left-config-path", type=str, required=True)
-    parser.add_argument("--right-config-path", type=str, required=False)
-    parser.add_argument(
-        "--use-save-interface",
-        action="store_true",
-        help="Enable saving data with keyboard interface",
-    )
-    args = parser.parse_args()
+    args = tyro.cli(Args)
 
     bimanual = args.right_config_path is not None
 
-    # Load configurations
+    # Load configs
     left_cfg = OmegaConf.to_container(
         OmegaConf.load(args.left_config_path), resolve=True
     )
