@@ -10,6 +10,38 @@ For additional resources:
 - [Project Website](https://wuphilipp.github.io/gello_site/)
 - [Hardware Repository](https://github.com/wuphilipp/gello_mechanical) - STL files and build instructions
 
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Installation](#installation)
+  - [Option 1: Virtual Environment (Recommended)](#option-1-virtual-environment-recommended)
+  - [Option 2: Docker](#option-2-docker)
+  - [ROS 2 Support](#ros-2-support)
+- [Hardware Configuration](#hardware-configuration)
+  - [1. Update Motor IDs](#1-update-motor-ids)
+  - [2.1 Extract Joint Offsets](#21-extract-joint-offsets)
+  - [2.2 Configuration System](#22-configuration-system)
+    - [YAML Configuration Files](#yaml-configuration-files)
+    - [Configuration Structure](#configuration-structure)
+    - [Generating Configuration Files](#generating-configuration-files)
+    - [Using Configuration Files](#using-configuration-files)
+    - [Creating Custom Configurations](#creating-custom-configurations)
+    - [Configuration Components](#configuration-components)
+- [Usage](#usage)
+  - [Testing in Simulation](#testing-in-simulation)
+  - [Real Robot Operation](#real-robot-operation)
+  - [Troubleshooting](#troubleshooting)
+  - [Optional: Starting Configuration](#optional-starting-configuration)
+- [Advanced Features](#advanced-features)
+  - [Data Collection](#data-collection)
+  - [Bimanual Operation](#bimanual-operation)
+  - [Process Management](#process-management)
+- [Development](#development)
+  - [Code Organization](#code-organization)
+- [Citation](#citation)
+- [License & Acknowledgements](#license--acknowledgements)
+  - [Third-Party Dependencies](#third-party-dependencies)
+
 ## Quick Start
 
 ```bash
@@ -150,8 +182,8 @@ Run `python scripts/generate_yam_config.py` while the arm is in the default buil
 
 Launch GELLO with a configuration file:
 ```bash
-python launch_yaml.py --config-path configs/yam_auto_generated.yaml         # Hardware robot
-python launch_yaml.py --config-path configs/yam_auto_generated_sim.yaml     # Simulation
+python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml         # Hardware robot
+python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.yaml     # Simulation
 ```
 
 #### Creating Custom Configurations
