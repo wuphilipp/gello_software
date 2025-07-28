@@ -141,12 +141,14 @@ max_steps: 1000
 
 ### 3. Advanced: Manual Configuration for Other Robots
 
+#### 1. Get joint offsets
+
 Set your GELLO and robot arm to a known, matching configuration (see images below) and run the offset detection script.
 
 <p align="center">
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
-  <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
+  <img src="imgs/fr3_gello_calib_pose                                                   .jpeg" width="31%"/>
 </p>
 
 **Command examples:**
