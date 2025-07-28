@@ -18,18 +18,14 @@ For additional resources:
   - [Option 2: Docker](#option-2-docker)
   - [ROS 2 Support](#ros-2-support)
 - [Hardware Configuration](#hardware-configuration)
-  - [1. Update Motor IDs](#1-update-motor-ids)
-  - [2.1 Extract Joint Offsets](#21-extract-joint-offsets)
-  - [2.2 Configuration System](#22-configuration-system)
-    - [YAML Configuration Files](#yaml-configuration-files)
+  - [1. Generate YAM Configuration (Recommended for YAM)](#1-generate-yam-configuration-recommended-for-yam)
+  - [2. Understanding the YAML Configuration System](#2-understanding-the-yaml-configuration-system)
     - [Configuration Structure](#configuration-structure)
-    - [Generating Configuration Files](#generating-configuration-files)
-    - [Using Configuration Files](#using-configuration-files)
-    - [Creating Custom Configurations](#creating-custom-configurations)
     - [Configuration Components](#configuration-components)
+  - [3. Advanced: Manual Configuration for Other Robots](#3-advanced-manual-configuration-for-other-robots)
 - [Usage](#usage)
-  - [Testing in Simulation](#testing-in-simulation)
-  - [Real Robot Operation](#real-robot-operation)
+  - [YAM GELLO Usage (Recommended)](#yam-gello-usage-recommended)
+  - [Legacy Launch for Other Robots](#legacy-launch-for-other-robots)
   - [Troubleshooting](#troubleshooting)
   - [Optional: Starting Configuration](#optional-starting-configuration)
 - [Advanced Features](#advanced-features)
@@ -84,30 +80,76 @@ python scripts/launch.py
 
 ## Hardware Configuration
 
-### 1. Update Motor IDs
+The recommended setup for GELLO is with the I2RT YAM robot arm, using the YAML-based configuration system. This provides the most features and is the best-supported configuration.
 
-Install the [Dynamixel Wizard](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/).
+### 1. Generate YAM Configuration (Recommended for YAM)
 
-Each Dynamixel motor defaults to ID 1. For multiple motors on one U2D2 controller, each needs a unique ID. Configure one motor at a time:
+For the I2RT YAM robot, you can automatically generate your configuration files. This process calibrates the joint offsets and creates configuration files for both simulation and real hardware.
 
-1. Connect a single motor to the controller
-2. Open Dynamixel Wizard
-3. Click scan (top left) to detect the motor
-4. Change the ID address to the appropriate number
-5. Repeat for each motor in order (base to gripper)
+1.  **Update Motor IDs**: Before generating the config, ensure each Dynamixel motor has a unique ID. Install the [Dynamixel Wizard](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/) and follow these steps:
+    1.  Connect a single motor to the U2D2 controller.
+    2.  Open Dynamixel Wizard and scan to detect the motor.
+    3.  Change the ID to a unique number (e.g., 1 through 7).
+    4.  Repeat for each motor, ensuring they are in order from base to gripper.
 
-### 2.1 Extract Joint Offsets
+2.  **Run the Generation Script**: With the YAM arm in its default build position (see image below), run the script:
+    ```bash
+    python scripts/generate_yam_config.py
+    ```
+    Follow the prompts in the terminal. This will create `configs/yam_auto_generated.yaml` for the real robot and `configs/yam_auto_generated_sim.yaml` for the simulation.
 
-If you are using a GELLO for the I2RT YAM, you can use `python scripts/generate_yam_config.py` to skip the rest of this section!
+<p align="center">
+  <img src="imgs/yam_default.JPG" width="42%">
+</p>
 
-Set GELLO to a known configuration and run the offset detection script:
+You can now skip to the [Usage](#usage) section.
+
+### 2. Understanding the YAML Configuration System
+
+GELLO uses YAML files in `configs/` for configuration. This allows for flexible setup of different robots, environments, and teleoperation parameters. If you have automatically generated your `.yaml` config files with `scripts/generate_yam_config.py`, you probably will not need to modify these confings manually.
+
+#### Configuration Structure
+
+Configuration files use a dependency injection pattern with `_target_` keys to specify Python classes:
+
+```yaml
+robot:
+  _target_: gello.robots.yam.YAMRobot
+  channel: "can_left"
+
+agent:
+  _target_: gello.agents.gello_agent.GelloAgent
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
+  dynamixel_config:
+    _target_: gello.agents.gello_agent.DynamixelRobotConfig
+    joint_ids: [1, 2, 3, 4, 5, 6]
+    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
+    joint_signs: [1, -1, -1, -1, 1, 1]
+    gripper_config: [7, -30, 24]
+  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+hz: 30
+max_steps: 1000
+```
+
+#### Configuration Components
+
+- **Robot Config**: Defines robot type, communication parameters, and physical settings.
+- **Agent Config**: Defines GELLO device settings, joint mappings, and calibration.
+- **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper.
+- **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings.
+
+### 3. Advanced: Manual Configuration for Other Robots
+
+Set your GELLO and robot arm to a known, matching configuration (see images below) and run the offset detection script.
 
 <p align="center">
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
   <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
-  <img src="imgs/yam_default.JPG" width="42%">
 </p>
+
+**Command examples:**
 
 **UR Robot:**
 ```bash
@@ -140,57 +182,13 @@ python scripts/gello_get_offset.py \
 - xArm: `1 1 1 1 1 1 1`
 - YAM: `1 -1 -1 -1 1 1`
 
-Add the generated joint offsets to `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP` or use the YAML method.
+Add the generated joint offsets to a new YAML configuration file (see below) or directly into `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP` for a legacy setup.
 
-## 2.2 Configuration System
+#### 2. Create Custom YAML Configurations
 
-### YAML Configuration Files
-
-GELLO supports configuration-driven operation through YAML files in the `configs/` directory. This approach provides a flexible way to configure different robot setups, simulation environments, and teleoperation parameters.
-
-#### Configuration Structure
-
-Configuration files use a dependency injection pattern with `_target_` keys to specify Python classes:
-
-```yaml
-robot:
-  _target_: gello.robots.yam.YAMRobot
-  channel: "can_left"
-
-agent:
-  _target_: gello.agents.gello_agent.GelloAgent
-  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
-  dynamixel_config:
-    _target_: gello.agents.gello_agent.DynamixelRobotConfig
-    joint_ids: [1, 2, 3, 4, 5, 6]
-    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
-    joint_signs: [1, -1, -1, -1, 1, 1]
-    gripper_config: [7, -30, 24]
-  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-
-hz: 30
-max_steps: 1000
-```
-
-#### Generating Configuration Files
-
-Automatic config file generation is only currently supported for the YAM Gello. Generating a config file through this process allows you to skip the manual joint angle calibration process.
-
-Run `python scripts/generate_yam_config.py` while the arm is in the default build position and follow the instructions in the terminal.
-
-#### Using Configuration Files
-
-Launch GELLO with a configuration file:
-```bash
-python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml         # Hardware robot
-python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.yaml     # Simulation
-```
-
-#### Creating Custom Configurations
-
-1. Copy an existing config from `configs/` as a template
+1. Copy an existing config from `configs/` as a template (e.g., `yam_passive.yaml`).
 2. Modify the robot `_target_` and parameters for your setup:
-   - For hardware: `gello.robots.yam.YAMRobot`, `gello.robots.ur.URRobot`, etc.
+   - For hardware: `gello.robots.ur.URRobot`, `gello.robots.panda.PandaRobot`, etc.
    - For simulation: `gello.robots.sim_robot.MujocoRobotServer`
 3. Update the agent configuration with your GELLO device settings:
    - `port`: Your U2D2 device path
@@ -198,47 +196,49 @@ python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.
    - `joint_signs`: Based on your robot type
    - `start_joints`: Your GELLO's starting position
 
-#### Configuration Components
-
-- **Robot Config**: Defines robot type, communication parameters, and physical settings
-- **Agent Config**: Defines GELLO device settings, joint mappings, and calibration
-- **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper
-- **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings
-
 ## Usage
 
-Install robot-specific dependencies:
+The recommended way to launch GELLO is with a YAML configuration file.
+
+### YAM GELLO Usage (Recommended)
+
+First, install the YAM-specific dependency:
+- **YAM**: [I2RT](https://github.com/i2rt-robotics/i2rt)
+- `uv pip install -e third_party/i2rt`
+
+**Testing in Simulation:**
+Launch the simulation with the auto-generated sim config file:
+```bash
+python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.yaml
+```
+
+**Real Robot Operation:**
+Launch the real robot with the auto-generated hardware config file:
+```bash
+python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml
+```
+
+### Legacy Launch for Other Robots
+
+For other robots or if not using a YAML configuration, you must launch the robot and controller nodes in separate terminals.
+
+First, install robot-specific dependencies:
 - **UR**: [ur_rtde](https://sdurobotics.gitlab.io/ur_rtde/installation/installation.html)
 - **Panda**: [polymetis](https://facebookresearch.github.io/fairo/polymetis/installation.html)
 - **xArm**: [xArm Python SDK](https://github.com/xArm-Developer/xArm-Python-SDK)
-- **YAM**: [i2rt](https://github.com/i2rt-robotics/i2rt)
 
-If you are using a .yaml config, simply run `scripts/launch_yaml.py` with your config. Otherwise, follow these procedures:
-
-### Testing in Simulation
-
-1. Launch the robot node:
+**1. Launch the robot node:**
 ```bash
-python experiments/launch_nodes.py --robot <sim_ur|sim_panda|sim_xarm|sim_yam>
+# For simulation
+python experiments/launch_nodes.py --robot <sim_ur|sim_panda|sim_xarm>
+
+# For real hardware
+python experiments/launch_nodes.py --robot <ur|panda|xarm>
 ```
 
-2. Launch GELLO controller:
+**2. Launch GELLO controller:**
 ```bash
 python experiments/run_env.py --agent=gello
-```
-
-### Real Robot Operation
-
-Launch the system:
-```bash
-python experiments/launch_nodes.py --robot=<your_robot>
-python experiments/run_env.py --agent=gello
-```
-
-**YAM-specific commands:**
-```bash
-python experiments/launch_nodes.py --robot=yam
-python experiments/run_env.py --agent=gello --start-joints 0 0 0 0 0 0 1
 ```
 
 ### Troubleshooting
@@ -257,17 +257,16 @@ python experiments/run_env.py --agent=gello --start-joints <joint_angles>
 
 ### Data Collection
 
-Collect teleoperation demonstrations with keyboard controls:
-For the YAM arm launched with `launch_yaml.py`, you can append the flag `--use-save-interface` to enable data saving. For example:
+Collect teleoperation demonstrations with keyboard controls.
+
+For the YAM arm launched with `launch_yaml.py`, you can append the flag `--use-save-interface` to enable data saving. This is the recommended method.
 
 ```
 python scripts/launch_yaml.py --left-config-path configs/yam_passive.yaml --use-save-interface
 ```
-After launching, you can begin saving with `s` and stop saving with `q`
-Data saved will be in the `data` directory in the root of the project.
+After launching, you can begin saving with `s` and stop saving with `q`. Data saved will be in the `data` directory in the root of the project.
 
-If you are not using `launch_yaml.py`, use the following:
-
+For legacy setups, use the following:
 ```bash
 python experiments/run_env.py --agent=gello --use-save-interface
 ```
@@ -278,11 +277,13 @@ python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
 
 ### Bimanual Operation
 
-If using `launch_yaml.py`, you will always have one arm (the left arm) with a config passed in as `--left-config-path`. To use bimanual mode, simply pass another GELLO yaml into `--right-config-path`. For example:
+The recommended way to use bimanual mode is with `launch_yaml.py`. Pass a config file for the right arm to `--right-config-path`.
+
 ```
 python scripts/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
 ```
-If not using `launch_yaml.py`, use:
+
+For legacy setups, use:
 ```bash
 python experiments/launch_nodes.py --robot=bimanual_ur
 python experiments/run_env.py --agent=gello --bimanual
@@ -301,9 +302,10 @@ Kill all Python processes if needed:
 
 - `scripts/`: Helpful Python scripts
 - `experiments/`: Entry points into GELLO code
-```
 
-Set up pre-commit hooks:
+### Contributing
+
+Set up pre-commit hooks to ensure code quality before contributing:
 ```bash
 uv pip install pre-commit
 pre-commit install
