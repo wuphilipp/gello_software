@@ -262,7 +262,7 @@ def main(args: Args) -> None:
     except FileNotFoundError as e:
         print(f"Error: Template config file not found: {e}")
         print(
-            "Please ensure test.yaml and test_sim.yaml exist in the configs/ directory."
+            "Please ensure yam_template.yaml and yam_sim_template.yaml exist in the configs/templates/ directory."
         )
         sys.exit(1)
 
