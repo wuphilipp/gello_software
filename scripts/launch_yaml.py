@@ -33,9 +33,6 @@ def main():
         action="store_true",
         help="Enable saving data with keyboard interface",
     )
-    parser.add_argument(
-        "--data-dir", type=str, default="~/bc_data", help="Directory to save data"
-    )
     args = parser.parse_args()
 
     bimanual = args.right_config_path is not None
@@ -212,11 +209,7 @@ def main():
             state = kb_interface.update()
             if state == "start":
                 dt_time = datetime.datetime.now()
-                save_path = (
-                    Path(args.data_dir).expanduser()
-                    / agent_name
-                    / dt_time.strftime("%m%d_%H%M%S")
-                )
+                save_path = Path("data") / agent_name / dt_time.strftime("%m%d_%H%M%S")
                 save_path.mkdir(parents=True, exist_ok=True)
                 print(f"Saving to {save_path}")
             elif state == "save":
