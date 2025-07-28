@@ -141,8 +141,19 @@ def update_config_with_offsets(
     """Update a template config with detected offsets and port."""
     import copy
 
-    def to_flow_list(data):
+    def to_flow_list(data, preserve_ints=False):
         """Convert data to FlowStyleList with proper type conversion."""
+        if preserve_ints:
+            return FlowStyleList(
+                [
+                    (
+                        int(x)
+                        if isinstance(x, (int, float, np.number)) and x == int(x)
+                        else float(x) if isinstance(x, (int, float, np.number)) else x
+                    )
+                    for x in data
+                ]
+            )
         return FlowStyleList(
             [float(x) if isinstance(x, (int, float, np.number)) else x for x in data]
         )
@@ -161,11 +172,16 @@ def update_config_with_offsets(
     # Update gripper config if present
     if gripper_config and "gripper_config" in dynamixel_config:
         gripper_vals = [7, gripper_config[1], gripper_config[0]]
-        dynamixel_config["gripper_config"] = to_flow_list(gripper_vals)
+        dynamixel_config["gripper_config"] = to_flow_list(
+            gripper_vals, preserve_ints=True
+        )
 
     # Convert existing lists to flow style
     for key in ["joint_ids", "joint_signs"]:
-        dynamixel_config[key] = to_flow_list(dynamixel_config[key])
+        preserve_ints = key == "joint_ids"
+        dynamixel_config[key] = to_flow_list(
+            dynamixel_config[key], preserve_ints=preserve_ints
+        )
 
     # Set gripper start position to open (1.0) if gripper exists
     start_joints = list(config["agent"]["start_joints"])
@@ -292,8 +308,12 @@ def main(args: Args) -> None:
     print(f"Simulation configuration saved to: {sim_output_path}")
     print()
     print("You can now run GELLO with:")
-    print(f"   Hardware: python launch_yaml.py --config-path {hardware_output_path}")
-    print(f"   Simulation: python launch_yaml.py --config-path {sim_output_path}")
+    print(
+        f"   Hardware: python scripts/launch_yaml.py --config-path {hardware_output_path}"
+    )
+    print(
+        f"   Simulation: python scripts/launch_yaml.py --config-path {sim_output_path}"
+    )
     print()
     print("Configuration files generated successfully!")
 
