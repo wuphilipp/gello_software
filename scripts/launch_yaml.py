@@ -1,10 +1,13 @@
+import atexit
 import datetime
 import importlib
+import signal
 import threading
 import time
 from pathlib import Path
 
 import numpy as np
+import zmq.error
 from omegaconf import OmegaConf
 
 
@@ -22,8 +25,58 @@ def instantiate(cfg):
         return cfg
 
 
+# Global variables for cleanup
+active_threads = []
+active_servers = []
+
+
+def cleanup():
+    """Clean up resources before exit."""
+    print("Cleaning up resources...")
+    for server in active_servers:
+        try:
+            if hasattr(server, "close"):
+                server.close()
+        except Exception as e:
+            print(f"Error closing server: {e}")
+
+    for thread in active_threads:
+        if thread.is_alive():
+            thread.join(timeout=2)
+
+    print("Cleanup completed.")
+
+
+def wait_for_server_ready(port, host="127.0.0.1", timeout_seconds=5):
+    """Wait for ZMQ server to be ready with retry logic."""
+    from gello.zmq_core.robot_node import ZMQClientRobot
+
+    attempts = int(timeout_seconds * 10)  # 0.1s intervals
+    for attempt in range(attempts):
+        try:
+            # Test connection
+            ZMQClientRobot(port=port, host=host)
+            # If we get here, connection succeeded
+            # Don't close immediately as it might interfere with the test
+            time.sleep(0.1)
+            return True
+        except (zmq.error.ZMQError, Exception):
+            time.sleep(0.1)
+            if attempt == attempts - 1:
+                raise RuntimeError(
+                    f"Server failed to start on {host}:{port} within {timeout_seconds} seconds"
+                )
+
+    return False
+
+
 def main():
     import argparse
+
+    # Register cleanup handlers
+    atexit.register(cleanup)
+    signal.signal(signal.SIGINT, lambda s, f: (cleanup(), exit(0)))
+    signal.signal(signal.SIGTERM, lambda s, f: (cleanup(), exit(0)))
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--left-config-path", type=str, required=True)
@@ -90,28 +143,51 @@ def main():
         from gello.env import RobotEnv
         from gello.zmq_core.robot_node import ZMQClientRobot
 
-        # Start server in background
-        server_thread = threading.Thread(target=robot.serve, daemon=True)
+        # Get server configuration
+        server_port = cfg["robot"].get("port", 5556)
+        server_host = cfg["robot"].get("host", "127.0.0.1")
+
+        # Start server in background (non-daemon for proper cleanup)
+        server_thread = threading.Thread(target=robot.serve, daemon=False)
         server_thread.start()
-        time.sleep(2)  # Give server time to start
+
+        # Track for cleanup
+        active_threads.append(server_thread)
+        active_servers.append(robot)
+
+        # Wait for server to be ready
+        print(f"Waiting for server to start on {server_host}:{server_port}...")
+        wait_for_server_ready(server_port, server_host)
+        print("Server ready!")
 
         # Create client to communicate with server using port and host from config
-        robot_client = ZMQClientRobot(
-            port=cfg["robot"].get("port", 5556),
-            host=cfg["robot"].get("host", "127.0.0.1"),
-        )
+        robot_client = ZMQClientRobot(port=server_port, host=server_host)
     else:  # Direct robot (hardware)
         from gello.env import RobotEnv
         from gello.zmq_core.robot_node import ZMQClientRobot, ZMQServerRobot
 
+        # Get server configuration (use a different default port for hardware)
+        hardware_port = cfg.get("hardware_server_port", 6001)
+        hardware_host = "127.0.0.1"
+
         # Create ZMQ server for the hardware robot
-        server = ZMQServerRobot(robot, port=6001, host="127.0.0.1")
-        server_thread = threading.Thread(target=server.serve, daemon=True)
+        server = ZMQServerRobot(robot, port=hardware_port, host=hardware_host)
+        server_thread = threading.Thread(target=server.serve, daemon=False)
         server_thread.start()
-        time.sleep(1)
+
+        # Track for cleanup
+        active_threads.append(server_thread)
+        active_servers.append(server)
+
+        # Wait for server to be ready
+        print(
+            f"Waiting for hardware server to start on {hardware_host}:{hardware_port}..."
+        )
+        wait_for_server_ready(hardware_port, hardware_host)
+        print("Hardware server ready!")
 
         # Create client to communicate with hardware
-        robot_client = ZMQClientRobot(port=6001, host="127.0.0.1")
+        robot_client = ZMQClientRobot(port=hardware_port, host=hardware_host)
 
     env = RobotEnv(robot_client, control_rate_hz=cfg.get("hz", 30))
 
@@ -130,9 +206,7 @@ def main():
                 print(f"Moving robot to start position: {reset_joints}")
                 for jnt in np.linspace(curr_joints, reset_joints, steps):
                     env.step(jnt)
-                    time.sleep(
-                        0.01
-                    )  # Reduced from 0.001 to prevent communication overload
+                    time.sleep(0.001)
     else:
         # Single arm handling
         if "start_joints" in cfg["agent"] and cfg["agent"]["start_joints"] is not None:
