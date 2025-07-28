@@ -1,6 +1,8 @@
+import datetime
 import importlib
 import threading
 import time
+from pathlib import Path
 
 import numpy as np
 from omegaconf import OmegaConf
@@ -26,6 +28,14 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--left-config-path", type=str, required=True)
     parser.add_argument("--right-config-path", type=str, required=False)
+    parser.add_argument(
+        "--use-save-interface",
+        action="store_true",
+        help="Enable saving data with keyboard interface",
+    )
+    parser.add_argument(
+        "--data-dir", type=str, default="~/bc_data", help="Directory to save data"
+    )
     args = parser.parse_args()
 
     bimanual = args.right_config_path is not None
@@ -185,9 +195,40 @@ def main():
             delta = delta / max_joint_delta * max_delta
         env.step(current_joints + delta)
 
+    if args.use_save_interface:
+        from gello.data_utils.format_obs import save_frame
+        from gello.data_utils.keyboard_interface import KBReset
+
+        kb_interface = KBReset()
+        agent_name = agent.__class__.__name__
+        save_path = None
+
     while True:
         obs = env.get_obs()
         action = agent.act(obs)
+
+        if args.use_save_interface:
+            dt = datetime.datetime.now()
+            state = kb_interface.update()
+            if state == "start":
+                dt_time = datetime.datetime.now()
+                save_path = (
+                    Path(args.data_dir).expanduser()
+                    / agent_name
+                    / dt_time.strftime("%m%d_%H%M%S")
+                )
+                save_path.mkdir(parents=True, exist_ok=True)
+                print(f"Saving to {save_path}")
+            elif state == "save":
+                assert save_path is not None, "something went wrong"
+                save_frame(save_path, dt, obs, action)
+            elif state == "normal":
+                save_path = None
+            elif state == "quit":
+                print("\nExiting.")
+                break
+            else:
+                raise ValueError(f"Invalid state {state}")
         env.step(action)
 
 
