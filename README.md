@@ -246,7 +246,7 @@ python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
 
 ### Bimanual Operation
 
-If using `launch_yaml.py`, you will always have one arm (the left arm) with a config passed in as `--left-config-path`. To use bimanual mode, simply pass in a `--right-config-path`. For example:
+If using `launch_yaml.py`, you will always have one arm (the left arm) with a config passed in as `--left-config-path`. To use bimanual mode, simply pass another GELLO yaml into `--right-config-path`. For example:
 ```
 python scripts/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
 ```
