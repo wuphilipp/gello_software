@@ -204,46 +204,19 @@ def main(args):
             )
         exit()
 
+    from gello.utils.control_utils import SaveInterface, run_control_loop
+
+    # Initialize save interface if requested
+    save_interface = None
     if args.use_save_interface:
-        from gello.data_utils.keyboard_interface import KBReset
-
-        kb_interface = KBReset()
-
-    print_color("\nStart 🚀🚀🚀", color="green", attrs=("bold",))
-
-    save_path = None
-    start_time = time.time()
-    while True:
-        num = time.time() - start_time
-        message = f"\rTime passed: {round(num, 2)}          "
-        print_color(
-            message,
-            color="white",
-            attrs=("bold",),
-            end="",
-            flush=True,
+        save_interface = SaveInterface(
+            data_dir=args.data_dir,
+            agent_name=args.agent,
+            expand_user=True
         )
-        action = agent.act(obs)
-        dt = datetime.datetime.now()
-        if args.use_save_interface:
-            state = kb_interface.update()
-            if state == "start":
-                dt_time = datetime.datetime.now()
-                save_path = (
-                    Path(args.data_dir).expanduser()
-                    / args.agent
-                    / dt_time.strftime("%m%d_%H%M%S")
-                )
-                save_path.mkdir(parents=True, exist_ok=True)
-                print(f"Saving to {save_path}")
-            elif state == "save":
-                assert save_path is not None, "something went wrong"
-                save_frame(save_path, dt, obs, action)
-            elif state == "normal":
-                save_path = None
-            else:
-                raise ValueError(f"Invalid state {state}")
-        obs = env.step(action)
+
+    # Run main control loop with colors
+    run_control_loop(env, agent, save_interface, use_colors=True)
 
 
 if __name__ == "__main__":

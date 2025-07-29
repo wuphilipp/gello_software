@@ -245,77 +245,23 @@ def main():
     )
     print(f"Control loop: {cfg.get('hz', 30)} Hz")
 
-    print("Going to start position")
-    start_pos = agent.act(env.get_obs())
-    obs = env.get_obs()
-    joints = obs["joint_positions"]
+    from gello.utils.control_utils import move_to_start_position, SaveInterface, run_control_loop
 
-    abs_deltas = np.abs(start_pos - joints)
-    id_max_joint_delta = np.argmax(abs_deltas)
-
-    max_joint_delta = 1.0
-    if abs_deltas[id_max_joint_delta] > max_joint_delta:
-        id_mask = abs_deltas > max_joint_delta
-        print()
-        ids = np.arange(len(id_mask))[id_mask]
-        for i, delta, joint, current_j in zip(
-            ids,
-            abs_deltas[id_mask],
-            start_pos[id_mask],
-            joints[id_mask],
-        ):
-            print(
-                f"joint[{i}]: \t delta: {delta:4.3f} , leader: \t{joint:4.3f} , follower: \t{current_j:4.3f}"
-            )
+    # Move to start position
+    if not move_to_start_position(env, agent):
         return
 
-    print(f"Start pos: {len(start_pos)}", f"Joints: {len(joints)}")
-    assert len(start_pos) == len(
-        joints
-    ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
-
-    max_delta = 1.0
-    for _ in range(25):
-        obs = env.get_obs()
-        command_joints = agent.act(obs)
-        current_joints = obs["joint_positions"]
-        delta = command_joints - current_joints
-        max_joint_delta = np.abs(delta).max()
-        if max_joint_delta > max_delta:
-            delta = delta / max_joint_delta * max_delta
-        env.step(current_joints + delta)
-
+    # Initialize save interface if requested
+    save_interface = None
     if args.use_save_interface:
-        from gello.data_utils.format_obs import save_frame
-        from gello.data_utils.keyboard_interface import KBReset
+        save_interface = SaveInterface(
+            data_dir=args.data_dir, 
+            agent_name=agent.__class__.__name__,
+            expand_user=True
+        )
 
-        kb_interface = KBReset()
-        agent_name = agent.__class__.__name__
-        save_path = None
-
-    while True:
-        obs = env.get_obs()
-        action = agent.act(obs)
-
-        if args.use_save_interface:
-            dt = datetime.datetime.now()
-            state = kb_interface.update()
-            if state == "start":
-                dt_time = datetime.datetime.now()
-                save_path = Path("data") / agent_name / dt_time.strftime("%m%d_%H%M%S")
-                save_path.mkdir(parents=True, exist_ok=True)
-                print(f"Saving to {save_path}")
-            elif state == "save":
-                assert save_path is not None, "something went wrong"
-                save_frame(save_path, dt, obs, action)
-            elif state == "normal":
-                save_path = None
-            elif state == "quit":
-                print("\nExiting.")
-                break
-            else:
-                raise ValueError(f"Invalid state {state}")
-        env.step(action)
+    # Run main control loop
+    run_control_loop(env, agent, save_interface)
 
 
 if __name__ == "__main__":
