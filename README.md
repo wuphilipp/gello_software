@@ -55,7 +55,7 @@ python scripts/launch.py
 
 The recommended setup for GELLO is with the I2RT YAM robot arm, using the YAML-based configuration system. This provides the most features and is the best-supported configuration.
 
-### 1. Generate YAM Configuration (Recommended for YAM)
+### 1. Generate YAML Configuration
 
 For the I2RT YAM robot, you can automatically generate your configuration files. This process calibrates the joint offsets and creates configuration files for both simulation and real hardware.
 
@@ -77,7 +77,7 @@ For the I2RT YAM robot, you can automatically generate your configuration files.
 
 You can now skip to the [Usage](#usage) section.
 
-### 2. Understanding the YAML Configuration System
+### 2. YAML Configuration System
 
 GELLO uses YAML files in `configs/` for configuration. This allows for flexible setup of different robots, environments, and teleoperation parameters. If you have automatically generated your `.yaml` config files with `scripts/generate_yam_config.py`, you probably will not need to modify these confings manually.
 
@@ -112,7 +112,34 @@ max_steps: 1000
 - **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper.
 - **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings.
 
-### 3. Advanced: Manual Configuration for Other Robots
+### 3. Manual Configuration for Other Robots
+
+#### Python Configuration (Core System)
+- Located in `gello/agents/gello_agent.py`
+- Uses `PORT_CONFIG_MAP` dictionary
+- Maps USB serial ports to robot configurations
+
+
+#### ROS 2 YAML configs for Franka
+- Used for ROS 2 packages
+- Runtime configuration loading
+- Located in `ros2/src/franka_gello_state_publisher/config/gello_config.yaml`
+
+## Adding New Robots
+
+To integrate a new robot:
+
+1. **Check Compatibility**: Ensure your GELLO kinematics match the target robot
+2. **Implement Robot Interface**: Create a new class implementing the `Robot` protocol from `gello/robots/robot.py`
+3. **Add Configuration**: Update the configuration system with your robot's parameters
+
+See existing implementations in `gello/robots/` for reference:
+- `panda.py` - Franka Panda robot
+- `ur.py` - Universal Robots
+- `xarm_robot.py` - xArm robots
+- `yam.py` - YAM robot
+
+
 
 #### 1. Get joint offsets
 
@@ -253,7 +280,6 @@ Use `--start-joints` to specify GELLO's starting configuration for automatic rob
 python experiments/run_env.py --agent=gello --start-joints <joint_angles>
 ```
 
-
 ## Advanced Features
 
 ### Data Collection
@@ -290,19 +316,23 @@ python experiments/launch_nodes.py --robot=bimanual_ur
 python experiments/run_env.py --agent=gello --bimanual
 ```
 
-### Process Management
-
-Kill all Python processes if needed:
-```bash
-./kill_nodes.sh
-```
-
 ## Development
 
 ### Code Organization
 
-- `scripts/`: Helpful Python scripts
-- `experiments/`: Entry points into GELLO code
+```
+├── scripts/             # Utility scripts
+├── experiments/         # Entry points and launch scripts
+├── gello/               # Core GELLO package
+│   ├── agents/          # Teleoperation agents
+│   ├── cameras/         # Camera interfaces
+│   ├── data_utils/      # Data processing utilities
+│   ├── dm_control_tasks/# MuJoCo environment utilities
+│   ├── dynamixel/       # Dynamixel hardware interface
+│   ├── robots/          # Robot-specific interfaces
+│   ├── utils/           # Shared launch and control utilities
+│   └── zmq_core/        # ZMQ multiprocessing utilities
+```
 
 ### Contributing
 

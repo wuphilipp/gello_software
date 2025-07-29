@@ -233,14 +233,12 @@ def main(args):
 
     from gello.utils.control_utils import SaveInterface, run_control_loop
 
-    # Initialize save interface if requested
     save_interface = None
     if args.use_save_interface:
         save_interface = SaveInterface(
             data_dir=args.data_dir, agent_name=args.agent, expand_user=True
         )
 
-    # Run main control loop with colors
     run_control_loop(env, agent, save_interface, use_colors=True)
 
 
