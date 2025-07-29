@@ -76,8 +76,6 @@ class ZMQClientRobot(Robot):
     def __init__(self, port: int = DEFAULT_ROBOT_PORT, host: str = "127.0.0.1"):
         self._context = zmq.Context()
         self._socket = self._context.socket(zmq.REQ)
-        self._socket.setsockopt(zmq.RCVTIMEO, 2000)  # 2 second timeout
-        self._socket.setsockopt(zmq.SNDTIMEO, 2000)  # 2 second timeout
         self._socket.connect(f"tcp://{host}:{port}")
 
     def num_dofs(self) -> int:

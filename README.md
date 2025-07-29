@@ -9,34 +9,7 @@ GELLO is a general, low-cost, and intuitive teleoperation framework for robot ma
 For additional resources:
 - [Project Website](https://wuphilipp.github.io/gello_site/)
 - [Hardware Repository](https://github.com/wuphilipp/gello_mechanical) - STL files and build instructions
-
-## Table of Contents
-
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-  - [Option 1: Virtual Environment (Recommended)](#option-1-virtual-environment-recommended)
-  - [Option 2: Docker](#option-2-docker)
-  - [ROS 2 Support](#ros-2-support)
-- [Hardware Configuration](#hardware-configuration)
-  - [1. Generate YAM Configuration (Recommended for YAM)](#1-generate-yam-configuration-recommended-for-yam)
-  - [2. Understanding the YAML Configuration System](#2-understanding-the-yaml-configuration-system)
-    - [Configuration Structure](#configuration-structure)
-    - [Configuration Components](#configuration-components)
-  - [3. Advanced: Manual Configuration for Other Robots](#3-advanced-manual-configuration-for-other-robots)
-- [Usage](#usage)
-  - [YAM GELLO Usage (Recommended)](#yam-gello-usage-recommended)
-  - [Legacy Launch for Other Robots](#legacy-launch-for-other-robots)
-  - [Troubleshooting](#troubleshooting)
-  - [Optional: Starting Configuration](#optional-starting-configuration)
-- [Advanced Features](#advanced-features)
-  - [Data Collection](#data-collection)
-  - [Bimanual Operation](#bimanual-operation)
-  - [Process Management](#process-management)
-- [Development](#development)
-  - [Code Organization](#code-organization)
-- [Citation](#citation)
-- [License & Acknowledgements](#license--acknowledgements)
-  - [Third-Party Dependencies](#third-party-dependencies)
+- [ROS 2 Support](ros2/README.md)
 
 ## Quick Start
 
