@@ -309,10 +309,10 @@ def main(args: Args) -> None:
     print()
     print("You can now run GELLO with:")
     print(
-        f"   Hardware: python scripts/launch_yaml.py --config-path {hardware_output_path}"
+        f"   Hardware: python scripts/launch_yaml.py --left-config-path {hardware_output_path}"
     )
     print(
-        f"   Simulation: python scripts/launch_yaml.py --config-path {sim_output_path}"
+        f"   Simulation: python scripts/launch_yaml.py --left-config-path {sim_output_path}"
     )
     print()
     print("Configuration files generated successfully!")
