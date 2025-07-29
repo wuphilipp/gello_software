@@ -202,6 +202,32 @@ Add the generated joint offsets to a new YAML configuration file (see below) or 
 
 The recommended way to launch GELLO is with a YAML configuration file.
 
+### CAN Configuration
+Robot arms such as the YAM use a CAN bus to communicate with your machine. If your arm uses a CAN bus, you will need to configure udev rules.
+First, get your CAN bus ID:
+```
+udevadm info -a -p /sys/class/net/can* | grep -i serial
+```
+Then open your CAN bus rules using your text editor of choice.
+```
+sudo nano /etc/udev/rules.d/90-can.rules
+```
+If you only have one arm, add this line:
+```
+SUBSYSTEM=="net", ACTION=="add", ATTRS{serial}=="<your-CAN-id>", NAME="can_left"
+```
+If you have two arms (a bimanual setup), you will need a second line for your right arm. Your bimanual CAN rules file should contain:
+```
+SUBSYSTEM=="net", ACTION=="add", ATTRS{serial}=="<left-CAN-id>", NAME="can_left"
+SUBSYSTEM=="net", ACTION=="add", ATTRS{serial}=="<right-CAN-id>", NAME="can_right"
+```
+
+After updating your udev rules, run the following and then unplug and reconnect your CAN devices.
+```
+sudo udevadm control --reload-rules && sudo systemctl restart systemd-udevd && sudo udevadm trigger
+```
+At this point, your CAN devices are correctly configured. If you encounter CAN connctivity issues after this point run `sh scripts/reset_all_can.sh` to reset your CAN buses.
+
 ### YAM GELLO Usage (Recommended)
 
 First, install the YAM-specific dependency:
