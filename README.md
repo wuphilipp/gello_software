@@ -55,7 +55,7 @@ python scripts/launch.py
 
 The recommended setup for GELLO is with the I2RT YAM robot arm, using the YAML-based configuration system. This provides the most features and is the best-supported configuration.
 
-### 1. Generate YAML Configuration
+### Generate YAML Configuration
 
 For the I2RT YAM robot, you can automatically generate your configuration files. This process calibrates the joint offsets and creates configuration files for both simulation and real hardware.
 
@@ -77,7 +77,7 @@ For the I2RT YAM robot, you can automatically generate your configuration files.
 
 You can now skip to the [Usage](#usage) section.
 
-### 2. YAML Configuration System
+### YAML Configuration System
 
 GELLO uses YAML files in `configs/` for configuration. This allows for flexible setup of different robots, environments, and teleoperation parameters. If you have automatically generated your `.yaml` config files with `scripts/generate_yam_config.py`, you probably will not need to modify these confings manually.
 
@@ -112,7 +112,7 @@ max_steps: 1000
 - **DynamixelRobotConfig**: Motor-specific settings including IDs, offsets, signs, and gripper.
 - **Control Parameters**: Update rates (`hz`), step limits (`max_steps`), and safety settings.
 
-### 3. Manual Configuration for Other Robots
+## Manual Configuration for Other Robots
 
 #### Python Configuration (Core System)
 - Located in `gello/agents/gello_agent.py`
