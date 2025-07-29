@@ -1,5 +1,4 @@
 import atexit
-import datetime
 import importlib
 import signal
 import threading
@@ -8,7 +7,6 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-import numpy as np
 import tyro
 import zmq.error
 from omegaconf import OmegaConf
@@ -211,53 +209,27 @@ def main():
     env = RobotEnv(robot_client, control_rate_hz=cfg.get("hz", 30))
 
     # Move robot to start_joints position if specified in config
+    from gello.utils.launch_utils import move_to_start_position
+
     if bimanual:
-        # For bimanual, get start_joints from both arms and concatenate
-        left_start = left_cfg["agent"].get("start_joints")
-        right_start = right_cfg["agent"].get("start_joints")
-        if left_start is not None and right_start is not None:
-            reset_joints = np.concatenate([np.array(left_start), np.array(right_start)])
-            curr_joints = env.get_obs()["joint_positions"]
-            if reset_joints.shape == curr_joints.shape:
-                max_delta = (np.abs(curr_joints - reset_joints)).max()
-                steps = min(int(max_delta / 0.01), 100)
-
-                print(f"Moving robot to start position: {reset_joints}")
-                for jnt in np.linspace(curr_joints, reset_joints, steps):
-                    env.step(jnt)
-                    time.sleep(0.001)
+        move_to_start_position(env, bimanual, left_cfg, right_cfg)
     else:
-        # Single arm handling
-        if "start_joints" in cfg["agent"] and cfg["agent"]["start_joints"] is not None:
-            reset_joints = np.array(cfg["agent"]["start_joints"])
-            curr_joints = env.get_obs()["joint_positions"]
-            if reset_joints.shape == curr_joints.shape:
-                max_delta = (np.abs(curr_joints - reset_joints)).max()
-                steps = min(int(max_delta / 0.01), 100)
-
-                print(f"Moving robot to start position: {reset_joints}")
-                for jnt in np.linspace(curr_joints, reset_joints, steps):
-                    env.step(jnt)
-                    time.sleep(0.001)
+        move_to_start_position(env, bimanual, left_cfg)
 
     print(
         f"Launching robot: {robot.__class__.__name__}, agent: {agent.__class__.__name__}"
     )
     print(f"Control loop: {cfg.get('hz', 30)} Hz")
 
-    from gello.utils.control_utils import move_to_start_position, SaveInterface, run_control_loop
-
-    # Move to start position
-    if not move_to_start_position(env, agent):
-        return
+    from gello.utils.control_utils import SaveInterface, run_control_loop
 
     # Initialize save interface if requested
     save_interface = None
     if args.use_save_interface:
         save_interface = SaveInterface(
-            data_dir=args.data_dir, 
+            data_dir=Path(args.left_config_path).parents[1] / "data",
             agent_name=agent.__class__.__name__,
-            expand_user=True
+            expand_user=True,
         )
 
     # Run main control loop

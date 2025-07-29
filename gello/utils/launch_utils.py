@@ -1,21 +1,21 @@
 import importlib
+import os
+import subprocess
 import threading
 import time
-import os
-import signal
-import subprocess
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, List, Optional
+
 import numpy as np
 from omegaconf import OmegaConf
 
 
 class DynamixelPortManager:
     """Manages Dynamixel port connections with proper cleanup and error handling."""
-    
+
     def __init__(self, port: str = "/dev/ttyUSB0"):
         self.port = port
         self._processes_using_port = []
-        
+
     def check_port_availability(self) -> bool:
         """Check if the port is available and not being used by other processes."""
         try:
@@ -23,16 +23,12 @@ class DynamixelPortManager:
             if not os.path.exists(self.port):
                 print(f"Port {self.port} does not exist")
                 return False
-                
+
             # Check for processes using the port
-            result = subprocess.run(
-                ["lsof", self.port], 
-                capture_output=True, 
-                text=True
-            )
-            
+            result = subprocess.run(["lsof", self.port], capture_output=True, text=True)
+
             if result.returncode == 0:
-                lines = result.stdout.strip().split('\n')
+                lines = result.stdout.strip().split("\n")
                 if len(lines) > 1:  # Header + processes
                     print(f"Port {self.port} is being used by other processes:")
                     for line in lines[1:]:
@@ -42,14 +38,12 @@ class DynamixelPortManager:
         except Exception as e:
             print(f"Error checking port availability: {e}")
             return False
-    
+
     def kill_processes_using_port(self) -> bool:
         """Kill processes that are using the port."""
         try:
             result = subprocess.run(
-                ["fuser", "-k", self.port], 
-                capture_output=True, 
-                text=True
+                ["fuser", "-k", self.port], capture_output=True, text=True
             )
             if result.returncode == 0:
                 print(f"Killed processes using {self.port}")
@@ -59,14 +53,12 @@ class DynamixelPortManager:
         except Exception as e:
             print(f"Error killing processes: {e}")
             return False
-    
+
     def fix_port_permissions(self) -> bool:
         """Fix port permissions if needed."""
         try:
             result = subprocess.run(
-                ["sudo", "chmod", "666", self.port], 
-                capture_output=True, 
-                text=True
+                ["sudo", "chmod", "666", self.port], capture_output=True, text=True
             )
             if result.returncode == 0:
                 print(f"Fixed permissions for {self.port}")
@@ -79,22 +71,30 @@ class DynamixelPortManager:
 
 class RobustDynamixelDriver:
     """A robust wrapper around DynamixelDriver with better error handling."""
-    
-    def __init__(self, ids: List[int], port: str = "/dev/ttyUSB0", baudrate: int = 57600, max_retries: int = 3):
+
+    def __init__(
+        self,
+        ids: List[int],
+        port: str = "/dev/ttyUSB0",
+        baudrate: int = 57600,
+        max_retries: int = 3,
+    ):
         self.ids = ids
         self.port = port
         self.baudrate = baudrate
         self.max_retries = max_retries
         self.driver = None
         self.port_manager = DynamixelPortManager(port)
-        
+
     def initialize(self) -> bool:
         """Initialize the Dynamixel driver with retry logic."""
         from gello.dynamixel.driver import DynamixelDriver
-        
+
         for attempt in range(self.max_retries):
-            print(f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{self.max_retries})")
-            
+            print(
+                f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{self.max_retries})"
+            )
+
             # Check port availability
             if not self.port_manager.check_port_availability():
                 print("Port is busy, attempting to free it...")
@@ -102,7 +102,7 @@ class RobustDynamixelDriver:
                     print("Failed to free port, trying to fix permissions...")
                     self.port_manager.fix_port_permissions()
                 time.sleep(2)
-            
+
             try:
                 self.driver = DynamixelDriver(self.ids, self.port, self.baudrate)
                 print(f"Successfully initialized Dynamixel driver on {self.port}")
@@ -115,22 +115,22 @@ class RobustDynamixelDriver:
                 else:
                     print("Max retries reached, falling back to fake driver")
                     return False
-        
+
         return False
-    
+
     def get_driver(self):
         """Get the initialized driver or a fake driver if initialization failed."""
-        if self.driver is None:
-            if not self.initialize():
-                from gello.dynamixel.driver import FakeDynamixelDriver
-                print("Using fake Dynamixel driver")
-                self.driver = FakeDynamixelDriver(self.ids)
+        if self.driver is None and not self.initialize():
+            from gello.dynamixel.driver import FakeDynamixelDriver
+
+            print("Using fake Dynamixel driver")
+            self.driver = FakeDynamixelDriver(self.ids)
         return self.driver
 
 
 class SimpleLaunchManager:
     """Simplified launch manager for robot systems."""
-    
+
     def __init__(self, config_path: str):
         self.config_path = config_path
         self.cfg = self._load_config()
@@ -138,20 +138,20 @@ class SimpleLaunchManager:
         self.agent = None
         self.env = None
         self.server_thread = None
-        
+
     def _load_config(self) -> Dict[str, Any]:
         """Load and resolve configuration."""
         cfg = OmegaConf.to_container(OmegaConf.load(self.config_path), resolve=True)
-        
+
         # Handle robot config
         robot_cfg = cfg["robot"]
         if isinstance(robot_cfg.get("config"), str):
             robot_cfg["config"] = OmegaConf.to_container(
                 OmegaConf.load(robot_cfg["config"]), resolve=True
             )
-        
+
         return cfg
-    
+
     def _instantiate(self, cfg):
         """Instantiate objects from configuration."""
         if isinstance(cfg, dict) and "_target_" in cfg:
@@ -165,11 +165,11 @@ class SimpleLaunchManager:
             return [self._instantiate(v) for v in cfg]
         else:
             return cfg
-    
+
     def setup_robot(self):
         """Setup the robot with proper error handling."""
         print("Setting up robot...")
-        
+
         # Check if it's a Dynamixel robot
         robot_cfg = self.cfg["robot"]
         if "DynamixelRobot" in str(robot_cfg.get("_target_", "")):
@@ -179,25 +179,26 @@ class SimpleLaunchManager:
             ids = dynamixel_config.get("ids", [1])
             port = dynamixel_config.get("port", "/dev/ttyUSB0")
             baudrate = dynamixel_config.get("baudrate", 57600)
-            
+
             # Use robust driver
             robust_driver = RobustDynamixelDriver(ids, port, baudrate)
             driver = robust_driver.get_driver()
-            
+
             # Create robot with the driver
             from gello.robots.dynamixel import DynamixelRobot
+
             self.robot = DynamixelRobot(driver)
         else:
             # Use standard instantiation for other robot types
             self.robot = self._instantiate(robot_cfg)
-    
+
     def setup_communication(self):
         """Setup ZMQ communication for the robot."""
         from gello.env import RobotEnv
         from gello.zmq_core.robot_node import ZMQClientRobot, ZMQServerRobot
-        
+
         robot_cfg = self.cfg["robot"]
-        
+
         if hasattr(self.robot, "serve"):  # MujocoRobotServer or ZMQServerRobot
             print("Starting robot server...")
             # Start server in background
@@ -219,28 +220,20 @@ class SimpleLaunchManager:
 
             # Create client to communicate with hardware
             robot_client = ZMQClientRobot(port=6001, host="127.0.0.1")
-        
+
         self.env = RobotEnv(robot_client, control_rate_hz=self.cfg.get("hz", 30))
-    
+
     def setup_agent(self):
         """Setup the agent."""
         print("Setting up agent...")
         self.agent = self._instantiate(self.cfg["agent"])
-    
-    def move_to_start_position(self):
-        """Move robot to start position if specified."""
-        if "start_joints" in self.cfg["agent"] and self.cfg["agent"]["start_joints"] is not None:
-            reset_joints = np.array(self.cfg["agent"]["start_joints"])
-            curr_joints = self.env.get_obs()["joint_positions"]
-            if reset_joints.shape == curr_joints.shape:
-                max_delta = (np.abs(curr_joints - reset_joints)).max()
-                steps = min(int(max_delta / 0.01), 100)
 
-                print(f"Moving robot to start position: {reset_joints}")
-                for jnt in np.linspace(curr_joints, reset_joints, steps):
-                    self.env.step(jnt)
-                    time.sleep(0.001)
-    
+    def move_to_joints(self, joints: np.ndarray):
+        """Move robot to specified joints."""
+        for jnt in np.linspace(self.env.get_obs()["joint_positions"], joints, 100):
+            self.env.step(jnt)
+            time.sleep(0.001)
+
     def validate_agent_output(self):
         """Validate that agent output matches environment dimensions."""
         start_pos = self.agent.act(self.env.get_obs())
@@ -248,14 +241,20 @@ class SimpleLaunchManager:
         joints = obs["joint_positions"]
 
         print(f"Start pos: {len(start_pos)}", f"Joints: {len(joints)}")
-        assert len(start_pos) == len(joints), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
-        
+        assert len(start_pos) == len(
+            joints
+        ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
+
         return start_pos
-    
+
     def run_control_loop(self):
         """Run the main control loop."""
-        print(f"Launching robot: {self.robot.__class__.__name__}, agent: {self.agent.__class__.__name__}")
-        print(f"Control loop: {self.cfg.get('hz', 30)} Hz, max_steps: {self.cfg.get('max_steps', 1000)}")
+        print(
+            f"Launching robot: {self.robot.__class__.__name__}, agent: {self.agent.__class__.__name__}"
+        )
+        print(
+            f"Control loop: {self.cfg.get('hz', 30)} Hz, max_steps: {self.cfg.get('max_steps', 1000)}"
+        )
 
         # Initial positioning
         start_pos = self.validate_agent_output()
@@ -299,7 +298,7 @@ class SimpleLaunchManager:
             obs = self.env.get_obs()
             action = self.agent.act(obs)
             self.env.step(action)
-    
+
     def launch(self):
         """Main launch method that orchestrates everything."""
         try:
@@ -314,7 +313,7 @@ class SimpleLaunchManager:
             print(f"Error during launch: {e}")
             raise
         finally:
-            if hasattr(self.robot, 'close'):
+            if hasattr(self.robot, "close"):
                 self.robot.close()
 
 
@@ -324,11 +323,48 @@ def simple_launch(config_path: str):
     manager.launch()
 
 
+def move_to_start_position(
+    env,
+    bimanual: Optional[bool] = False,
+    left_cfg: Optional[Dict[str, Any]] = None,
+    right_cfg: Optional[Dict[str, Any]] = None,
+):
+    """Move robot to start position if specified."""
+    if bimanual:
+        if right_cfg is None:
+            return
+        left_start = left_cfg["agent"].get("start_joints")
+        right_start = right_cfg["agent"].get("start_joints")
+        if left_start is None or right_start is None:
+            return
+        reset_joints = np.concatenate([np.array(left_start), np.array(right_start)])
+    else:
+        if (
+            "start_joints" not in left_cfg["agent"]
+            or left_cfg["agent"]["start_joints"] is None
+        ):
+            return
+        reset_joints = np.array(left_cfg["agent"]["start_joints"])
+
+    curr_joints = env.get_obs()["joint_positions"]
+    if reset_joints.shape != curr_joints.shape:
+        print("Warning: Mismatch in joint shapes, skipping move_to_start_position.")
+        return
+
+    max_delta = (np.abs(curr_joints - reset_joints)).max()
+    steps = min(int(max_delta / 0.01), 100)
+
+    print(f"Moving robot to start position: {reset_joints}")
+    for jnt in np.linspace(curr_joints, reset_joints, steps):
+        env.step(jnt)
+        time.sleep(0.001)
+
+
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--config-path", type=str, required=True)
     args = parser.parse_args()
-    
-    simple_launch(args.config_path) 
+
+    simple_launch(args.config_path)
