@@ -152,20 +152,6 @@ class SimpleLaunchManager:
 
         return cfg
 
-    def _instantiate(self, cfg):
-        """Instantiate objects from configuration."""
-        if isinstance(cfg, dict) and "_target_" in cfg:
-            module_path, class_name = cfg["_target_"].rsplit(".", 1)
-            cls = getattr(importlib.import_module(module_path), class_name)
-            kwargs = {k: v for k, v in cfg.items() if k != "_target_"}
-            return cls(**{k: self._instantiate(v) for k, v in kwargs.items()})
-        elif isinstance(cfg, dict):
-            return {k: self._instantiate(v) for k, v in cfg.items()}
-        elif isinstance(cfg, list):
-            return [self._instantiate(v) for v in cfg]
-        else:
-            return cfg
-
     def setup_robot(self):
         """Setup the robot with proper error handling."""
         print("Setting up robot...")
@@ -190,7 +176,7 @@ class SimpleLaunchManager:
             self.robot = DynamixelRobot(driver)
         else:
             # Use standard instantiation for other robot types
-            self.robot = self._instantiate(robot_cfg)
+            self.robot = instantiate_from_dict(robot_cfg)
 
     def setup_communication(self):
         """Setup ZMQ communication for the robot."""
@@ -226,7 +212,7 @@ class SimpleLaunchManager:
     def setup_agent(self):
         """Setup the agent."""
         print("Setting up agent...")
-        self.agent = self._instantiate(self.cfg["agent"])
+        self.agent = instantiate_from_dict(self.cfg["agent"])
 
     def move_to_joints(self, joints: np.ndarray):
         """Move robot to specified joints."""
@@ -368,3 +354,18 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     simple_launch(args.config_path)
+
+
+def instantiate_from_dict(cfg):
+    """Instantiate objects from configuration."""
+    if isinstance(cfg, dict) and "_target_" in cfg:
+        module_path, class_name = cfg["_target_"].rsplit(".", 1)
+        cls = getattr(importlib.import_module(module_path), class_name)
+        kwargs = {k: v for k, v in cfg.items() if k != "_target_"}
+        return cls(**{k: instantiate_from_dict(v) for k, v in kwargs.items()})
+    elif isinstance(cfg, dict):
+        return {k: instantiate_from_dict(v) for k, v in cfg.items()}
+    elif isinstance(cfg, list):
+        return [instantiate_from_dict(v) for v in cfg]
+    else:
+        return cfg

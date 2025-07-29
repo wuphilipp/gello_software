@@ -1,5 +1,4 @@
 import atexit
-import importlib
 import signal
 import threading
 import time
@@ -11,20 +10,7 @@ import tyro
 import zmq.error
 from omegaconf import OmegaConf
 
-
-def instantiate(cfg):
-    if isinstance(cfg, dict) and "_target_" in cfg:
-        module_path, class_name = cfg["_target_"].rsplit(".", 1)
-        cls = getattr(importlib.import_module(module_path), class_name)
-        kwargs = {k: v for k, v in cfg.items() if k != "_target_"}
-        return cls(**{k: instantiate(v) for k, v in kwargs.items()})
-    elif isinstance(cfg, dict):
-        return {k: instantiate(v) for k, v in cfg.items()}
-    elif isinstance(cfg, list):
-        return [instantiate(v) for v in cfg]
-    else:
-        return cfg
-
+from gello.utils.launch_utils import instantiate_from_dict
 
 # Global variables for cleanup
 active_threads = []
@@ -121,11 +107,11 @@ def main():
         from gello.agents.agent import BimanualAgent
 
         agent = BimanualAgent(
-            agent_left=instantiate(left_cfg["agent"]),
-            agent_right=instantiate(right_cfg["agent"]),
+            agent_left=instantiate_from_dict(left_cfg["agent"]),
+            agent_right=instantiate_from_dict(right_cfg["agent"]),
         )
     else:
-        agent = instantiate(left_cfg["agent"])
+        agent = instantiate_from_dict(left_cfg["agent"])
 
     # Create robot(s)
     left_robot_cfg = left_cfg["robot"]
@@ -134,7 +120,7 @@ def main():
             OmegaConf.load(left_robot_cfg["config"]), resolve=True
         )
 
-    left_robot = instantiate(left_robot_cfg)
+    left_robot = instantiate_from_dict(left_robot_cfg)
 
     if bimanual:
         from gello.robots.robot import BimanualRobot
@@ -145,7 +131,7 @@ def main():
                 OmegaConf.load(right_robot_cfg["config"]), resolve=True
             )
 
-        right_robot = instantiate(right_robot_cfg)
+        right_robot = instantiate_from_dict(right_robot_cfg)
         robot = BimanualRobot(left_robot, right_robot)
 
         # For bimanual, use the left config for general settings (hz, etc.)
