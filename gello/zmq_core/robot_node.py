@@ -140,3 +140,8 @@ class ZMQClientRobot(Robot):
             return result
         except zmq.Again:
             raise RuntimeError("ZMQ timeout - robot may be disconnected")
+
+    def close(self) -> None:
+        """Close the ZMQ socket and context."""
+        self._socket.close()
+        self._context.term()
