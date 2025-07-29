@@ -31,10 +31,16 @@ def instantiate(cfg):
 # Global variables for cleanup
 active_threads = []
 active_servers = []
+cleanup_in_progress = False
 
 
 def cleanup():
     """Clean up resources before exit."""
+    global cleanup_in_progress
+    if cleanup_in_progress:
+        return
+    cleanup_in_progress = True
+
     print("Cleaning up resources...")
     for server in active_servers:
         try:
@@ -85,11 +91,19 @@ class Args:
     """Enable saving data with keyboard interface."""
 
 
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully."""
+    cleanup()
+    import os
+
+    os._exit(0)
+
+
 def main():
     # Register cleanup handlers
     atexit.register(cleanup)
-    signal.signal(signal.SIGINT, lambda s, f: (cleanup(), exit(0)))
-    signal.signal(signal.SIGTERM, lambda s, f: (cleanup(), exit(0)))
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
 
     args = tyro.cli(Args)
 
@@ -256,7 +270,9 @@ def main():
         return
 
     print(f"Start pos: {len(start_pos)}", f"Joints: {len(joints)}")
-    assert len(start_pos) == len(joints), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
+    assert len(start_pos) == len(
+        joints
+    ), f"agent output dim = {len(start_pos)}, but env dim = {len(joints)}"
 
     max_delta = 1.0
     for _ in range(25):
