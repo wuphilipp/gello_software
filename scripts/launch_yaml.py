@@ -57,10 +57,14 @@ def wait_for_server_ready(port, host="127.0.0.1", timeout_seconds=5):
     attempts = int(timeout_seconds * 10)  # 0.1s intervals
     for attempt in range(attempts):
         try:
-            ZMQClientRobot(port=port, host=host)
+            client = ZMQClientRobot(port=port, host=host)
             time.sleep(0.1)
             return True
         except (zmq.error.ZMQError, Exception):
+            time.sleep(0.1)
+        finally:
+            if "client" in locals():
+                client.close()
             time.sleep(0.1)
             if attempt == attempts - 1:
                 raise RuntimeError(
