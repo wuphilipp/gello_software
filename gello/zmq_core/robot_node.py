@@ -40,25 +40,20 @@ class ZMQServerRobot:
                 method = request.get("method")
                 args = request.get("args", {})
                 result: Any
-                try:
-                    if method == "num_dofs":
-                        result = self._robot.num_dofs()
-                    elif method == "get_joint_state":
-                        result = self._robot.get_joint_state()
-                    elif method == "command_joint_state":
-                        result = self._robot.command_joint_state(**args)
-                    elif method == "get_observations":
-                        result = self._robot.get_observations()
-                    else:
-                        result = {"error": "Invalid method"}
-                        print(result)
-                        raise NotImplementedError(
-                            f"Invalid method: {method}, {args, result}"
-                        )
-                except Exception as e:
-                    # Handle robot communication errors gracefully
-                    result = {"error": f"Robot communication failed: {str(e)}"}
-                    print(f"Robot error in {method}: {e}")
+                if method == "num_dofs":
+                    result = self._robot.num_dofs()
+                elif method == "get_joint_state":
+                    result = self._robot.get_joint_state()
+                elif method == "command_joint_state":
+                    result = self._robot.command_joint_state(**args)
+                elif method == "get_observations":
+                    result = self._robot.get_observations()
+                else:
+                    result = {"error": "Invalid method"}
+                    print(result)
+                    raise NotImplementedError(
+                        f"Invalid method: {method}, {args, result}"
+                    )
 
                 self._socket.send(pickle.dumps(result))
             except zmq.Again:
