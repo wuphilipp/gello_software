@@ -81,29 +81,10 @@ You can now skip to the [Usage](#usage) section.
 
 GELLO uses YAML files in `configs/` for configuration. This allows for flexible setup of different robots, environments, and teleoperation parameters. If you have automatically generated your `.yaml` config files with `scripts/generate_yam_config.py`, you probably will not need to modify these confings manually.
 
-#### Configuration Structure
+#### Sample Configs
 
-Configuration files use a dependency injection pattern with `_target_` keys to specify Python classes:
+Sample configs for the YAM arm and the xarm can be found in `configs`.
 
-```yaml
-robot:
-  _target_: gello.robots.yam.YAMRobot
-  channel: "can_left"
-
-agent:
-  _target_: gello.agents.gello_agent.GelloAgent
-  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
-  dynamixel_config:
-    _target_: gello.agents.gello_agent.DynamixelRobotConfig
-    joint_ids: [1, 2, 3, 4, 5, 6]
-    joint_offsets: [0.0, 3.14159, 6.28318, 3.14159, 5.23599, 3.14159]
-    joint_signs: [1, -1, -1, -1, 1, 1]
-    gripper_config: [7, -30, 24]
-  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
-
-hz: 30
-max_steps: 1000
-```
 
 #### Configuration Components
 
@@ -114,11 +95,11 @@ max_steps: 1000
 
 ## Manual Configuration for Other Robots
 
-#### Python Configuration (Core System)
+#### Python Configuration (legacy)
+- Most widely supported across different arms
 - Located in `gello/agents/gello_agent.py`
 - Uses `PORT_CONFIG_MAP` dictionary
 - Maps USB serial ports to robot configurations
-
 
 #### ROS 2 YAML configs for Franka
 - Used for ROS 2 packages
@@ -127,7 +108,7 @@ max_steps: 1000
 
 ## Adding New Robots
 
-To integrate a new robot:
+To integrate a new robot to the Python configs:
 
 1. **Check Compatibility**: Ensure your GELLO kinematics match the target robot
 2. **Implement Robot Interface**: Create a new class implementing the `Robot` protocol from `gello/robots/robot.py`
@@ -140,9 +121,7 @@ See existing implementations in `gello/robots/` for reference:
 - `yam.py` - YAM robot
 
 
-
-#### 1. Get joint offsets
-
+#### 1. Manual `gello_agent` setup
 Set your GELLO and robot arm to a known, matching configuration (see images below) and run the offset detection script.
 
 <p align="center">
@@ -184,7 +163,7 @@ python scripts/gello_get_offset.py \
 - xArm: `1 1 1 1 1 1 1`
 - YAM: `1 -1 -1 -1 1 1`
 
-Add the generated joint offsets to a new YAML configuration file (see below) or directly into `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP` for a legacy setup.
+Add the generated joint offsets to `gello/agents/gello_agent.py` in the `PORT_CONFIG_MAP`.
 
 #### 2. Create Custom YAML Configurations
 
@@ -246,7 +225,7 @@ Launch the real robot with the auto-generated hardware config file:
 python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml
 ```
 
-### Legacy Launch for Other Robots
+### Launching `gello_agent` (legacy)
 
 For other robots or if not using a YAML configuration, you must launch the robot and controller nodes in separate terminals.
 
