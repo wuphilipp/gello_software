@@ -69,7 +69,7 @@ def get_config(args: Args) -> None:
             best_offset = 0
             best_error = 1e6
             for offset in np.linspace(
-                -8 * np.pi, 8 * np.pi, 8 * 4 + 1
+                -8 * np.pi, 8 * np.pi, 8 * 8 + 1
             ):  # intervals of pi/2
                 error = get_error(offset, i, curr_joints)
                 if error < best_error:
@@ -80,7 +80,7 @@ def get_config(args: Args) -> None:
         print("best offsets               : ", [f"{x:.3f}" for x in best_offsets])
         print(
             "best offsets function of pi: ["
-            + ", ".join([f"{int(np.round(x/(np.pi/2)))}*np.pi/2" for x in best_offsets])
+            + ", ".join([f"{int(np.round(x/(np.pi/4)))}*np.pi/4" for x in best_offsets])
             + " ]",
         )
         if args.gripper:
