@@ -315,8 +315,9 @@ python experiments/run_env.py --agent=gello --bimanual
 
 ### Contributing
 
-Set up pre-commit hooks to ensure code quality before contributing:
+Install development dependencies and set up pre-commit hooks to ensure code quality before contributing:
 ```bash
+uv pip install -r requirements_dev.txt
 uv pip install pre-commit
 pre-commit install
 ```
