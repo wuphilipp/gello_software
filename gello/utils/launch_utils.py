@@ -291,7 +291,7 @@ class SimpleLaunchManager:
             self.setup_robot()
             self.setup_communication()
             self.setup_agent()
-            self.move_to_start_position()
+            move_to_start_position(self.env, left_cfg=self.cfg)
             self.run_control_loop()
         except KeyboardInterrupt:
             print("\nShutting down gracefully...")
