@@ -347,16 +347,6 @@ def move_to_start_position(
         time.sleep(0.001)
 
 
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--config-path", type=str, required=True)
-    args = parser.parse_args()
-
-    simple_launch(args.config_path)
-
-
 def instantiate_from_dict(cfg):
     """Instantiate objects from configuration."""
     if isinstance(cfg, dict) and "_target_" in cfg:
@@ -370,3 +360,13 @@ def instantiate_from_dict(cfg):
         return [instantiate_from_dict(v) for v in cfg]
     else:
         return cfg
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config-path", type=str, required=True)
+    args = parser.parse_args()
+
+    simple_launch(args.config_path)
