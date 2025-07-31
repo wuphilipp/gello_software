@@ -95,7 +95,7 @@ Sample configs for the YAM arm and the xarm can be found in `configs`.
 
 ## Manual Configuration for Other Robots
 
-#### Python Configuration (legacy)
+#### Python Configuration for Non-YAM arms
 - Most widely supported across different arms
 - Located in `gello/agents/gello_agent.py`
 - Uses `PORT_CONFIG_MAP` dictionary
@@ -127,7 +127,7 @@ Set your GELLO and robot arm to a known, matching configuration (see images belo
 <p align="center">
   <img src="imgs/gello_matching_joints.jpg" width="29%"/>
   <img src="imgs/robot_known_configuration.jpg" width="29%"/>
-  <img src="imgs/fr3_gello_calib_pose                                                   .jpeg" width="31%"/>
+  <img src="imgs/fr3_gello_calib_pose.jpeg" width="31%"/>
 </p>
 
 **Command examples:**
@@ -225,7 +225,7 @@ Launch the real robot with the auto-generated hardware config file:
 python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml
 ```
 
-### Launching `gello_agent` (legacy)
+### Launching `gello_agent` for non-YAM arms
 
 For other robots or if not using a YAML configuration, you must launch the robot and controller nodes in separate terminals.
 
@@ -272,7 +272,7 @@ python scripts/launch_yaml.py --left-config-path configs/yam_passive.yaml --use-
 ```
 After launching, you can begin saving with `s` and stop saving with `q`. Data saved will be in the `data` directory in the root of the project.
 
-For legacy setups, use the following:
+For non-YAM setups, use the following:
 ```bash
 python experiments/run_env.py --agent=gello --use-save-interface
 ```
@@ -289,7 +289,7 @@ The recommended way to use bimanual mode is with `launch_yaml.py`. Pass a config
 python scripts/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
 ```
 
-For legacy setups, use:
+For non-YAM setups, use:
 ```bash
 python experiments/launch_nodes.py --robot=bimanual_ur
 python experiments/run_env.py --agent=gello --bimanual
