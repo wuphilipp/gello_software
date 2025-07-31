@@ -1,3 +1,5 @@
+import os
+import subprocess
 import time
 from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
@@ -92,7 +94,12 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
 
 class DynamixelDriver(DynamixelDriverProtocol):
     def __init__(
-        self, ids: Sequence[int], port: str = "/dev/ttyUSB0", baudrate: int = 57600
+        self,
+        ids: Sequence[int],
+        port: str = "/dev/ttyUSB0",
+        baudrate: int = 57600,
+        max_retries: int = 3,
+        use_fake_fallback: bool = True,
     ):
         """Initialize the DynamixelDriver class.
 
@@ -100,13 +107,66 @@ class DynamixelDriver(DynamixelDriverProtocol):
             ids (Sequence[int]): A list of IDs for the Dynamixel servos.
             port (str): The USB port to connect to the arm.
             baudrate (int): The baudrate for communication.
+            max_retries (int): Maximum number of initialization attempts.
+            use_fake_fallback (bool): Whether to fallback to FakeDynamixelDriver on failure.
         """
         self._ids = ids
         self._joint_angles = None
         self._lock = Lock()
+        self._port = port
+        self._baudrate = baudrate
+        self._max_retries = max_retries
+        self._use_fake_fallback = use_fake_fallback
+        self._is_fake = False
+        self._torque_enabled = False
+        self._stop_thread = Event()
+
+        # Initialize with retry logic
+        if not self._initialize_with_retries():
+            if self._use_fake_fallback:
+                print("Using fake Dynamixel driver")
+                self._initialize_fake_driver()
+            else:
+                raise RuntimeError(
+                    "Failed to initialize Dynamixel driver after all retries"
+                )
+
+    def _initialize_with_retries(self) -> bool:
+        """Initialize the Dynamixel driver with retry logic."""
+        for attempt in range(self._max_retries):
+            print(
+                f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{self._max_retries})"
+            )
+
+            # Check port availability
+            if not self._check_port_availability():
+                print("Port is busy, attempting to free it...")
+                if not self._kill_processes_using_port():
+                    print("Failed to free port, trying to fix permissions...")
+                    self._fix_port_permissions()
+                time.sleep(2)
+
+            try:
+                self._initialize_hardware()
+                print(f"Successfully initialized Dynamixel driver on {self._port}")
+                return True
+            except Exception as e:
+                print(f"Failed to initialize Dynamixel driver: {e}")
+                if attempt < self._max_retries - 1:
+                    print("Retrying in 2 seconds...")
+                    time.sleep(2)
+                else:
+                    print("Max retries reached")
+
+        return False
+
+    def _initialize_hardware(self):
+        """Initialize the hardware connection."""
+        # Check and prepare port before connection
+        self._prepare_port()
 
         # Initialize the port handler, packet handler, and group sync read/write
-        self._portHandler = PortHandler(port)
+        self._portHandler = PortHandler(self._port)
         self._packetHandler = PacketHandler(2.0)
         self._groupSyncRead = GroupSyncRead(
             self._portHandler,
@@ -125,8 +185,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         if not self._portHandler.openPort():
             raise RuntimeError("Failed to open the port")
 
-        if not self._portHandler.setBaudRate(baudrate):
-            raise RuntimeError(f"Failed to change the baudrate, {baudrate}")
+        if not self._portHandler.setBaudRate(self._baudrate):
+            raise RuntimeError(f"Failed to change the baudrate, {self._baudrate}")
 
         # Add parameters for each Dynamixel servo to the group sync read
         for dxl_id in self._ids:
@@ -136,14 +196,17 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 )
 
         # Disable torque for each Dynamixel servo
-        self._torque_enabled = False
         try:
             self.set_torque_mode(self._torque_enabled)
         except Exception as e:
-            print(f"port: {port}, {e}")
+            print(f"port: {self._port}, {e}")
 
-        self._stop_thread = Event()
         self._start_reading_thread()
+
+    def _initialize_fake_driver(self):
+        """Initialize as a fake driver."""
+        self._is_fake = True
+        self._fake_joint_angles = np.zeros(len(self._ids), dtype=float)
 
     def set_joints(self, joint_angles: Sequence[float]):
         if len(joint_angles) != len(self._ids):
@@ -152,6 +215,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
             )
         if not self._torque_enabled:
             raise RuntimeError("Torque must be enabled to set joint angles")
+
+        if self._is_fake:
+            self._fake_joint_angles = np.array(joint_angles)
+            return
 
         for dxl_id, angle in zip(self._ids, joint_angles):
             # Convert the angle to the appropriate value for the servo
@@ -186,6 +253,10 @@ class DynamixelDriver(DynamixelDriverProtocol):
         return self._torque_enabled
 
     def set_torque_mode(self, enable: bool):
+        if self._is_fake:
+            self._torque_enabled = enable
+            return
+
         torque_value = TORQUE_ENABLE if enable else TORQUE_DISABLE
         with self._lock:
             for dxl_id in self._ids:
@@ -233,6 +304,9 @@ class DynamixelDriver(DynamixelDriverProtocol):
             # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
 
     def get_joints(self) -> np.ndarray:
+        if self._is_fake:
+            return self._fake_joint_angles.copy()
+
         # Return a copy of the joint_angles array to avoid race conditions
         while self._joint_angles is None:
             time.sleep(0.1)
@@ -240,7 +314,75 @@ class DynamixelDriver(DynamixelDriverProtocol):
         _j = self._joint_angles.copy()
         return _j / 2048.0 * np.pi
 
+    def _check_port_availability(self) -> bool:
+        """Check if the port is available and not being used by other processes."""
+        try:
+            # Check if port exists
+            if not os.path.exists(self._port):
+                print(f"Port {self._port} does not exist")
+                return False
+
+            # Check for processes using the port
+            result = subprocess.run(
+                ["lsof", self._port], capture_output=True, text=True
+            )
+
+            if result.returncode == 0:
+                lines = result.stdout.strip().split("\n")
+                if len(lines) > 1:  # Header + processes
+                    print(f"Port {self._port} is being used by other processes:")
+                    for line in lines[1:]:
+                        print(f"  {line}")
+                    return False
+            return True
+        except Exception as e:
+            print(f"Error checking port availability: {e}")
+            return False
+
+    def _kill_processes_using_port(self) -> bool:
+        """Kill processes that are using the port."""
+        try:
+            result = subprocess.run(
+                ["fuser", "-k", self._port], capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                print(f"Killed processes using {self._port}")
+                time.sleep(1)  # Give time for processes to terminate
+                return True
+            return False
+        except Exception as e:
+            print(f"Error killing processes: {e}")
+            return False
+
+    def _fix_port_permissions(self) -> bool:
+        """Fix port permissions if needed."""
+        try:
+            result = subprocess.run(
+                ["sudo", "chmod", "666", self._port], capture_output=True, text=True
+            )
+            if result.returncode == 0:
+                print(f"Fixed permissions for {self._port}")
+                return True
+            return False
+        except Exception as e:
+            print(f"Error fixing port permissions: {e}")
+            return False
+
+    def _prepare_port(self):
+        """Prepare the port for connection by checking availability and fixing issues."""
+        if not self._check_port_availability():
+            print(f"Port {self._port} is not available, attempting to fix...")
+            self._kill_processes_using_port()
+            self._fix_port_permissions()
+
+            # Check again after fixing
+            if not self._check_port_availability():
+                print(f"Warning: Port {self._port} may still have issues")
+
     def close(self):
+        if self._is_fake:
+            return
+
         self._stop_thread.set()
         self._reading_thread.join()
         self._portHandler.closePort()

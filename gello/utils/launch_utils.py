@@ -1,132 +1,10 @@
 import importlib
-import os
-import subprocess
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 import numpy as np
 from omegaconf import OmegaConf
-
-
-class DynamixelPortManager:
-    """Manages Dynamixel port connections with proper cleanup and error handling."""
-
-    def __init__(self, port: str = "/dev/ttyUSB0"):
-        self.port = port
-        self._processes_using_port = []
-
-    def check_port_availability(self) -> bool:
-        """Check if the port is available and not being used by other processes."""
-        try:
-            # Check if port exists
-            if not os.path.exists(self.port):
-                print(f"Port {self.port} does not exist")
-                return False
-
-            # Check for processes using the port
-            result = subprocess.run(["lsof", self.port], capture_output=True, text=True)
-
-            if result.returncode == 0:
-                lines = result.stdout.strip().split("\n")
-                if len(lines) > 1:  # Header + processes
-                    print(f"Port {self.port} is being used by other processes:")
-                    for line in lines[1:]:
-                        print(f"  {line}")
-                    return False
-            return True
-        except Exception as e:
-            print(f"Error checking port availability: {e}")
-            return False
-
-    def kill_processes_using_port(self) -> bool:
-        """Kill processes that are using the port."""
-        try:
-            result = subprocess.run(
-                ["fuser", "-k", self.port], capture_output=True, text=True
-            )
-            if result.returncode == 0:
-                print(f"Killed processes using {self.port}")
-                time.sleep(1)  # Give time for processes to terminate
-                return True
-            return False
-        except Exception as e:
-            print(f"Error killing processes: {e}")
-            return False
-
-    def fix_port_permissions(self) -> bool:
-        """Fix port permissions if needed."""
-        try:
-            result = subprocess.run(
-                ["sudo", "chmod", "666", self.port], capture_output=True, text=True
-            )
-            if result.returncode == 0:
-                print(f"Fixed permissions for {self.port}")
-                return True
-            return False
-        except Exception as e:
-            print(f"Error fixing permissions: {e}")
-            return False
-
-
-class RobustDynamixelDriver:
-    """A robust wrapper around DynamixelDriver with better error handling."""
-
-    def __init__(
-        self,
-        ids: List[int],
-        port: str = "/dev/ttyUSB0",
-        baudrate: int = 57600,
-        max_retries: int = 3,
-    ):
-        self.ids = ids
-        self.port = port
-        self.baudrate = baudrate
-        self.max_retries = max_retries
-        self.driver = None
-        self.port_manager = DynamixelPortManager(port)
-
-    def initialize(self) -> bool:
-        """Initialize the Dynamixel driver with retry logic."""
-        from gello.dynamixel.driver import DynamixelDriver
-
-        max_retries_str = str(self.max_retries)
-        for attempt in range(self.max_retries):
-            print(
-                f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{max_retries_str})"
-            )
-
-            # Check port availability
-            if not self.port_manager.check_port_availability():
-                print("Port is busy, attempting to free it...")
-                if not self.port_manager.kill_processes_using_port():
-                    print("Failed to free port, trying to fix permissions...")
-                    self.port_manager.fix_port_permissions()
-                time.sleep(2)
-
-            try:
-                self.driver = DynamixelDriver(self.ids, self.port, self.baudrate)
-                print(f"Successfully initialized Dynamixel driver on {self.port}")
-                return True
-            except Exception as e:
-                print(f"Failed to initialize Dynamixel driver: {e}")
-                if attempt < self.max_retries - 1:
-                    print("Retrying in 2 seconds...")
-                    time.sleep(2)
-                else:
-                    print("Max retries reached, falling back to fake driver")
-                    return False
-
-        return False
-
-    def get_driver(self):
-        """Get the initialized driver or a fake driver if initialization failed."""
-        if self.driver is None and not self.initialize():
-            from gello.dynamixel.driver import FakeDynamixelDriver
-
-            print("Using fake Dynamixel driver")
-            self.driver = FakeDynamixelDriver(self.ids)
-        return self.driver
 
 
 class SimpleLaunchManager:
@@ -160,20 +38,26 @@ class SimpleLaunchManager:
         # Check if it's a Dynamixel robot
         robot_cfg = self.cfg["robot"]
         if "DynamixelRobot" in str(robot_cfg.get("_target_", "")):
-            print("Detected Dynamixel robot, using robust initialization...")
+            print("Detected Dynamixel robot, using enhanced initialization...")
             # Extract Dynamixel configuration
             dynamixel_config = robot_cfg.get("config", {})
             ids = dynamixel_config.get("ids", [1])
             port = dynamixel_config.get("port", "/dev/ttyUSB0")
             baudrate = dynamixel_config.get("baudrate", 57600)
+            max_retries = dynamixel_config.get("max_retries", 3)
+            use_fake_fallback = dynamixel_config.get("use_fake_fallback", True)
 
-            # Use robust driver
-            robust_driver = RobustDynamixelDriver(ids, port, baudrate)
-            driver = robust_driver.get_driver()
-
-            # Create robot with the driver
+            # Use enhanced driver with retry logic and fallback
+            from gello.dynamixel.driver import DynamixelDriver
             from gello.robots.dynamixel import DynamixelRobot
 
+            driver = DynamixelDriver(
+                ids=ids,
+                port=port,
+                baudrate=baudrate,
+                max_retries=max_retries,
+                use_fake_fallback=use_fake_fallback,
+            )
             self.robot = DynamixelRobot(driver)
         else:
             # Use standard instantiation for other robot types
