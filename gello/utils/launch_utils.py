@@ -90,9 +90,10 @@ class RobustDynamixelDriver:
         """Initialize the Dynamixel driver with retry logic."""
         from gello.dynamixel.driver import DynamixelDriver
 
+        max_retries_str = str(self.max_retries)
         for attempt in range(self.max_retries):
             print(
-                f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{self.max_retries})"
+                f"Attempting to initialize Dynamixel driver (attempt {attempt + 1}/{max_retries_str})"
             )
 
             # Check port availability
