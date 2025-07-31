@@ -84,7 +84,9 @@ def signal_handler(signum, frame):
 
 
 def main():
-    # Register cleanup handlers, if terminated without cleanup, can leave ZMQ sockets bound causing "address in use" errors or resource leaks
+    # Register cleanup handlers
+    # If terminated without cleanup, can leave ZMQ sockets bound causing "address in use" errors or resource leaks
+
     atexit.register(cleanup)
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
