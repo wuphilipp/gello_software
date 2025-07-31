@@ -1,11 +1,13 @@
 # keep in alphabetical order
 dm_control
+omegaconf==2.3.0
 Pillow
 pygame
 pyspacemouse
 PyQt6
 pyquaternion
 pyrealsense2
+pyzmq
 pure-python-adb
 quaternion
 setuptools
