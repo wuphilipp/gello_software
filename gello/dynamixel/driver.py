@@ -120,8 +120,6 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._is_fake = False
         self._torque_enabled = False
         self._stop_thread = Event()
-        self._comm_failure_count = 0
-        self._max_comm_failures = 10
 
         # Initialize with retry logic
         if not self._initialize_with_retries():
@@ -280,101 +278,30 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._reading_thread.start()
 
     def _read_joint_angles(self):
+        # Continuously read joint angles and update the joint_angles array
         while not self._stop_thread.is_set():
             time.sleep(0.001)
-            try:
-                with self._lock:
-                    _joint_angles = np.zeros(len(self._ids), dtype=int)
-                    dxl_comm_result = self._groupSyncRead.txRxPacket()
-                    if dxl_comm_result != COMM_SUCCESS:
-                        self._comm_failure_count += 1
-                        print(
-                            f"warning, comm failed: {dxl_comm_result} (count: {self._comm_failure_count})"
-                        )
-
-                        # try recovery
-                        if self._comm_failure_count >= 5:
-                            print(
-                                "Multiple communication failures, attempting recovery..."
-                            )
-                            if self._attempt_recovery():
-                                self._comm_failure_count = 0
-                            elif self._comm_failure_count >= self._max_comm_failures:
-                                print(
-                                    "Too many communication failures, switching to fake mode"
-                                )
-                                self._switch_to_fake_mode()
-                                break
-                        continue
-
-                    # reset failure count on successful communication
-                    if self._comm_failure_count > 0:
-                        print("Communication recovered")
-                        self._comm_failure_count = 0
-
-                    for i, dxl_id in enumerate(self._ids):
-                        if self._groupSyncRead.isAvailable(
+            with self._lock:
+                _joint_angles = np.zeros(len(self._ids), dtype=int)
+                dxl_comm_result = self._groupSyncRead.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print(f"warning, comm failed: {dxl_comm_result}")
+                    continue
+                for i, dxl_id in enumerate(self._ids):
+                    if self._groupSyncRead.isAvailable(
+                        dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
+                    ):
+                        angle = self._groupSyncRead.getData(
                             dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
-                        ):
-                            angle = self._groupSyncRead.getData(
-                                dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
-                            )
-                            angle = np.int32(np.uint32(angle))
-                            _joint_angles[i] = angle
-                        else:
-                            print(
-                                f"Warning: No data available for Dynamixel ID {dxl_id}"
-                            )
-                            continue
-                    self._joint_angles = _joint_angles
-            except Exception as e:
-                self._comm_failure_count += 1
-                print(
-                    f"Exception in read thread: {e} (count: {self._comm_failure_count})"
-                )
-                if self._comm_failure_count >= self._max_comm_failures:
-                    print("Too many exceptions, switching to fake mode")
-                    self._switch_to_fake_mode()
-                    break
-                time.sleep(0.1)  # Wait before retrying after exception
-
-    def _attempt_recovery(self) -> bool:
-        """Attempt to recover from communication failures."""
-        try:
-            print("Attempting port recovery...")
-            # Close and reopen the port
-            self._portHandler.closePort()
-            time.sleep(1)
-
-            # Try port management techniques
-            self._prepare_port()
-
-            # Reopen port
-            if not self._portHandler.openPort():
-                print("Failed to reopen port during recovery")
-                return False
-
-            if not self._portHandler.setBaudRate(self._baudrate):
-                print("Failed to set baudrate during recovery")
-                return False
-
-            print("Port recovery successful")
-            return True
-        except Exception as e:
-            print(f"Recovery failed: {e}")
-            return False
-
-    def _switch_to_fake_mode(self):
-        """Switch to fake driver mode during runtime."""
-        if self._use_fake_fallback and not self._is_fake:
-            print(
-                "Switching to fake driver mode due to persistent communication failures"
-            )
-            self._is_fake = True
-            self._fake_joint_angles = np.zeros(len(self._ids), dtype=float)
-            # Copy last known positions if available
-            if self._joint_angles is not None:
-                self._fake_joint_angles = self._joint_angles.copy() / 2048.0 * np.pi
+                        )
+                        angle = np.int32(np.uint32(angle))
+                        _joint_angles[i] = angle
+                    else:
+                        raise RuntimeError(
+                            f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
+                        )
+                self._joint_angles = _joint_angles
+            # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
 
     def get_joints(self) -> np.ndarray:
         if self._is_fake:
