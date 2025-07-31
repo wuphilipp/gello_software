@@ -311,7 +311,7 @@ def simple_launch(config_path: str):
 
 def move_to_start_position(
     env,
-    bimanual: Optional[bool] = False,
+    bimanual: bool = False,
     left_cfg: Optional[Dict[str, Any]] = None,
     right_cfg: Optional[Dict[str, Any]] = None,
 ):
