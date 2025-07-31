@@ -103,7 +103,7 @@ class SimpleLaunchManager:
         """Move robot to specified joints."""
         for jnt in np.linspace(self.env.get_obs()["joint_positions"], joints, 100):
             self.env.step(jnt)
-            time.sleep(0.05)
+            time.sleep(0.001)
 
     def validate_agent_output(self):
         """Validate that agent output matches environment dimensions."""
