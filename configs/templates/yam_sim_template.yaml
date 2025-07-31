@@ -1,0 +1,20 @@
+# Simulation configuration for YAM robot - equivalent to sim_yam + gello
+robot:
+  _target_: gello.robots.sim_robot.MujocoRobotServer
+  xml_path: "third_party/mujoco_menagerie/i2rt_yam/yam.xml"
+  gripper_xml_path: null
+  host: "127.0.0.1"
+  port: 6001
+
+agent:
+  _target_: gello.agents.gello_agent.GelloAgent
+  port: "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
+  dynamixel_config:
+    _target_: gello.agents.gello_agent.DynamixelRobotConfig
+    joint_ids: [1, 2, 3, 4, 5, 6]
+    joint_offsets: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    joint_signs: [1, -1, -1, -1, 1, 1]
+    gripper_config: [7, 0, 0]
+  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+hz: 30

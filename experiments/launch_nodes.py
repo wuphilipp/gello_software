@@ -29,6 +29,17 @@ def launch_robot_server(args: Args):
             xml_path=xml, gripper_xml_path=gripper_xml, port=port, host=args.hostname
         )
         server.serve()
+    elif args.robot == "sim_yam":
+        MENAGERIE_ROOT: Path = (
+            Path(__file__).parent.parent / "third_party" / "mujoco_menagerie"
+        )
+        xml = MENAGERIE_ROOT / "i2rt_yam" / "yam.xml"
+        from gello.robots.sim_robot import MujocoRobotServer
+
+        server = MujocoRobotServer(
+            xml_path=xml, gripper_xml_path=None, port=port, host=args.hostname
+        )
+        server.serve()
     elif args.robot == "sim_panda":
         from gello.robots.sim_robot import MujocoRobotServer
 
@@ -74,6 +85,10 @@ def launch_robot_server(args: Args):
             _robot_l = URRobot(robot_ip="192.168.2.10")
             _robot_r = URRobot(robot_ip="192.168.1.10")
             robot = BimanualRobot(_robot_l, _robot_r)
+        elif args.robot == "yam":
+            from gello.robots.yam import YAMRobot
+
+            robot = YAMRobot(channel="can0")
         elif args.robot == "none" or args.robot == "print":
             robot = PrintRobot(8)
 
