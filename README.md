@@ -216,13 +216,13 @@ First, install the YAM-specific dependency:
 **Testing in Simulation:**
 Launch the simulation with the auto-generated sim config file:
 ```bash
-python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.yaml
+python experiments/launch_yaml.py --left-config-path configs/yam_auto_generated_sim.yaml
 ```
 
 **Real Robot Operation:**
 Launch the real robot with the auto-generated hardware config file:
 ```bash
-python scripts/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml
+python experiments/launch_yaml.py --left-config-path configs/yam_auto_generated.yaml
 ```
 
 ### Launching `gello_agent` for non-YAM arms
@@ -268,7 +268,7 @@ Collect teleoperation demonstrations with keyboard controls.
 For the YAM arm launched with `launch_yaml.py`, you can append the flag `--use-save-interface` to enable data saving. This is the recommended method.
 
 ```
-python scripts/launch_yaml.py --left-config-path configs/yam_passive.yaml --use-save-interface
+python experiments/launch_yaml.py --left-config-path configs/yam_passive.yaml --use-save-interface
 ```
 After launching, you can begin saving with `s` and stop saving with `q`. Data saved will be in the `data` directory in the root of the project.
 
@@ -286,7 +286,7 @@ python gello/data_utils/demo_to_gdict.py --source-dir=<source_dir>
 The recommended way to use bimanual mode is with `launch_yaml.py`. Pass a config file for the right arm to `--right-config-path`.
 
 ```
-python scripts/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
+python experiments/launch_yaml.py --left-config-path configs/gello_1.yaml --right-config-path configs/gello_2.yaml
 ```
 
 For non-YAM setups, use:
