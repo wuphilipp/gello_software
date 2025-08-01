@@ -62,3 +62,16 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
   cd .. && \
   rm -rf tmp_build && \
   rm -rf /var/lib/apt/lists/*"
+
+# Install rqt reconfigure from source (for array parameters)
+RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+  mkdir -p /tmp/rqt_reconfigure && cd /tmp && \
+  git clone https://github.com/ros-visualization/rqt_reconfigure.git --branch humble && \
+  cd rqt_reconfigure && \
+  apt-get update && \
+  rosdep update && \
+  rosdep install --from-paths . --ignore-src -r -y && \
+  colcon build --install-base /opt/ros/humble/franka --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+  cd .. && \
+  rm -rf /tmp/rqt_reconfigure \
+  rm -rf /var/lib/apt/lists/*"
