@@ -250,6 +250,10 @@ python experiments/run_env.py --agent=gello
 
 ### Troubleshooting
 
+If, when you run `generate_yam_config.py`, you get an error detecting offsets, you may need to add your user to the dialout user group. To do so, run:
+`sudo usermod -aG dialout $USER`
+And then log out and log back in or restart your computer.s
+
 If some joints in your arm are not behaving as expected, you may need to modify the joint signs of your configuration. Simply invert the affected joint sign(s) in your .yaml or `gello_agent.py` or physically reverse the installation of the servo.
 
 ### Optional: Starting Configuration
