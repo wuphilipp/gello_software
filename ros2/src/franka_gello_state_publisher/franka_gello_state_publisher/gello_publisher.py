@@ -2,11 +2,12 @@ import os
 import sys
 import glob
 import rclpy
+import numpy as np
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
 from ament_index_python.packages import get_package_prefix
-from rcl_interfaces.msg import ParameterEvent, ParameterDescriptor
+from rcl_interfaces.msg import ParameterEvent, ParameterDescriptor, ParameterValue
 
 
 class GelloPublisher(Node):
@@ -30,7 +31,7 @@ class GelloPublisher(Node):
             .get_parameter_value()
             .integer_value
         )
-        self.joint_signs = (
+        self.joint_signs = np.array(
             self.declare_parameter("joint_signs", [1] * 7, read_only_desc)
             .get_parameter_value()
             .integer_array_value
@@ -46,7 +47,7 @@ class GelloPublisher(Node):
             .get_parameter_value()
             .double_array_value
         )
-        self.best_offsets = (
+        self.best_offsets = np.array(
             self.declare_parameter("best_offsets", [0.0] * 7, read_only_desc)
             .get_parameter_value()
             .double_array_value
@@ -54,7 +55,7 @@ class GelloPublisher(Node):
 
         self.initialize_dynamixels()
 
-        self.robot_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
+        self.arm_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
         self.gripper_joint_publisher = self.create_publisher(
             Float32, "gripper/gripper_client/target_gripper_width_percent", 10
         )
@@ -78,7 +79,13 @@ class GelloPublisher(Node):
                 continue
             # Extract the data name and value
             data_name = param.name.replace("dynamixel_", "")
-            value = list(param.value.integer_array_value)
+            def convert(x): return x
+            for entry in self.ordered_dynamixel_params:
+                if entry["name"] == data_name:
+                    if "convert" in entry:
+                        convert = entry["convert"]
+                    break
+            value = list(convert(param.value))
             # Write the parameter value to the Dynamixel driver
             self.driver.write_value_by_name(data_name, value)
             self.get_logger().info(f"Parameter {data_name} changed to {value}. Updated Dynamixels.")
@@ -98,9 +105,18 @@ class GelloPublisher(Node):
         from gello.dynamixel.driver import DynamixelDriver
         self.driver = DynamixelDriver(joint_ids, port=self.com_port, baudrate=57600)
 
+        def to_integer_array_value(param_value: ParameterValue) -> list[int]:
+            return list(param_value.integer_array_value)
+        
+        def goal_position_to_pulses(param_value: ParameterValue) -> list[int]:
+            goals = np.array(param_value.double_array_value)
+            arm_goals_raw = (goals[:self.num_arm_joints] * self.joint_signs) + self.best_offsets
+            goals_raw = np.append(arm_goals_raw, goals[-1]) if self.gripper else arm_goals_raw
+            return [self.driver._rad_to_pulses(rad) for rad in goals_raw]
+
         CURRENT_BASED_POSITION_MODE = 5
         CURRENT_LIMIT = 600  # mA
-        ordered_dynamixel_params = [
+        self.ordered_dynamixel_params = [
             {
                 "name": "operating_mode",  # resets kp_p, kp_i, kp_d, goal_current, goal_position
                 "default": [CURRENT_BASED_POSITION_MODE] * self.num_total_joints,
@@ -114,34 +130,39 @@ class GelloPublisher(Node):
                 "default": [0] * self.num_total_joints,
                 "constraints": "Sensible values: 0 to ~1000",
                 "is_ros2_param": True,
+                "convert": to_integer_array_value
             },
             {
                 "name": "kp_i",
                 "default": [0] * self.num_total_joints,
                 "constraints": "Sensible values: 0 to ~1000",
                 "is_ros2_param": True,
+                "convert": to_integer_array_value
             },
             {
                 "name": "kp_d",
                 "default": [0] * self.num_total_joints,
                 "constraints": "Sensible values: 0 to ~1000",
                 "is_ros2_param": True,
+                "convert": to_integer_array_value
             },
             {
                 "name": "torque_enable",  # resets goal_position
                 "default": [0] * self.num_total_joints,
                 "constraints": "0 (disabled), 1 (enabled)",
                 "is_ros2_param": True,
+                "convert": to_integer_array_value
             },
             {
                 "name": "goal_position",
-                "default": [0] * self.num_total_joints,
+                "default": [0.0] * self.num_total_joints,
                 "constraints": "4095 corresponds to 360 degrees",
                 "is_ros2_param": True,
+                "convert": goal_position_to_pulses,
             },
         ]
 
-        for param in ordered_dynamixel_params:
+        for param in self.ordered_dynamixel_params:
             param_value = param["default"]
             if param.get("is_ros2_param", False):
                 desc = ParameterDescriptor(additional_constraints=param.get("constraints", ""))
@@ -150,9 +171,9 @@ class GelloPublisher(Node):
                         f"dynamixel_{param['name']}", param["default"], desc
                     )
                     .get_parameter_value()
-                    .integer_array_value
                 )
-            self.driver.write_value_by_name(param["name"], list(param_value))
+            convert = param.get("convert", lambda x: x)
+            self.driver.write_value_by_name(param["name"], list(convert(param_value)))
         self.get_logger().info("Sent initial control parameters to all Dynamixel motors.")
 
         # Subscribe to parameter events to allow dynamic updates of parameters
@@ -169,24 +190,24 @@ class GelloPublisher(Node):
             assert j == -1 or j == 1, f"Joint idx: {idx} should be -1 or 1, but got {j}."
 
     def publish_joint_jog(self):
-        gello_joints = self.driver.get_joints()
+        gello_joints_raw = self.driver.get_joints()
 
-        gello_robot_joints = gello_joints[:self.num_arm_joints]
-        gello_robot_joints_corrected = (gello_robot_joints - self.best_offsets) * self.joint_signs
+        gello_arm_joints_raw = gello_joints_raw[:self.num_arm_joints]
+        gello_arm_joints = (gello_arm_joints_raw - self.best_offsets) * self.joint_signs
 
-        robot_joint_states = JointState()
-        robot_joint_states.header.stamp = self.get_clock().now().to_msg()
-        robot_joint_states.name = self.joint_names
-        robot_joint_states.header.frame_id = "fr3_link0"
-        robot_joint_states.position = [float(joint) for joint in gello_robot_joints_corrected]
+        arm_joint_states = JointState()
+        arm_joint_states.header.stamp = self.get_clock().now().to_msg()
+        arm_joint_states.name = self.joint_names
+        arm_joint_states.header.frame_id = "fr3_link0"
+        arm_joint_states.position = [float(joint) for joint in gello_arm_joints]
 
         gripper_joint_states = Float32()
         if self.gripper:
-            gripper_position = gello_joints[-1]
+            gripper_position = gello_joints_raw[-1]
             gripper_joint_states.data = self.gripper_readout_to_percent(gripper_position)
         else:
             gripper_joint_states.data = 0.0
-        self.robot_joint_publisher.publish(robot_joint_states)
+        self.arm_joint_publisher.publish(arm_joint_states)
         self.gripper_joint_publisher.publish(gripper_joint_states)
 
     def gripper_readout_to_percent(self, gripper_position: float) -> float:
