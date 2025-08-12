@@ -7,4 +7,10 @@ services:
     volumes:
       - ../../:/workspace
       - /dev/serial/by-id:/dev/serial/by-id
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+    environment:
+      DISPLAY: ${DISPLAY}
+      QT_X11_NO_MITSH: "1"
+      XAUTHORITY: /tmp/.docker.xauth
       
