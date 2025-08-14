@@ -1,17 +1,29 @@
 LEFT:
   com_port: "usb-FTDI_USB__-__Serial_Converter_FT9MFSIO-if00-port0"
   namespace: "left"
-  num_joints: 7
+  num_arm_joints: 7
   joint_signs: [1, 1, 1, 1, 1, -1, 1]
   gripper: true
   best_offsets: [3.142, 3.142, 3.142, 4.712, 3.142, 4.712, 1.571]
   gripper_range_rad: [2.77856, 3.50931]
+  # Optional Dynamixel control parameters for all arm joints (+ gripper):
+  dynamixel_torque_enable: [     1,     1,     1,     1,     1,     1,     1,     1] # 1 on, 0 off
+  dynamixel_goal_position: [   0.0,   0.0,   0.0,-1.571,   0.0, 1.571,   0.0, 3.509] # rad
+  dynamixel_kp_p:          [    30,    60,     0,    30,     0,     0,     0,    50]
+  dynamixel_kp_i:          [     0,     0,     0,     0,     0,     0,     0,     0]
+  dynamixel_kp_d:          [   250,   100,    80,    60,    30,    10,     5,     0]
 
 RIGHT:
   com_port: "usb-FTDI_USB__-__Serial_Converter_FT9MFR6C-if00-port0"
   namespace: "right"
-  num_joints: 7
+  num_arm_joints: 7
   joint_signs: [1, 1, 1, 1, 1, -1, 1]
   gripper: true
   best_offsets: [3.142, 3.142, -3.142, 4.712, 3.142, 4.712, 1.571]
   gripper_range_rad: [2.77856, 3.50931]
+  # Optional Dynamixel control parameters for all arm joints (+ gripper):
+  dynamixel_torque_enable: [     1,     1,     1,     1,     1,     1,     1,     1] # 1 on, 0 off
+  dynamixel_goal_position: [   0.0,   0.0,   0.0,-1.571,   0.0, 1.571,   0.0, 3.509] # rad
+  dynamixel_kp_p:          [    30,    60,     0,    30,     0,     0,     0,    50]
+  dynamixel_kp_i:          [     0,     0,     0,     0,     0,     0,     0,     0]
+  dynamixel_kp_d:          [   250,   100,    80,    60,    30,    10,     5,     0]
