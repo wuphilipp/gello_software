@@ -1,0 +1,51 @@
+# YAM GELLO Agent Simulation Configuration with FACTR Gravity Compensation
+# This config runs YAM simulation in MuJoCo controlled by real YAM GELLO hardware
+# Run with: python experiments/launch_yaml.py --left-config-path configs/yam_gello_factr_sim.yaml
+
+robot:
+  _target_: gello.robots.sim_robot.MujocoRobotServer
+  xml_path: third_party/mujoco_menagerie/i2rt_yam/yam.xml
+  gripper_xml_path: null
+  host: 127.0.0.1
+  port: 6001
+
+agent:
+  _target_: gello.factr.yam_gello_factr_agent.YAMGelloAgent
+  robot:
+    _target_: gello.factr.yam_gello_factr_agent.YAMGelloRobot
+    config:
+      _target_: gello.factr.yam_gello_factr_agent.YAMGelloConfig
+      
+      # Hardware configuration (REAL GELLO hardware)
+      port: /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0
+      baudrate: 57600
+      joint_ids: [1, 2, 3, 4, 5, 6]
+      
+      # Joint configuration (from yam_active.yaml)
+      joint_offsets: [3.14159, 3.14159, 3.14159, 3.14159, 3.14159, 1.5708]
+      joint_signs: [1.0, -1.0, 1.0, 1.0, 1.0, 1.0]
+      
+      # Servo types for torque conversion
+      servo_types: ["XC330_T288_T", "XM430_W210_T", "XM430_W210_T", 
+                    "XC330_T288_T", "XC330_T288_T", "XC330_T288_T"]
+      
+      # URDF configuration
+      urdf_path: "gello/factr/urdf/yam_active_gello/robot.urdf"
+      
+      # FACTR gravity compensation parameters (non-zero for testing)
+      control_frequency: 100.0  # Hz
+      gravity_gain: 0.3  # Non-zero for testing (0.3 = 30% gravity compensation)
+      null_space_kp: 0.05  # Non-zero for testing
+      null_space_kd: 0.005  # Non-zero for testing
+      friction_gain: 0.2  # Non-zero for testing
+      barrier_kp: 0.3  # Non-zero for testing
+      barrier_kd: 0.01  # Non-zero for testing
+      
+      # Gripper configuration
+      gripper_config: [7, 241.4375, 300.9375]  
+      
+      # Starting joint positions
+      start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+
+# Control parameters
+hz: 30 
