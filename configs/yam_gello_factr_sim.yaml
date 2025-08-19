@@ -18,7 +18,7 @@ agent:
       
       # Hardware configuration (REAL GELLO hardware)
       port: /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0
-      baudrate: 57600
+      baudrate: 4000000  # Increased from 57600 to match lab42 performance (70x faster!)
       joint_ids: [1, 2, 3, 4, 5, 6]
       
       # Joint configuration (from yam_active.yaml)
@@ -33,19 +33,21 @@ agent:
       urdf_path: "gello/factr/urdf/yam_active_gello/robot.urdf"
       
       # FACTR gravity compensation parameters (non-zero for testing)
-      control_frequency: 100.0  # Hz
-      gravity_gain: 0.3  # Non-zero for testing (0.3 = 30% gravity compensation)
-      null_space_kp: 0.05  # Non-zero for testing
-      null_space_kd: 0.005  # Non-zero for testing
-      friction_gain: 0.2  # Non-zero for testing
-      barrier_kp: 0.3  # Non-zero for testing
-      barrier_kd: 0.01  # Non-zero for testing
+      control_frequency: 100.0  # Hz - increased for better responsiveness
+      gravity_gain: 0.2 
+      null_space_kp: 0.0
+      null_space_kd: 0.00 
+      friction_gain: 0.0
+      barrier_kp: 0.0 
+      barrier_kd: 0.00
       
       # Gripper configuration
       gripper_config: [7, 241.4375, 300.9375]  
       
       # Starting joint positions
       start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+  
+  # Enable gravity compensation to actually run the FACTR control loop
+  enable_gravity_comp: true
 
-# Control parameters
 hz: 30 

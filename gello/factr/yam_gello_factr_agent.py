@@ -217,34 +217,6 @@ class YAMGelloRobot:
                     barrier_kd=self.config.barrier_kd
                 )
             
-            # Debug: Check what model was loaded
-            if self.factr_system:
-                print(f"  FACTR System Details:")
-                print(f"    URDF Path: {self.config.urdf_path}")
-                print(f"    Use Simple Model: {getattr(self.factr_system, 'use_simple_model', 'Unknown')}")
-                print(f"    Model DOF: {getattr(self.factr_system, 'model', None) is not None}")
-                print(f"    Gravity Gain: {self.factr_system.gravity_gain}")
-                print(f"    Null Space KP: {self.factr_system.null_space_kp}")
-                print(f"    Null Space KD: {self.factr_system.null_space_kd}")
-                print(f"    Friction Gain: {self.factr_system.friction_gain}")
-                print(f"    Barrier KP: {self.factr_system.barrier_kp}")
-                print(f"    Barrier KD: {self.factr_system.barrier_kd}")
-            
-            # Set YAM-specific joint limits (more conservative than Franka defaults)
-            if self.factr_system:
-                # YAM robot joint limits (conservative values in radians)
-                yam_joint_limits_max = [np.pi, np.pi, np.pi, np.pi, np.pi, np.pi]  # Conservative upper limits
-                yam_joint_limits_min = [-np.pi, -np.pi, -np.pi, -np.pi, -np.pi, -np.pi]  # Conservative lower limits
-                
-                # Update the FACTR system with YAM-specific limits
-                self.factr_system.joint_limits_max = np.array(yam_joint_limits_max)
-                self.factr_system.joint_limits_min = np.array(yam_joint_limits_min)
-                self.factr_system.joint_limits_margin = 0.2  # Larger margin for safety
-                
-                # Set YAM-specific null space target (home position)
-                yam_null_space_target = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]  # YAM home position
-                self.factr_system.null_space_target = np.array(yam_null_space_target)
-            
             print("✓ FACTR system setup complete")
             
         except Exception as e:
@@ -273,83 +245,67 @@ class YAMGelloRobot:
         """Main control loop for FACTR gravity compensation."""
         dt = 1.0 / self.config.control_frequency
         
+        # Set real-time scheduling policy like lab42
+        try:
+            os.sched_setscheduler(
+                0,
+                os.SCHED_FIFO,
+                os.sched_param(os.sched_get_priority_max(os.SCHED_FIFO)),
+            )
+            print("✓ Real-time scheduling enabled")
+        except PermissionError:
+            print("⚠️  Failed to set real-time scheduling policy, please edit /etc/security/limits.d/99-realtime.conf")
+        except:
+            print("⚠️  Real-time scheduling not available")
+        
+        print(f"Starting FACTR control loop at {1/dt:.1f} Hz")
+        
         while self._running:
             start_time = time.time()
             
             try:
                 # Get current joint states
                 if self._sim_mode:
-                    # In simulation mode, we can't control torques directly
-                    # Just monitor the simulation
                     time.sleep(dt)
                     continue
                 
                 joint_pos_raw, joint_vel_raw = self.driver.get_positions_and_velocities()
                 
                 if joint_pos_raw is None or joint_vel_raw is None:
-                    time.sleep(0.01)
+                    time.sleep(0.001)  # Minimal sleep like lab42
                     continue
                 
                 # Separate arm and gripper data
                 arm_pos_raw = joint_pos_raw[:len(self.config.joint_ids)]
                 arm_vel_raw = joint_vel_raw[:len(self.config.joint_ids)]
                 
-                # Calculate torques using FACTR system (currently zero for testing)
+                # Calculate torques using FACTR system
                 if self.factr_system and not self._sim_mode:
-                    # Ensure we're in current control mode for FACTR
-                    if hasattr(self.driver, 'get_operating_mode'):
-                        try:
-                            current_mode = self.driver.get_operating_mode()
-                            if current_mode != 0:  # Not in current control mode
-                                print(f"⚠️  Switching to current control mode (was mode {current_mode})")
-                                self._switch_to_current_control()
-                        except:
-                            pass  # Ignore if get_operating_mode is not available
-                    
-                    # Use FACTR system for torque calculation (real robot only)
-                    # Pass raw positions/velocities - FACTR system handles offsets and signs internally
                     torques = self.factr_system.compute_torques(arm_pos_raw, arm_vel_raw)
-                    
-                    # Debug: Print torque components to see what's happening
-                    if hasattr(self.factr_system, 'gravity_gain') and self.factr_system.gravity_gain > 0:
-                        print(f"\r🔍 FACTR Debug: gravity_gain={self.factr_system.gravity_gain:.3f}, "
-                              f"null_kp={self.factr_system.null_space_kp:.3f}, "
-                              f"null_kd={self.factr_system.null_space_kd:.3f}, "
-                              f"friction_gain={self.factr_system.friction_gain:.3f}, "
-                              f"barrier_kp={self.factr_system.barrier_kp:.3f}, "
-                              f"barrier_kd={self.factr_system.barrier_kd:.3f}, "
-                              f"torques={[f'{t:.4f}' for t in torques[:3]]}...", end="", flush=True)
                 else:
-                    # Zero torque mode for testing or simulation
                     torques = np.zeros(len(self.config.joint_ids))
                 
-                # Apply torques (will be zero in testing mode)
+                # Apply torques
                 try:
-                    # Convert torques to driver format (including gripper if configured)
                     if self.config.gripper_config is not None:
-                        # Add zero torque for gripper
-                        gripper_torques = np.zeros(1)  # Zero torque for gripper
-                        # FACTR system already applies joint signs, so don't apply them again
+                        gripper_torques = np.zeros(1)
                         all_torques = np.concatenate([torques, gripper_torques])
                     else:
-                        # FACTR system already applies joint signs, so don't apply them again
                         all_torques = torques
                     
                     self.driver.set_torque(all_torques.tolist())
                 except Exception as e:
                     print(f"Warning: Failed to set torque: {e}")
                 
-                # Maintain loop timing
+                # Maintain loop timing (like lab42)
                 elapsed = time.time() - start_time
                 sleep_time = max(0, dt - elapsed)
                 if sleep_time > 0:
                     time.sleep(sleep_time)
-                else:
-                    print(f"⚠️  Loop overrun: {elapsed - dt:.4f}s")
                     
             except Exception as e:
                 print(f"Error in control loop: {e}")
-                time.sleep(0.1)
+                time.sleep(0.001)  # Minimal sleep like lab42
                 continue
     
     def get_joint_state(self) -> Dict[str, np.ndarray]:
@@ -435,7 +391,7 @@ class YAMGelloRobot:
                 self.driver.set_torque_mode(True)
                 return True
             except Exception as e:
-                print(f"Warning: Could not switch to current control mode: {e}")
+                print(f"❌ Warning: Could not switch to current control mode: {e}")
                 return False
         return False
     
@@ -566,11 +522,19 @@ class YAMGelloAgent(Agent):
     robot: YAMGelloRobot
     use_joint_state_as_action: bool = True
     regularize_joints: Optional[np.ndarray] = None
+    enable_gravity_comp: bool = False  # Whether to enable gravity compensation
     
     def __post_init__(self):
         """Post-initialization setup."""
         if isinstance(self.robot, YAMGelloRobot):
-            self.robot.set_torque_mode(False)  # Start in position mode for safety
+            if self.enable_gravity_comp:
+                # Enable torque mode and start gravity compensation
+                self.robot.set_torque_mode(True)
+                self.start_gravity_compensation()
+                print("🚀 Started FACTR gravity compensation")
+            else:
+                # Start in position mode for safety
+                self.robot.set_torque_mode(False)
     
     def act(self, obs: Dict[str, Any]) -> np.ndarray:
         """Get action from robot - matches gello_software GelloAgent pattern."""
