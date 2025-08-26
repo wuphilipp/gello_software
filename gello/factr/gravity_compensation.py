@@ -26,6 +26,10 @@ import yaml
 # Import FACTR's dynamixel driver directly (no ROS dependencies)
 from gello.factr.lab42_driver import DynamixelDriver
 
+import threading
+from importlib import import_module
+from typing import Any, Dict
+
 
 def find_ttyusb(port_name: str) -> str:
     """Locate the underlying ttyUSB device."""
@@ -44,6 +48,27 @@ def find_ttyusb(port_name: str) -> str:
             )
     except Exception as e:
         raise Exception(f"Unable to resolve the symbolic link for '{port_name}'. {e}") from e
+
+
+def _instantiate_from_dict(cfg: Dict[str, Any]) -> Any:
+    """Lightweight instantiation from a dict with a _target_ path.
+
+    Keeps this script self-contained without importing broader launch utilities.
+    """
+    assert isinstance(cfg, dict) and "_target_" in cfg, "Invalid instantiation config"
+    module_path, class_name = cfg["_target_"].rsplit(".", 1)
+    cls = getattr(import_module(module_path), class_name)
+    kwargs = {k: v for k, v in cfg.items() if k != "_target_"}
+    # Recurse into nested dicts/lists
+    def _recurse(v):
+        if isinstance(v, dict) and "_target_" in v:
+            return _instantiate_from_dict(v)
+        if isinstance(v, dict):
+            return {kk: _recurse(vv) for kk, vv in v.items()}
+        if isinstance(v, list):
+            return [ _recurse(x) for x in v ]
+        return v
+    return cls(**{k: _recurse(v) for k, v in kwargs.items()})
 
 
 class FACTRGravityCompensation:
@@ -66,12 +91,24 @@ class FACTRGravityCompensation:
         self.config_path = config_path
         self.driver: Optional[DynamixelDriver] = None  # Initialize early for cleanup
 
+        # Teleop-related fields
+        self.teleop_enabled: bool = False
+        self.teleop_env = None
+        self.teleop_client = None
+        self.teleop_rate_hz: float = 30.0
+        self.teleop_thread: Optional[threading.Thread] = None
+        self.teleop_robot_server = None
+        self.teleop_threads: list[threading.Thread] = []
+        self.teleop_prepared: bool = False
+
         try:
             self._load_config()
             self._setup_parameters()
             self._prepare_dynamixel()
             self._prepare_inverse_dynamics()
             self._calibrate_system()
+            # Optional teleop setup
+            self._maybe_setup_teleop()
         except Exception as e:
             # Cleanup on initialization failure
             self.shutdown()
@@ -198,6 +235,134 @@ class FACTRGravityCompensation:
         self._get_dynamixel_offsets()
         print("Skipping initial position match...")
         print("System calibrated and ready!")
+
+    def _maybe_setup_teleop(self) -> None:
+        """Optionally set up a follower robot and teleop loop if enabled by config."""
+        teleop_cfg = self.config.get("teleop", {})
+        enabled = bool(teleop_cfg.get("enable", False))
+        if not enabled:
+            return
+
+        # Lazily import here to avoid adding dependencies when teleop is disabled
+        from gello.zmq_core.robot_node import ZMQClientRobot, ZMQServerRobot
+        from gello.env import RobotEnv
+
+        self.teleop_enabled = True
+        self.teleop_rate_hz = float(teleop_cfg.get("hz", 30))
+        server_host = teleop_cfg.get("robot", {}).get("host", "127.0.0.1")
+        server_port = int(teleop_cfg.get("robot", {}).get("port", 6001))
+        server_timeout_s = float(teleop_cfg.get("wait_for_server_timeout_s", 5.0))
+
+        robot_cfg = teleop_cfg.get("robot")
+        if not isinstance(robot_cfg, dict) or "_target_" not in robot_cfg:
+            raise ValueError("teleop.robot must be a dict containing a _target_ field")
+
+        # Instantiate follower robot
+        follower_robot = _instantiate_from_dict(robot_cfg)
+        self.teleop_robot_server = follower_robot
+
+        # Start server in background if needed
+        if hasattr(follower_robot, "serve"):
+            server_thread = threading.Thread(target=follower_robot.serve, daemon=True)
+            server_thread.start()
+            self.teleop_threads.append(server_thread)
+        else:
+            # Hardware robot; wrap with ZMQServerRobot
+            server = ZMQServerRobot(follower_robot, port=server_port, host=server_host)
+            server_thread = threading.Thread(target=server.serve, daemon=True)
+            server_thread.start()
+            self.teleop_robot_server = server
+            self.teleop_threads.append(server_thread)
+
+        # Wait for server to become ready
+        start = time.time()
+        while True:
+            try:
+                client = ZMQClientRobot(port=server_port, host=server_host)
+                # Probe an RPC to ensure server responsiveness
+                _ = client.num_dofs()
+                self.teleop_client = client
+                break
+            except Exception:
+                if time.time() - start > server_timeout_s:
+                    raise RuntimeError(
+                        f"Follower server failed to start on {server_host}:{server_port} within {server_timeout_s} seconds"
+                    )
+                time.sleep(0.1)
+
+        # Create env for follower
+        self.teleop_env = RobotEnv(self.teleop_client, control_rate_hz=self.teleop_rate_hz)
+
+        # Optionally move follower to a start position
+        start_joints = teleop_cfg.get("start_joints")
+        if start_joints is not None:
+            try:
+                self._move_follower_to_start(np.array(start_joints, dtype=float))
+            except Exception as e:
+                print(f"Warning: failed to move follower to start position: {e}")
+
+        # Mark prepared; DO NOT start thread yet (start in run() after running=True)
+        self.teleop_prepared = True
+        print(
+            f"Teleop prepared: follower ready at {server_host}:{server_port}, will mirror at {self.teleop_rate_hz:.1f} Hz"
+        )
+
+    def _move_follower_to_start(self, target_joints: np.ndarray) -> None:
+        assert self.teleop_env is not None
+        obs = self.teleop_env.get_obs()
+        curr = obs["joint_positions"]
+        if curr.shape != target_joints.shape:
+            print("Warning: follower start joints shape mismatch; skipping")
+            return
+        steps = int(min(max(np.abs(curr - target_joints).max() / 0.01, 1), 100))
+        for jnt in np.linspace(curr, target_joints, steps):
+            self.teleop_env.step(jnt)
+            time.sleep(0.001)
+
+    def _build_follower_action(
+        self,
+        self_arm_pos: npt.NDArray[np.float64],
+        self_gripper_pos: float,
+    ) -> np.ndarray:
+        """Build follower joint command from leader arm and gripper positions.
+
+        If follower has N = num_arm_joints + 1, append normalized gripper; otherwise, use arm only.
+        """
+        assert self.teleop_client is not None
+        try:
+            follower_dofs = self.teleop_client.num_dofs()
+        except Exception:
+            follower_dofs = len(self_arm_pos)
+        if follower_dofs == len(self_arm_pos) + 1:
+            # Normalize gripper to [0, 1] using leader actuation range
+            gripper_norm = float(np.clip(self_gripper_pos / max(self.gripper_limit_max, 1e-6), 0.0, 1.0))
+            return np.concatenate([self_arm_pos, np.array([gripper_norm], dtype=float)])
+        # Fallback: truncate/extend to match DOFs
+        if follower_dofs <= len(self_arm_pos):
+            return self_arm_pos[:follower_dofs]
+        # Pad with zeros for any extra joints (unlikely)
+        padded = np.zeros((follower_dofs,), dtype=float)
+        padded[: len(self_arm_pos)] = self_arm_pos
+        return padded
+
+    def _teleop_loop(self) -> None:
+        assert self.teleop_env is not None
+        rate_dt = 1.0 / max(self.teleop_rate_hz, 1e-3)
+        print("Starting teleop loop (follower control)")
+        while self.running:
+            t0 = time.time()
+            try:
+                # Use the same leader state access used by GC, which already applies offsets/signs
+                leader_arm_pos, leader_arm_vel, leader_gripper_pos, leader_gripper_vel = self.get_leader_joint_states()
+                action = self._build_follower_action(leader_arm_pos, leader_gripper_pos)
+                self.teleop_env.step(action)
+            except Exception as e:
+                print(f"Teleop loop warning: {e}")
+            # Timing
+            elapsed = time.time() - t0
+            sleep_t = rate_dt - elapsed
+            if sleep_t > 0:
+                time.sleep(sleep_t)
 
     def _get_dynamixel_offsets(self, verbose: bool = True) -> None:
         """Calibrate Dynamixel servos to match expected joint positions."""
@@ -374,6 +539,11 @@ class FACTRGravityCompensation:
         print("Press Ctrl+C to stop")
         
         self.running = True
+        # Start teleop thread now that running is True
+        if self.teleop_enabled and self.teleop_prepared and self.teleop_thread is None:
+            self.teleop_thread = threading.Thread(target=self._teleop_loop, daemon=True)
+            self.teleop_thread.start()
+            print("Teleop started.")
         try:
             while self.running:
                 start_time = time.time()
@@ -396,9 +566,30 @@ class FACTRGravityCompensation:
     def shutdown(self) -> None:
         """Safely shutdown the system."""
         self.running = False
+        # Stop teleop thread and close ZMQ resources first
+        try:
+            if self.teleop_thread is not None and self.teleop_thread.is_alive():
+                # Give teleop loop a cycle to exit since self.running is False
+                time.sleep(0.05)
+                # Join briefly
+                self.teleop_thread.join(timeout=1.0)
+            if self.teleop_client is not None and hasattr(self.teleop_client, "close"):
+                self.teleop_client.close()
+            # Attempt to stop underlying server if it has a stop
+            if self.teleop_robot_server is not None and hasattr(self.teleop_robot_server, "stop"):
+                try:
+                    self.teleop_robot_server.stop()
+                except Exception:
+                    pass
+        except Exception as e:
+            print(f"Teleop shutdown warning: {e}")
+
         if hasattr(self, "driver") and self.driver is not None:
             print("Disabling motor torques...")
-            self.set_leader_joint_torque(np.zeros(self.num_arm_joints), 0.0)
+            try:
+                self.set_leader_joint_torque(np.zeros(self.num_arm_joints), 0.0)
+            except Exception:
+                pass
             self.driver.set_torque_mode(False)
             self.driver.close()
         print("Shutdown complete")
