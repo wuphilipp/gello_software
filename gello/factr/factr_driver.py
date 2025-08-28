@@ -19,9 +19,6 @@
 # https://github.com/wuphilipp/gello_software/blob/main/gello/dynamixel/driver.py
 # ---------------------------------------------------------------------------
 
-# EXACT COPY FROM WORKING LAB42 - ZERO DISCREPANCIES
-# SELF-CONTAINED IN FACTR DIRECTORY
-
 from threading import Lock
 from typing import Protocol, Sequence
 

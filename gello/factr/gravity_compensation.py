@@ -1,12 +1,10 @@
 """
 Standalone FACTR Gravity Compensation Script (Non-ROS)
 
-This script provides the same gravity compensation functionality as the ROS-based
-FACTR teleop system, but without ROS dependencies. It can be used within the lab42
-codebase where FACTR_Teleop is a submodule.
-
+This script provides the similar gravity compensation functionality as the ROS-based
+FACTR teleop system, but without ROS dependencies. 
 Usage:
-    python xdof/factr/factr_grav_comp.py --config xdof/sandboxs/jliu/factr_grav_comp_demo.yaml
+    python3 gello/factr/gravity_compensation.py --config configs/yam_gello_factr_hw.yaml
 """
 
 import argparse
@@ -24,11 +22,11 @@ import pinocchio as pin
 import yaml
 
 # Import FACTR's dynamixel driver directly (no ROS dependencies)
-from gello.factr.lab42_driver import DynamixelDriver
+from gello.factr.factr_driver import DynamixelDriver
 
 import threading
 from importlib import import_module
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 
 def find_ttyusb(port_name: str) -> str:
@@ -100,6 +98,15 @@ class FACTRGravityCompensation:
         self.teleop_robot_server = None
         self.teleop_threads: list[threading.Thread] = []
         self.teleop_prepared: bool = False
+        # Mapping from leader (arm joints) -> follower (first K joints)
+        self.map_index: Optional[np.ndarray] = None
+        self.map_signs: Optional[np.ndarray] = None
+        self.map_offsets: Optional[np.ndarray] = None
+        # Optional gripper teleop mapping using explicit open/close angles (degrees)
+        self.gripper_open_rad: Optional[float] = None
+        self.gripper_close_rad: Optional[float] = None
+        # Last raw leader gripper reading in radians (before offsets/signs)
+        self.leader_gripper_raw_rad: float = 0.0
 
         try:
             self._load_config()
@@ -250,16 +257,38 @@ class FACTRGravityCompensation:
         self.teleop_enabled = True
         self.teleop_rate_hz = float(teleop_cfg.get("hz", 30))
         server_host = teleop_cfg.get("robot", {}).get("host", "127.0.0.1")
-        server_port = int(teleop_cfg.get("robot", {}).get("port", 6001))
+        base_port = int(teleop_cfg.get("robot", {}).get("port", 6001))
         server_timeout_s = float(teleop_cfg.get("wait_for_server_timeout_s", 5.0))
 
         robot_cfg = teleop_cfg.get("robot")
         if not isinstance(robot_cfg, dict) or "_target_" not in robot_cfg:
             raise ValueError("teleop.robot must be a dict containing a _target_ field")
 
-        # Instantiate follower robot
+        # Optional gripper config: [id, open_deg, close_deg]
+        gc = teleop_cfg.get("gripper_config")
+        if isinstance(gc, list) and len(gc) == 3:
+            try:
+                _, open_deg, close_deg = gc
+                self.gripper_open_rad = float(open_deg) * np.pi / 180.0
+                self.gripper_close_rad = float(close_deg) * np.pi / 180.0
+                print(
+                    f"Teleop gripper_config set (rad): open={self.gripper_open_rad:.3f}, close={self.gripper_close_rad:.3f}"
+                )
+            except Exception as e:
+                print(f"Warning: invalid teleop.gripper_config, ignoring: {e}")
+
+        # Instantiate follower robot from config
         follower_robot = _instantiate_from_dict(robot_cfg)
         self.teleop_robot_server = follower_robot
+
+        # Determine server port to use
+        server_port = base_port
+        if hasattr(follower_robot, "serve"):
+            # Sim server exposes port in its own config; prefer that
+            try:
+                server_port = int(robot_cfg.get("port", base_port))
+            except Exception:
+                server_port = base_port
 
         # Start server in background if needed
         if hasattr(follower_robot, "serve"):
@@ -267,12 +296,29 @@ class FACTRGravityCompensation:
             server_thread.start()
             self.teleop_threads.append(server_thread)
         else:
-            # Hardware robot; wrap with ZMQServerRobot
-            server = ZMQServerRobot(follower_robot, port=server_port, host=server_host)
-            server_thread = threading.Thread(target=server.serve, daemon=True)
-            server_thread.start()
-            self.teleop_robot_server = server
-            self.teleop_threads.append(server_thread)
+            # Hardware robot; wrap with ZMQServerRobot and auto-select port if needed
+            from zmq.error import ZMQError  # type: ignore
+            selected_port = None
+            last_error: Optional[Exception] = None
+            for port_delta in range(0, 16):
+                try:
+                    candidate_port = base_port + port_delta
+                    server = ZMQServerRobot(follower_robot, port=candidate_port, host=server_host)
+                    server_thread = threading.Thread(target=server.serve, daemon=True)
+                    server_thread.start()
+                    self.teleop_robot_server = server
+                    self.teleop_threads.append(server_thread)
+                    selected_port = candidate_port
+                    break
+                except (ZMQError, Exception) as e:  # bind may fail if address in use
+                    last_error = e
+                    msg = str(e)
+                    if "Address already in use" in msg or "address in use" in msg:
+                        continue
+                    raise
+            if selected_port is None:
+                raise RuntimeError(f"Failed to create ZMQ server for hardware follower: {last_error}")
+            server_port = selected_port
 
         # Wait for server to become ready
         start = time.time()
@@ -293,6 +339,55 @@ class FACTRGravityCompensation:
         # Create env for follower
         self.teleop_env = RobotEnv(self.teleop_client, control_rate_hz=self.teleop_rate_hz)
 
+        # Determine follower DOFs and build mapping defaults
+        try:
+            follower_dofs = int(self.teleop_client.num_dofs())
+        except Exception:
+            follower_dofs = self.num_arm_joints
+        # If follower appears to include a gripper as last joint
+        follower_has_gripper = follower_dofs == (self.num_arm_joints + 1)
+        map_dims = min(self.num_arm_joints, follower_dofs - (1 if follower_has_gripper else 0))
+        default_index = np.arange(map_dims, dtype=int)
+        default_signs = np.ones(map_dims, dtype=float)
+        default_offsets = np.zeros(map_dims, dtype=float)
+
+        # Load mapping config
+        mapping_cfg = teleop_cfg.get("mapping", {}) if isinstance(teleop_cfg.get("mapping", {}), dict) else {}
+        index_map = mapping_cfg.get("index_map")
+        signs = mapping_cfg.get("signs")
+        offsets = mapping_cfg.get("offsets")
+        auto_align = bool(mapping_cfg.get("auto_align", True))
+
+        if index_map is None:
+            self.map_index = default_index
+        else:
+            self.map_index = np.array(index_map, dtype=int)
+        if signs is None:
+            self.map_signs = default_signs
+        else:
+            self.map_signs = np.array(signs, dtype=float)
+        if offsets is None:
+            self.map_offsets = default_offsets
+        else:
+            self.map_offsets = np.array(offsets, dtype=float)
+
+        # Use local, non-optional views for validation
+        map_index_local = cast(np.ndarray, self.map_index)
+        map_signs_local = cast(np.ndarray, self.map_signs)
+        map_offsets_local = cast(np.ndarray, self.map_offsets)
+
+        # Validate lengths
+        if not (len(map_index_local) == len(map_signs_local) == len(map_offsets_local) == map_dims):
+            print(
+                "Warning: teleop.mapping lengths mismatch or not equal to map_dims; using defaults."
+            )
+            self.map_index = default_index
+            self.map_signs = default_signs
+            self.map_offsets = default_offsets
+            map_index_local = default_index
+            map_signs_local = default_signs
+            map_offsets_local = default_offsets
+
         # Optionally move follower to a start position
         start_joints = teleop_cfg.get("start_joints")
         if start_joints is not None:
@@ -301,11 +396,45 @@ class FACTRGravityCompensation:
             except Exception as e:
                 print(f"Warning: failed to move follower to start position: {e}")
 
+        # Optional auto-alignment: compute offsets so current follower == mapped leader
+        if auto_align:
+            try:
+                obs = self.teleop_env.get_obs()
+                follower_curr = obs["joint_positions"]
+                leader_arm_pos, _, _, _ = self.get_leader_joint_states()
+                leader_mapped = map_signs_local * leader_arm_pos[map_index_local]
+                follower_slice = follower_curr[: int(len(map_index_local))]
+                self.map_offsets = follower_slice - leader_mapped
+                map_offsets_local = cast(np.ndarray, self.map_offsets)
+                print(
+                    f"Teleop auto-aligned offsets set to: {[float(x) for x in map_offsets_local]}"
+                )
+            except Exception as e:
+                print(f"Warning: auto_align failed: {e}")
+
         # Mark prepared; DO NOT start thread yet (start in run() after running=True)
         self.teleop_prepared = True
         print(
             f"Teleop prepared: follower ready at {server_host}:{server_port}, will mirror at {self.teleop_rate_hz:.1f} Hz"
         )
+        # Print mapping and initial states for quick tuning
+        try:
+            map_index_local = cast(np.ndarray, self.map_index)
+            map_signs_local = cast(np.ndarray, self.map_signs)
+            map_offsets_local = cast(np.ndarray, self.map_offsets)
+            leader_arm_pos, _, _, _ = self.get_leader_joint_states()
+            leader_mapped_dbg = map_signs_local * leader_arm_pos[map_index_local] + map_offsets_local
+            follower_dbg = self.teleop_env.get_obs()["joint_positions"][: int(len(map_index_local))]
+            def _fmt(arr):
+                return [float(f"{x:.3f}") for x in np.array(arr).tolist()]
+            print("Teleop mapping:")
+            print(f"  index_map: {map_index_local.tolist()}")
+            print(f"  signs: {_fmt(map_signs_local)}")
+            print(f"  offsets: {_fmt(map_offsets_local)}")
+            print(f"  leader(mapped): {_fmt(leader_mapped_dbg)}")
+            print(f"  follower(curr): {_fmt(follower_dbg)}")
+        except Exception as e:
+            print(f"Warning: teleop debug print failed: {e}")
 
     def _move_follower_to_start(self, target_joints: np.ndarray) -> None:
         assert self.teleop_env is not None
@@ -326,23 +455,48 @@ class FACTRGravityCompensation:
     ) -> np.ndarray:
         """Build follower joint command from leader arm and gripper positions.
 
-        If follower has N = num_arm_joints + 1, append normalized gripper; otherwise, use arm only.
+        Applies configured mapping: index, signs, offsets. Handles extra gripper DOF.
         """
         assert self.teleop_client is not None
         try:
             follower_dofs = self.teleop_client.num_dofs()
         except Exception:
             follower_dofs = len(self_arm_pos)
-        if follower_dofs == len(self_arm_pos) + 1:
-            # Normalize gripper to [0, 1] using leader actuation range
-            gripper_norm = float(np.clip(self_gripper_pos / max(self.gripper_limit_max, 1e-6), 0.0, 1.0))
-            return np.concatenate([self_arm_pos, np.array([gripper_norm], dtype=float)])
-        # Fallback: truncate/extend to match DOFs
-        if follower_dofs <= len(self_arm_pos):
-            return self_arm_pos[:follower_dofs]
+
+        # Prepare mapped arm command
+        if self.map_index is None or self.map_signs is None or self.map_offsets is None:
+            map_index = np.arange(min(len(self_arm_pos), follower_dofs), dtype=int)
+            map_signs = np.ones_like(map_index, dtype=float)
+            map_offsets = np.zeros_like(map_index, dtype=float)
+        else:
+            map_index = self.map_index
+            map_signs = self.map_signs
+            map_offsets = self.map_offsets
+
+        arm_cmd = map_signs * self_arm_pos[map_index] + map_offsets
+
+        # Compose final command with optional gripper channel
+        if follower_dofs == len(arm_cmd) + 1:
+            # Determine normalized gripper using explicit config if provided
+            if self.gripper_open_rad is not None and self.gripper_close_rad is not None:
+                denom = (self.gripper_close_rad - self.gripper_open_rad)
+                if abs(denom) < 1e-6:
+                    gripper_norm = 0.0
+                else:
+                    gripper_norm = (self.leader_gripper_raw_rad - self.gripper_open_rad) / denom
+            else:
+                # Fallback to actuation_range
+                gripper_norm = self_gripper_pos / max(self.gripper_limit_max, 1e-6)
+            gripper_norm = float(np.clip(gripper_norm, 0.0, 1.0))
+            return np.concatenate([arm_cmd, np.array([gripper_norm], dtype=float)])
+
+        if follower_dofs == len(arm_cmd):
+            return arm_cmd
+        if follower_dofs < len(arm_cmd):
+            return arm_cmd[:follower_dofs]
         # Pad with zeros for any extra joints (unlikely)
         padded = np.zeros((follower_dofs,), dtype=float)
-        padded[: len(self_arm_pos)] = self_arm_pos
+        padded[: len(arm_cmd)] = arm_cmd
         return padded
 
     def _teleop_loop(self) -> None:
@@ -428,6 +582,7 @@ class FACTRGravityCompensation:
         joint_vel_arm = joint_vel[0 : self.num_arm_joints] * self.joint_signs[0 : self.num_arm_joints]
 
         # Process gripper
+        self.leader_gripper_raw_rad = float(joint_pos[-1])
         self.gripper_pos = (joint_pos[-1] - self.joint_offsets[-1]) * self.joint_signs[-1]
         gripper_vel = (self.gripper_pos - self.gripper_pos_prev) / self.dt
 

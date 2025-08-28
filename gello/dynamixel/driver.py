@@ -19,7 +19,6 @@
 # https://github.com/wuphilipp/gello_software/blob/main/gello/dynamixel/driver.py
 # ---------------------------------------------------------------------------
 
-# EXACT COPY FROM WORKING LAB42 - ZERO DISCREPANCIES
 
 import os
 import subprocess

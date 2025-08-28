@@ -24,9 +24,6 @@ from typing import Any, Dict, List, Optional, Tuple, Sequence
 import numpy as np
 import os 
 
-# Remove the malformed sys.path.insert line
-# sys.path.insert(0, str(Path(__file__).parent.parent.parent))
-
 from gello.agents.agent import Agent
 from gello.dynamixel.driver import DynamixelDriver
 from gello.factr.gravity_compensation import FACTRGravityCompensation
@@ -51,16 +48,15 @@ class YAMGelloConfig:
     # URDF configuration
     urdf_path: str = "gello/factr/urdf/yam_active_gello/robot.urdf"
     
-    # FACTR gravity compensation parameters (from working lab42 config)
-    control_frequency: float = 500.0  # Hz - same as lab42
-    gravity_gain: float = 1.0  # Full strength like lab42
-    null_space_kp: float = 0.0  # Disabled like working FACTR
-    null_space_kd: float = 0.0  # Disabled like working FACTR
-    friction_gain: float = 0.0  # Disabled like working FACTR
-    barrier_kp: float = 0.0  # Disabled like working FACTR
-    barrier_kd: float = 0.0  # Disabled like working FACTR
+   
+    control_frequency: float = 500.0  
+    gravity_gain: float = 1.0  # Full strength 
+    null_space_kp: float = 0.0  
+    null_space_kd: float = 0.0  
+    friction_gain: float = 0.0  
+    barrier_kp: float = 0.0  
+    barrier_kd: float = 0.0  
     
-    # Torque limits (allow higher torques like lab42)
     max_torque: float = 2.0  # Maximum torque per joint in Nm
     
     # Gripper configuration
@@ -179,7 +175,7 @@ class YAMGelloRobot:
                 print(f"  ⚠️  Warning: Could not switch to current control mode: {e}")
                 print("  FACTR system will use position control mode instead")
             
-            # Setup FACTR gravity compensation system (EXACT LAB42 COPY)
+            # Setup FACTR gravity compensation system 
             factr_config_path = "configs/yam_gello_factr_sim.yaml"
             self.factr_system = FACTRGravityCompensation(factr_config_path)
             
@@ -195,7 +191,7 @@ class YAMGelloRobot:
             print("Control loop already running")
             return
         
-        # Enable FACTR system first to set up joint offsets (lab42 style)
+        # Enable FACTR system first to set up joint offsets
         if self.factr_system and not self._sim_mode:
             try:
                 print("Enabling FACTR gravity compensation system...")
@@ -218,7 +214,6 @@ class YAMGelloRobot:
         print("✓ Control loop stopped")
     
     def _control_loop(self):
-        """Main control loop - EXACT COPY FROM LAB42."""
         print("Starting FACTR gravity compensation control loop...")
         self.factr_system.run()
     
@@ -510,32 +505,28 @@ class YAMGelloAgent(Agent):
         return self.robot.num_dofs()
     
     def get_joint_pos(self) -> np.ndarray:
-        """Get current joint positions - simplified for lab42 system."""
-        # For lab42 system, positions are handled internally
-        return np.zeros(7)  # Placeholder - lab42 handles this
+
+        return np.zeros(7) 
     
     def get_joint_state(self) -> Dict[str, np.ndarray]:
-        """Get current joint state - simplified for lab42 system."""
-        # For lab42 system, joint states are handled internally
+
         return {
-            "joint_pos": np.zeros(7),  # Placeholder - lab42 handles this
-            "joint_vel": np.zeros(7),  # Placeholder - lab42 handles this
+            "joint_pos": np.zeros(7)
+            "joint_vel": np.zeros(7), 
         }
     
     def start_gravity_compensation(self) -> None:
-        """Start gravity compensation - EXACT COPY FROM LAB42."""
         print("Starting FACTR gravity compensation system...")
-        # The lab42 system handles everything internally
         pass
     
     def stop_gravity_compensation(self) -> None:
-        """Stop gravity compensation - EXACT COPY FROM LAB42."""
+        """Stop gravity compensation"""
         print("Stopping FACTR gravity compensation system...")
         if hasattr(self, 'factr_system') and self.factr_system:
             self.factr_system.shutdown()
     
     def close(self) -> None:
-        """Close the agent - EXACT COPY FROM LAB42."""
+        """Close the agent"""
         print("Closing FACTR gravity compensation system...")
         if hasattr(self, 'factr_system') and self.factr_system:
             self.factr_system.shutdown()
