@@ -107,6 +107,9 @@ class FACTRGravityCompensation:
         self.gripper_close_rad: Optional[float] = None
         # Last raw leader gripper reading in radians (before offsets/signs)
         self.leader_gripper_raw_rad: float = 0.0
+        # Teleop smoothing (match baseline non-FACTR behavior)
+        self.teleop_smoothing_alpha: float = 0.99
+        self._teleop_last_action: Optional[np.ndarray] = None
 
         try:
             self._load_config()
@@ -206,8 +209,18 @@ class FACTRGravityCompensation:
 
         # Configure servos
         self.driver.set_torque_mode(False)
-        self.driver.set_operating_mode(0)  # Current control mode
-        self.driver.set_torque_mode(True)
+        if self.enable_gravity_comp:
+            # Use current control with torque enabled when GC is active
+            self.driver.set_operating_mode(0)  # Current control mode
+            self.driver.set_torque_mode(True)
+        else:
+            # When GC is disabled, keep motors free/backdrivable similar to baseline
+            # Try to switch to position mode (not strictly necessary) and keep torque disabled
+            try:
+                self.driver.set_operating_mode(3)  # Position control mode
+            except Exception:
+                pass
+            self.driver.set_torque_mode(False)
 
     def _prepare_inverse_dynamics(self) -> None:
         """Initialize Pinocchio model for inverse dynamics."""
@@ -509,6 +522,12 @@ class FACTRGravityCompensation:
                 # Use the same leader state access used by GC, which already applies offsets/signs
                 leader_arm_pos, leader_arm_vel, leader_gripper_pos, leader_gripper_vel = self.get_leader_joint_states()
                 action = self._build_follower_action(leader_arm_pos, leader_gripper_pos)
+                # Apply exponential smoothing to follower command to mirror baseline
+                if self._teleop_last_action is None or len(self._teleop_last_action) != len(action):
+                    self._teleop_last_action = action
+                else:
+                    action = self._teleop_last_action * (1.0 - self.teleop_smoothing_alpha) + action * self.teleop_smoothing_alpha
+                    self._teleop_last_action = action
                 self.teleop_env.step(action)
             except Exception as e:
                 print(f"Teleop loop warning: {e}")
@@ -685,8 +704,9 @@ class FACTRGravityCompensation:
             torque_arm += self.gravity_compensation(leader_arm_pos, leader_arm_vel)
             torque_arm += self.friction_compensation(leader_arm_vel)
 
-        # Apply torques
-        self.set_leader_joint_torque(torque_arm, torque_gripper)
+        # Apply torques only if GC is enabled (torque mode is off otherwise)
+        if self.enable_gravity_comp:
+            self.set_leader_joint_torque(torque_arm, torque_gripper)
 
     def run(self) -> None:
         """Run the main control loop."""

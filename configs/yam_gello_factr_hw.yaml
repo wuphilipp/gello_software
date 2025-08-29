@@ -36,7 +36,7 @@ controller:
     motor_scalar: 94.5652173913
   gravity_comp:
     enable: True
-    gain: 0.8
+    gain: 0.6
   null_space_regulation:
     null_space_joint_target: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
     kp: 0.0
@@ -48,16 +48,16 @@ controller:
     kp: 0.0
     kd: 0.0
   joint_position_control:
-    interpolation_step_size: 0.5
+    interpolation_step_size: 0.01
     kp: 1.03561658022
     kd: 0.04315069084
 
   gripper_feedback:
-    enable: False
+    enable: True
 
 teleop:
   enable: true
-  hz: 100
+  hz: 30
   wait_for_server_timeout_s: 5.0
   robot:
     _target_: gello.robots.yam.YAMRobot
@@ -73,4 +73,3 @@ teleop:
     auto_align: true
   # Explicit gripper config for teleop normalization: [id, open_deg, close_deg]
   gripper_config: [7, 241.4375, 300.9375] 
-  

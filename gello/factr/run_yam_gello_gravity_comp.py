@@ -3,7 +3,6 @@
 Direct YAM_GELLO Gravity Compensation Script
 
 This script directly launches the YAM_GELLO in FACTR gravity compensation mode.
-Uses the exact same physics/IK system as the working factr_grav_comp.py
 """
 
 import sys
@@ -64,7 +63,7 @@ def calibrate_joint_offsets(driver: DynamixelDriver, joint_signs: list, num_join
     return joint_offsets
 
 def main():
-    """Main function to run YAM_GELLO gravity compensation using the same physics as factr_grav_comp.py."""
+    """Main function to run YAM_GELLO gravity compensation"""
     
     print("="*60)
     print("YAM_GELLO FACTR Gravity Compensation (Direct Physics)")
@@ -124,7 +123,7 @@ def main():
         print(f"Error details: {type(e).__name__}: {str(e)}")
         sys.exit(1)
     
-    # Now create the main driver and physics system (same as factr_grav_comp.py)
+    # Now create the main driver and physics system 
     try:
         print("\n🔧 Creating main driver and physics system...")
         driver = DynamixelDriver(
@@ -134,13 +133,13 @@ def main():
         )
         print("✓ Main driver created successfully")
         
-        # Configure servos (same as factr_grav_comp.py)
+        # Configure servos 
         driver.set_torque_mode(False)
         driver.set_operating_mode(0)  # Current control mode
         driver.set_torque_mode(True)
         print("✓ Servos configured for current control")
         
-        # Load Pinocchio model (same as factr_grav_comp.py)
+        # Load Pinocchio model 
         print(f"Loading URDF: {urdf_path}")
         urdf_model_dir = str(Path(urdf_path).parent)
         pin_model, _, _ = pin.buildModelsFromUrdf(filename=str(urdf_path), package_dirs=urdf_model_dir)
@@ -154,7 +153,7 @@ def main():
         print(f"  Servo types: {servo_types}")
         print(f"  Gravity gain: 0.4")
         print(f"  URDF: {urdf_path}")
-        print(f"  Control frequency: 100 Hz")  # FIXED: Was incorrectly showing 500 Hz
+        print(f"  Control frequency: 100 Hz") 
         
     except Exception as e:
         print(f"✗ Failed to create main system: {e}")
@@ -181,14 +180,14 @@ def main():
         print("Press Ctrl+C to stop.")
         print("="*60 + "\n")
         
-        # Run the gravity compensation loop using the exact same control loop as factr_grav_comp.py
+        # Run the gravity compensation loop 
         print("Starting gravity compensation control loop at 100 Hz")
         print("Press Ctrl+C to stop")
         
         running = True
-        dt = 1.0 / 100.0  # 100 Hz control loop
+        dt = 1.0 / 500.0  
         
-        # Control parameters (exact same as working factr_grav_comp.py)
+        # Control parameters 
         joint_limit_kp = 1.0
         joint_limit_kd = 0.05
         null_space_kp = 0.1
@@ -208,7 +207,7 @@ def main():
             start_time = time.time()
             
             try:
-                # Get current joint states (exact same as factr_grav_comp.py)
+                # Get current joint states 
                 joint_pos_raw, joint_vel_raw = driver.get_positions_and_velocities()
                 
                 # Check if we got valid data
@@ -217,14 +216,14 @@ def main():
                     time.sleep(0.01)
                     continue
                 
-                # Apply offsets and signs for arm joints (exact same as factr_grav_comp.py)
+                # Apply offsets and signs for arm joints 
                 joint_pos_arm = (joint_pos_raw - joint_offsets) * joint_signs
                 joint_vel_arm = joint_vel_raw * joint_signs
                 
-                # Initialize torque commands (exact same as working factr_grav_comp.py)
+                # Initialize torque commands 
                 torque_arm = np.zeros(6)
                 
-                # 1. JOINT LIMIT BARRIERS (exact same as factr_grav_comp.py)
+                # 1. JOINT LIMIT BARRIERS 
                 exceed_max_mask = joint_pos_arm > joint_limits_max
                 tau_l = (-joint_limit_kp * (joint_pos_arm - joint_limits_max) - joint_limit_kd * joint_vel_arm) * exceed_max_mask
                 
@@ -233,7 +232,7 @@ def main():
                 
                 torque_arm += tau_l
                 
-                # 2. NULL SPACE REGULATION (exact same as factr_grav_comp.py)
+                # 2. NULL SPACE REGULATION 
                 J = pin.computeJointJacobian(pin_model, pin_data, joint_pos_arm, 6)
                 J_dagger = np.linalg.pinv(J)
                 null_space_projector = np.eye(6) - J_dagger @ J
@@ -241,12 +240,12 @@ def main():
                 tau_n = null_space_projector @ (-null_space_kp * q_error - null_space_kd * joint_vel_arm)
                 torque_arm += tau_n
                 
-                # 3. GRAVITY COMPENSATION (exact same as factr_grav_comp.py)
+                # 3. GRAVITY COMPENSATION  
                 tau_g = pin.rnea(pin_model, pin_data, joint_pos_arm, joint_vel_arm, np.zeros_like(joint_vel_arm))
                 tau_g *= 0.4  # Gravity compensation gain
                 torque_arm += tau_g
                 
-                # 4. FRICTION COMPENSATION (exact same as factr_grav_comp.py)
+                # 4. FRICTION COMPENSATION 
                 tau_ss = np.zeros(6)
                 for i in range(6):
                     if abs(joint_vel_arm[i]) < stiction_comp_enable_speed:
@@ -274,7 +273,7 @@ def main():
                 except Exception as e:
                     print(f"\n⚠️  Warning: Failed to set torque: {e}, continuing...")
                 
-                # Maintain loop timing (exact same as factr_grav_comp.py)
+                # Maintain loop timing 
                 elapsed = time.time() - start_time
                 sleep_time = max(0, dt - elapsed)
                 if sleep_time > 0:

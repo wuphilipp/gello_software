@@ -294,6 +294,12 @@ For non-YAM setups, use:
 python experiments/launch_nodes.py --robot=bimanual_ur
 python experiments/run_env.py --agent=gello --bimanual
 ```
+### FACTR Gravity Compensation
+If you want to activate gravity compensation, all the code can be found in `gello/factr`. It works similarly to the regular launch but for now it's self-contained inside its own subdirectory and supports the YAM arm in sim and in hardware.
+
+```bash
+python gello/factr/gravity_compensation.py --config configs/yam_gello_factr_hw.yaml
+```
 
 ## Development
 
@@ -308,6 +314,7 @@ python experiments/run_env.py --agent=gello --bimanual
 │   ├── data_utils/      # Data processing utilities
 │   ├── dm_control_tasks/# MuJoCo environment utilities
 │   ├── dynamixel/       # Dynamixel hardware interface
+|   ├── factr/           # gravity compensation
 │   ├── robots/          # Robot-specific interfaces
 │   ├── utils/           # Shared launch and control utilities
 │   └── zmq_core/        # ZMQ multiprocessing utilities
@@ -344,3 +351,5 @@ This project is licensed under the MIT License (see LICENSE file).
 - [google-deepmind/mujoco_menagerie](https://github.com/google-deepmind/mujoco_menagerie): Robot models for MuJoCo
 - [brentyi/tyro](https://github.com/brentyi/tyro): Argument parsing and configuration
 - [ZMQ](https://zeromq.org/): Multiprocessing communication framework
+
+This project uses components from ‘FACTR Teleop: Low-Cost Force-Feedback Teleoperation’ (Apache‑2.0). See `https://github.com/RaindragonD/factr_teleop/`.
