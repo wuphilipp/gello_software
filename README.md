@@ -297,6 +297,9 @@ python experiments/run_env.py --agent=gello --bimanual
 ### FACTR Gravity Compensation
 If you want to activate gravity compensation, all the code can be found in `gello/factr`. It works similarly to the regular launch but for now it's self-contained inside its own subdirectory and supports the YAM arm in sim and in hardware.
 
+The YAML provides important fields that can control the strength of the gravity compensation and friction. Feel free to mess around with the strenght and friction til you attain your desired 
+
+One important step is to add the URDF. We have provided the URDF for the active GELLO in the [Hardware Repository](https://github.com/wuphilipp/gello_mechanical). You will need to update the path in the YAML to the entry point of the URDF. 
 ```bash
 python gello/factr/gravity_compensation.py --config configs/yam_gello_factr_hw.yaml
 ```
