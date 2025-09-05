@@ -210,13 +210,13 @@ def main(args: Args) -> None:
     # Step 2: Physical setup instructions
     print("SETUP INSTRUCTIONS:")
     print(
-        "1. Position your YAM arm in the position shown in the build documentation image."
+        "1. Position your GELLO in the position shown in the build documentation image."
     )
     print("2. Ensure all Dynamixel motors are powered and connected")
     print("3. Make sure the gripper is attached (if using)")
     print()
 
-    input("Press Enter when your YAM arm is in the correct position...")
+    input("Press Enter when your GELLO is in the correct position...")
     print()
 
     # Step 3: Detect offsets
@@ -309,10 +309,10 @@ def main(args: Args) -> None:
     print()
     print("You can now run GELLO with:")
     print(
-        f"   Hardware: python scripts/launch_yaml.py --left-config-path {hardware_output_path}"
+        f"   Hardware: python experiments/launch_yaml.py --left-config-path {hardware_output_path}"
     )
     print(
-        f"   Simulation: python scripts/launch_yaml.py --left-config-path {sim_output_path}"
+        f"   Simulation: python experiments/launch_yaml.py --left-config-path {sim_output_path}"
     )
     print()
     print("Configuration files generated successfully!")
