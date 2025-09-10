@@ -21,8 +21,7 @@ import numpy.typing as npt
 import pinocchio as pin
 import yaml
 
-# Import FACTR's dynamixel driver directly (no ROS dependencies)
-from gello.factr.factr_driver import DynamixelDriver
+from gello.dynamixel.driver import DynamixelDriver
 
 import threading
 from importlib import import_module
@@ -653,7 +652,7 @@ class FACTRGravityCompensation:
         self, arm_joint_pos: npt.NDArray[np.float64], arm_joint_vel: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         """Compute gravity compensation torques using inverse dynamics."""
-        self.tau_g = pin.rnea(
+        self.tau_g = pin.rnea(  # type: ignore[attr-defined]
             self.pin_model, self.pin_data, arm_joint_pos, arm_joint_vel, np.zeros_like(arm_joint_vel)
         )
         self.tau_g *= self.gravity_comp_modifier
@@ -675,7 +674,7 @@ class FACTRGravityCompensation:
         self, arm_joint_pos: npt.NDArray[np.float64], arm_joint_vel: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         """Compute null-space regulation torques."""
-        J = pin.computeJointJacobian(self.pin_model, self.pin_data, arm_joint_pos, self.num_arm_joints)
+        J = pin.computeJointJacobian(self.pin_model, self.pin_data, arm_joint_pos, self.num_arm_joints)  # type: ignore[attr-defined]
         J_dagger = np.linalg.pinv(J)
         null_space_projector = np.eye(self.num_arm_joints) - J_dagger @ J
         q_error = arm_joint_pos - self.null_space_joint_target[0 : self.num_arm_joints]
