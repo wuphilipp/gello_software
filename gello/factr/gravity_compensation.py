@@ -2,7 +2,7 @@
 Standalone FACTR Gravity Compensation Script (Non-ROS)
 
 This script provides the similar gravity compensation functionality as the ROS-based
-FACTR teleop system, but without ROS dependencies. 
+FACTR teleop system, but without ROS dependencies.
 Usage:
     python3 gello/factr/gravity_compensation.py --config configs/yam_gello_factr_hw.yaml
 """
