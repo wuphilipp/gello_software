@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 from threading import Event, Lock, Thread
-from typing import Protocol, Sequence, Tuple
+from typing import Optional, Protocol, Sequence, Tuple
 
 import numpy as np
 from dynamixel_sdk.group_sync_read import GroupSyncRead
@@ -161,7 +161,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def __init__(
         self,
         ids: Sequence[int],
-        servo_types: Sequence[str] | None = None,
+        servo_types: Optional[Sequence[str]] = None,
         port: str = "/dev/ttyUSB0",
         baudrate: int = 57600,
         max_retries: int = 3,
@@ -171,7 +171,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
         Args:
             ids (Sequence[int]): A list of IDs for the Dynamixel servos.
-            servo_types (Sequence[str] | None): Optional servo model names for torque->current mapping.
+            servo_types (Optional[Sequence[str]]): Optional servo model names for torque->current mapping.
             port (str): The USB port to connect to the arm.
             baudrate (int): The baudrate for communication.
             max_retries (int): Maximum number of initialization attempts.
