@@ -511,7 +511,7 @@ class YAMGelloAgent(Agent):
     def get_joint_state(self) -> Dict[str, np.ndarray]:
 
         return {
-            "joint_pos": np.zeros(7)
+            "joint_pos": np.zeros(7),
             "joint_vel": np.zeros(7), 
         }
     
