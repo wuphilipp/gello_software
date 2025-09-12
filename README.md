@@ -120,6 +120,7 @@ See existing implementations in `gello/robots/` for reference:
 - `xarm_robot.py` - xArm robots
 - `yam.py` - YAM robot
 
+=======
 
 #### 1. Manual `gello_agent` setup
 Set your GELLO and robot arm to a known, matching configuration (see images below) and run the offset detection script.
@@ -306,6 +307,7 @@ The YAML provides important fields that can control the strength of the gravity 
 One important step is to add the URDF. We have provided the URDF for the active GELLO in the [Hardware Repository](https://github.com/wuphilipp/gello_mechanical). You will need to update the path in the YAML to the entry point of the URDF. 
 ```bash
 python gello/factr/gravity_compensation.py --config configs/yam_gello_factr_hw.yaml
+
 ```
 
 ## Development

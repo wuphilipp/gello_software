@@ -498,7 +498,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
     def get_positions(self) -> np.ndarray:
         return self.get_joints()
-
+    
     def _check_port_availability(self) -> bool:
         """Check if the port is available and not being used by other processes."""
         try:
