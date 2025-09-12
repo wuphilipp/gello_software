@@ -2,7 +2,7 @@ import os
 import subprocess
 import time
 from threading import Event, Lock, Thread
-from typing import Protocol, Sequence
+from typing import Protocol, Sequence, Tuple
 
 import numpy as np
 from dynamixel_sdk.group_sync_read import GroupSyncRead
@@ -96,7 +96,7 @@ class DynamixelDriverProtocol(Protocol):
         """
         ...
 
-    def get_positions_and_velocities(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_positions_and_velocities(self) -> Tuple[np.ndarray, np.ndarray]:
         """Get joint positions (rad) and velocities (rad/s)."""
         ...
 
@@ -147,7 +147,7 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
     def get_joints(self) -> np.ndarray:
         return self._joint_angles.copy()
 
-    def get_positions_and_velocities(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_positions_and_velocities(self) -> Tuple[np.ndarray, np.ndarray]:
         return self._joint_angles.copy(), self._velocities.copy()
 
     def get_positions(self) -> np.ndarray:
@@ -492,7 +492,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 self._velocities = _velocities
             # self._groupSyncRead.clearParam()
 
-    def get_positions_and_velocities(self) -> tuple[np.ndarray, np.ndarray]:
+    def get_positions_and_velocities(self) -> Tuple[np.ndarray, np.ndarray]:
         if self._is_fake:
             return self._fake_joint_angles.copy(), self._fake_velocities.copy()
         while self._joint_angles is None or self._velocities is None:
