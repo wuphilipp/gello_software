@@ -195,7 +195,9 @@ class DynamixelDriver(DynamixelDriverProtocol):
             self.torque_to_current_map = np.array(
                 [TORQUE_TO_CURRENT_MAPPING[s] for s in self._servo_types]
             )
-            self.current_limits = np.array([SERVO_CURRENT_LIMITS[s] for s in self._servo_types])
+            self.current_limits = np.array(
+                [SERVO_CURRENT_LIMITS[s] for s in self._servo_types]
+            )
         else:
             self.torque_to_current_map = None
             self.current_limits = None
@@ -341,7 +343,9 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def set_current(self, currents: Sequence[float]):
         if self._is_fake:
             if len(currents) != len(self._ids):
-                raise ValueError("The length of currents must match the number of servos")
+                raise ValueError(
+                    "The length of currents must match the number of servos"
+                )
             if not self._torque_enabled:
                 raise RuntimeError("Torque must be enabled to set currents")
             self._fake_currents = np.array(currents, dtype=float)
@@ -355,14 +359,21 @@ class DynamixelDriver(DynamixelDriverProtocol):
         # Clip currents to servo-specific limits if available
         currents_array = np.array(currents)
         if self.current_limits is not None:
-            currents_array = np.clip(currents_array, -self.current_limits, self.current_limits)
+            currents_array = np.clip(
+                currents_array, -self.current_limits, self.current_limits
+            )
 
         with self._lock:
             for dxl_id, current in zip(self._ids, currents_array.tolist()):
                 current_value = int(current)
-                param_goal_current = [DXL_LOBYTE(current_value), DXL_HIBYTE(current_value)]
+                param_goal_current = [
+                    DXL_LOBYTE(current_value),
+                    DXL_HIBYTE(current_value),
+                ]
                 if not self._groupSyncWriteCurrent.addParam(dxl_id, param_goal_current):
-                    raise RuntimeError(f"Failed to set current for Dynamixel with ID {dxl_id}")
+                    raise RuntimeError(
+                        f"Failed to set current for Dynamixel with ID {dxl_id}"
+                    )
             dxl_comm_result = self._groupSyncWriteCurrent.txPacket()
             if dxl_comm_result != COMM_SUCCESS:
                 raise RuntimeError("Failed to syncwrite goal current")
@@ -421,7 +432,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 mode, dxl_comm_result, dxl_error = self._packetHandler.read1ByteTxRx(
                     self._portHandler, dxl_id, ADDR_OPERATING_MODE
                 )
-                if dxl_comm_result != COMM_SUCCESS or dxl_error != 0 or mode != expected_mode:
+                if (
+                    dxl_comm_result != COMM_SUCCESS
+                    or dxl_error != 0
+                    or mode != expected_mode
+                ):
                     raise RuntimeError(
                         f"Operating mode mismatch for Dynamixel ID {dxl_id} (got {mode}, expected {expected_mode})"
                     )
@@ -498,7 +513,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
 
     def get_positions(self) -> np.ndarray:
         return self.get_joints()
-    
+
     def _check_port_availability(self) -> bool:
         """Check if the port is available and not being used by other processes."""
         try:

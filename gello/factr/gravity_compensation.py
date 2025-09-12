@@ -44,7 +44,9 @@ def find_ttyusb(port_name: str) -> str:
                 f"The port '{port_name}' does not correspond to a ttyUSB device. It links to {resolved_path}."
             )
     except Exception as e:
-        raise Exception(f"Unable to resolve the symbolic link for '{port_name}'. {e}") from e
+        raise Exception(
+            f"Unable to resolve the symbolic link for '{port_name}'. {e}"
+        ) from e
 
 
 def _instantiate_from_dict(cfg: Dict[str, Any]) -> Any:
@@ -56,6 +58,7 @@ def _instantiate_from_dict(cfg: Dict[str, Any]) -> Any:
     module_path, class_name = cfg["_target_"].rsplit(".", 1)
     cls = getattr(import_module(module_path), class_name)
     kwargs = {k: v for k, v in cfg.items() if k != "_target_"}
+
     # Recurse into nested dicts/lists
     def _recurse(v):
         if isinstance(v, dict) and "_target_" in v:
@@ -63,15 +66,16 @@ def _instantiate_from_dict(cfg: Dict[str, Any]) -> Any:
         if isinstance(v, dict):
             return {kk: _recurse(vv) for kk, vv in v.items()}
         if isinstance(v, list):
-            return [ _recurse(x) for x in v ]
+            return [_recurse(x) for x in v]
         return v
+
     return cls(**{k: _recurse(v) for k, v in kwargs.items()})
 
 
 class FACTRGravityCompensation:
     """
     Standalone FACTR gravity compensation system without ROS dependencies.
-    
+
     This class implements the core functionality of FACTR teleop gravity compensation,
     including:
     - Gravity compensation using inverse dynamics
@@ -137,25 +141,39 @@ class FACTRGravityCompensation:
         # Leader arm parameters
         self.num_arm_joints = self.config["arm_teleop"]["num_arm_joints"]
         self.safety_margin = self.config["arm_teleop"]["arm_joint_limits_safety_margin"]
-        self.arm_joint_limits_max = np.array(self.config["arm_teleop"]["arm_joint_limits_max"]) - self.safety_margin
-        self.arm_joint_limits_min = np.array(self.config["arm_teleop"]["arm_joint_limits_min"]) + self.safety_margin
-        self.calibration_joint_pos = np.array(self.config["arm_teleop"]["initialization"]["calibration_joint_pos"])
-        self.initial_match_joint_pos = np.array(self.config["arm_teleop"]["initialization"]["initial_match_joint_pos"])
+        self.arm_joint_limits_max = (
+            np.array(self.config["arm_teleop"]["arm_joint_limits_max"])
+            - self.safety_margin
+        )
+        self.arm_joint_limits_min = (
+            np.array(self.config["arm_teleop"]["arm_joint_limits_min"])
+            + self.safety_margin
+        )
+        self.calibration_joint_pos = np.array(
+            self.config["arm_teleop"]["initialization"]["calibration_joint_pos"]
+        )
+        self.initial_match_joint_pos = np.array(
+            self.config["arm_teleop"]["initialization"]["initial_match_joint_pos"]
+        )
 
         # Gripper parameters
         self.gripper_limit_min = 0.0
         self.gripper_limit_max = self.config["gripper_teleop"]["actuation_range"]
         self.gripper_pos_prev = 0.0
         self.gripper_pos = 0.0
-        
+
         # Control parameters
         self.enable_gravity_comp = self.config["controller"]["gravity_comp"]["enable"]
         self.gravity_comp_modifier = self.config["controller"]["gravity_comp"]["gain"]
         self.tau_g = np.zeros(self.num_arm_joints)
 
         # Friction compensation
-        self.stiction_comp_enable_speed = self.config["controller"]["static_friction_comp"]["enable_speed"]
-        self.stiction_comp_gain = self.config["controller"]["static_friction_comp"]["gain"]
+        self.stiction_comp_enable_speed = self.config["controller"][
+            "static_friction_comp"
+        ]["enable_speed"]
+        self.stiction_comp_gain = self.config["controller"]["static_friction_comp"][
+            "gain"
+        ]
         self.stiction_dither_flag = np.ones((self.num_arm_joints), dtype=bool)
 
         # Joint limit barrier
@@ -164,33 +182,45 @@ class FACTRGravityCompensation:
 
         # Null space regulation
         self.null_space_joint_target = np.array(
-            self.config["controller"]["null_space_regulation"]["null_space_joint_target"]
+            self.config["controller"]["null_space_regulation"][
+                "null_space_joint_target"
+            ]
         )
         self.null_space_kp = self.config["controller"]["null_space_regulation"]["kp"]
         self.null_space_kd = self.config["controller"]["null_space_regulation"]["kd"]
 
         print(f"Control frequency: {1 / self.dt:.1f} Hz")
-        print(f"Gravity compensation: {'enabled' if self.enable_gravity_comp else 'disabled'}")
+        print(
+            f"Gravity compensation: {'enabled' if self.enable_gravity_comp else 'disabled'}"
+        )
 
     def _prepare_dynamixel(self) -> None:
         """Initialize Dynamixel servo driver."""
         self.servo_types = self.config["dynamixel"]["servo_types"]
         self.num_motors = len(self.servo_types)
-        self.joint_signs = np.array(self.config["dynamixel"]["joint_signs"], dtype=float)
-        self.dynamixel_port = "/dev/serial/by-id/" + self.config["dynamixel"]["dynamixel_port"]
+        self.joint_signs = np.array(
+            self.config["dynamixel"]["joint_signs"], dtype=float
+        )
+        self.dynamixel_port = (
+            "/dev/serial/by-id/" + self.config["dynamixel"]["dynamixel_port"]
+        )
 
         # Check latency timer
         try:
             port_name = os.path.basename(self.dynamixel_port)
             ttyUSBx = find_ttyusb(port_name)
             latency_path = f"/sys/bus/usb-serial/devices/{ttyUSBx}/latency_timer"
-            result = subprocess.run(["cat", latency_path], capture_output=True, text=True, check=True)
+            result = subprocess.run(
+                ["cat", latency_path], capture_output=True, text=True, check=True
+            )
             ttyUSB_latency_timer = int(result.stdout)
             if ttyUSB_latency_timer != 1:
                 print(
                     f"Warning: Latency timer of {ttyUSBx} is {ttyUSB_latency_timer}, should be 1 for optimal performance."
                 )
-                print(f"Run: echo 1 | sudo tee /sys/bus/usb-serial/devices/{ttyUSBx}/latency_timer")
+                print(
+                    f"Run: echo 1 | sudo tee /sys/bus/usb-serial/devices/{ttyUSBx}/latency_timer"
+                )
         except (subprocess.CalledProcessError, FileNotFoundError, PermissionError) as e:
             print(f"Could not check latency timer (file access issue): {e}")
         except (ValueError, IndexError) as e:
@@ -201,7 +231,9 @@ class FACTRGravityCompensation:
         # Initialize driver
         joint_ids = (np.arange(self.num_motors) + 1).tolist()
         try:
-            self.driver = DynamixelDriver(joint_ids, self.servo_types, self.dynamixel_port)
+            self.driver = DynamixelDriver(
+                joint_ids, self.servo_types, self.dynamixel_port
+            )
             print(f"Connected to Dynamixel servos on {self.dynamixel_port}")
         except Exception as e:
             raise RuntimeError(f"Failed to connect to Dynamixel servos: {e}") from e
@@ -232,20 +264,28 @@ class FACTRGravityCompensation:
 
         # If not found, try relative to GELLO factr directory (self-contained)
         if not urdf_path.exists():
-            gello_factr_urdf_path = Path(__file__).parent / "urdf" / Path(urdf_filename).name
+            gello_factr_urdf_path = (
+                Path(__file__).parent / "urdf" / Path(urdf_filename).name
+            )
             if gello_factr_urdf_path.exists():
                 urdf_path = gello_factr_urdf_path
             else:
                 # Try the full GELLO path
-                gello_full_urdf_path = Path(__file__).parent.parent.parent / urdf_filename
+                gello_full_urdf_path = (
+                    Path(__file__).parent.parent.parent / urdf_filename
+                )
                 if gello_full_urdf_path.exists():
                     urdf_path = gello_full_urdf_path
                 else:
-                    raise FileNotFoundError(f"URDF file {urdf_filename} not found in GELLO paths")
+                    raise FileNotFoundError(
+                        f"URDF file {urdf_filename} not found in GELLO paths"
+                    )
 
         print(f"Loading URDF: {urdf_path}")
         urdf_model_dir = str(urdf_path.parent)
-        self.pin_model, _, _ = pin.buildModelsFromUrdf(filename=str(urdf_path), package_dirs=urdf_model_dir)
+        self.pin_model, _, _ = pin.buildModelsFromUrdf(
+            filename=str(urdf_path), package_dirs=urdf_model_dir
+        )
         self.pin_data = self.pin_model.createData()
 
     def _calibrate_system(self) -> None:
@@ -310,12 +350,15 @@ class FACTRGravityCompensation:
         else:
             # Hardware robot; wrap with ZMQServerRobot and auto-select port if needed
             from zmq.error import ZMQError  # type: ignore
+
             selected_port = None
             last_error: Optional[Exception] = None
             for port_delta in range(0, 16):
                 try:
                     candidate_port = base_port + port_delta
-                    server = ZMQServerRobot(follower_robot, port=candidate_port, host=server_host)
+                    server = ZMQServerRobot(
+                        follower_robot, port=candidate_port, host=server_host
+                    )
                     server_thread = threading.Thread(target=server.serve, daemon=True)
                     server_thread.start()
                     self.teleop_robot_server = server
@@ -329,7 +372,9 @@ class FACTRGravityCompensation:
                         continue
                     raise
             if selected_port is None:
-                raise RuntimeError(f"Failed to create ZMQ server for hardware follower: {last_error}")
+                raise RuntimeError(
+                    f"Failed to create ZMQ server for hardware follower: {last_error}"
+                )
             server_port = selected_port
 
         # Wait for server to become ready
@@ -349,7 +394,9 @@ class FACTRGravityCompensation:
                 time.sleep(0.1)
 
         # Create env for follower
-        self.teleop_env = RobotEnv(self.teleop_client, control_rate_hz=self.teleop_rate_hz)
+        self.teleop_env = RobotEnv(
+            self.teleop_client, control_rate_hz=self.teleop_rate_hz
+        )
 
         # Determine follower DOFs and build mapping defaults
         try:
@@ -358,13 +405,19 @@ class FACTRGravityCompensation:
             follower_dofs = self.num_arm_joints
         # If follower appears to include a gripper as last joint
         follower_has_gripper = follower_dofs == (self.num_arm_joints + 1)
-        map_dims = min(self.num_arm_joints, follower_dofs - (1 if follower_has_gripper else 0))
+        map_dims = min(
+            self.num_arm_joints, follower_dofs - (1 if follower_has_gripper else 0)
+        )
         default_index = np.arange(map_dims, dtype=int)
         default_signs = np.ones(map_dims, dtype=float)
         default_offsets = np.zeros(map_dims, dtype=float)
 
         # Load mapping config
-        mapping_cfg = teleop_cfg.get("mapping", {}) if isinstance(teleop_cfg.get("mapping", {}), dict) else {}
+        mapping_cfg = (
+            teleop_cfg.get("mapping", {})
+            if isinstance(teleop_cfg.get("mapping", {}), dict)
+            else {}
+        )
         index_map = mapping_cfg.get("index_map")
         signs = mapping_cfg.get("signs")
         offsets = mapping_cfg.get("offsets")
@@ -389,7 +442,12 @@ class FACTRGravityCompensation:
         map_offsets_local = cast(np.ndarray, self.map_offsets)
 
         # Validate lengths
-        if not (len(map_index_local) == len(map_signs_local) == len(map_offsets_local) == map_dims):
+        if not (
+            len(map_index_local)
+            == len(map_signs_local)
+            == len(map_offsets_local)
+            == map_dims
+        ):
             print(
                 "Warning: teleop.mapping lengths mismatch or not equal to map_dims; using defaults."
             )
@@ -435,10 +493,16 @@ class FACTRGravityCompensation:
             map_signs_local = cast(np.ndarray, self.map_signs)
             map_offsets_local = cast(np.ndarray, self.map_offsets)
             leader_arm_pos, _, _, _ = self.get_leader_joint_states()
-            leader_mapped_dbg = map_signs_local * leader_arm_pos[map_index_local] + map_offsets_local
-            follower_dbg = self.teleop_env.get_obs()["joint_positions"][: int(len(map_index_local))]
+            leader_mapped_dbg = (
+                map_signs_local * leader_arm_pos[map_index_local] + map_offsets_local
+            )
+            follower_dbg = self.teleop_env.get_obs()["joint_positions"][
+                : int(len(map_index_local))
+            ]
+
             def _fmt(arr):
                 return [float(f"{x:.3f}") for x in np.array(arr).tolist()]
+
             print("Teleop mapping:")
             print(f"  index_map: {map_index_local.tolist()}")
             print(f"  signs: {_fmt(map_signs_local)}")
@@ -491,11 +555,13 @@ class FACTRGravityCompensation:
         if follower_dofs == len(arm_cmd) + 1:
             # Determine normalized gripper using explicit config if provided
             if self.gripper_open_rad is not None and self.gripper_close_rad is not None:
-                denom = (self.gripper_close_rad - self.gripper_open_rad)
+                denom = self.gripper_close_rad - self.gripper_open_rad
                 if abs(denom) < 1e-6:
                     gripper_norm = 0.0
                 else:
-                    gripper_norm = (self.leader_gripper_raw_rad - self.gripper_open_rad) / denom
+                    gripper_norm = (
+                        self.leader_gripper_raw_rad - self.gripper_open_rad
+                    ) / denom
             else:
                 # Fallback to actuation_range
                 gripper_norm = self_gripper_pos / max(self.gripper_limit_max, 1e-6)
@@ -519,13 +585,23 @@ class FACTRGravityCompensation:
             t0 = time.time()
             try:
                 # Use the same leader state access used by GC, which already applies offsets/signs
-                leader_arm_pos, leader_arm_vel, leader_gripper_pos, leader_gripper_vel = self.get_leader_joint_states()
+                (
+                    leader_arm_pos,
+                    leader_arm_vel,
+                    leader_gripper_pos,
+                    leader_gripper_vel,
+                ) = self.get_leader_joint_states()
                 action = self._build_follower_action(leader_arm_pos, leader_gripper_pos)
                 # Apply exponential smoothing to follower command to mirror baseline
-                if self._teleop_last_action is None or len(self._teleop_last_action) != len(action):
+                if self._teleop_last_action is None or len(
+                    self._teleop_last_action
+                ) != len(action):
                     self._teleop_last_action = action
                 else:
-                    action = self._teleop_last_action * (1.0 - self.teleop_smoothing_alpha) + action * self.teleop_smoothing_alpha
+                    action = (
+                        self._teleop_last_action * (1.0 - self.teleop_smoothing_alpha)
+                        + action * self.teleop_smoothing_alpha
+                    )
                     self._teleop_last_action = action
                 self.teleop_env.step(action)
             except Exception as e:
@@ -580,13 +656,19 @@ class FACTRGravityCompensation:
         """Wait for leader arm to be moved to initial position."""
         while True:
             curr_pos, _, _, _ = self.get_leader_joint_states()
-            current_joint_error = np.linalg.norm(curr_pos - self.initial_match_joint_pos[0 : self.num_arm_joints])
+            current_joint_error = np.linalg.norm(
+                curr_pos - self.initial_match_joint_pos[0 : self.num_arm_joints]
+            )
             if current_joint_error <= 0.6:
                 break
-            print(f"Please match starting joint position. Current error: {current_joint_error:.3f}")
+            print(
+                f"Please match starting joint position. Current error: {current_joint_error:.3f}"
+            )
             time.sleep(0.5)
 
-    def get_leader_joint_states(self) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, float]:
+    def get_leader_joint_states(
+        self,
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], float, float]:
         """Get current joint positions and velocities."""
         if self.driver is None:
             raise RuntimeError("Driver not initialized")
@@ -595,18 +677,26 @@ class FACTRGravityCompensation:
 
         # Apply offsets and signs for arm joints
         joint_pos_arm = (
-            joint_pos[0 : self.num_arm_joints] - self.joint_offsets[0 : self.num_arm_joints]
+            joint_pos[0 : self.num_arm_joints]
+            - self.joint_offsets[0 : self.num_arm_joints]
         ) * self.joint_signs[0 : self.num_arm_joints]
-        joint_vel_arm = joint_vel[0 : self.num_arm_joints] * self.joint_signs[0 : self.num_arm_joints]
+        joint_vel_arm = (
+            joint_vel[0 : self.num_arm_joints]
+            * self.joint_signs[0 : self.num_arm_joints]
+        )
 
         # Process gripper
         self.leader_gripper_raw_rad = float(joint_pos[-1])
-        self.gripper_pos = (joint_pos[-1] - self.joint_offsets[-1]) * self.joint_signs[-1]
+        self.gripper_pos = (joint_pos[-1] - self.joint_offsets[-1]) * self.joint_signs[
+            -1
+        ]
         gripper_vel = (self.gripper_pos - self.gripper_pos_prev) / self.dt
 
         return joint_pos_arm, joint_vel_arm, self.gripper_pos, gripper_vel
 
-    def set_leader_joint_torque(self, arm_torque: npt.NDArray[np.float64], gripper_torque: float) -> None:
+    def set_leader_joint_torque(
+        self, arm_torque: npt.NDArray[np.float64], gripper_torque: float
+    ) -> None:
         """Apply torque to leader arm and gripper."""
         if self.driver is None:
             raise RuntimeError("Driver not initialized")
@@ -624,12 +714,14 @@ class FACTRGravityCompensation:
         # Arm joint limits
         exceed_max_mask = arm_joint_pos > self.arm_joint_limits_max
         tau_l = (
-            -self.joint_limit_kp * (arm_joint_pos - self.arm_joint_limits_max) - self.joint_limit_kd * arm_joint_vel
+            -self.joint_limit_kp * (arm_joint_pos - self.arm_joint_limits_max)
+            - self.joint_limit_kd * arm_joint_vel
         ) * exceed_max_mask
 
         exceed_min_mask = arm_joint_pos < self.arm_joint_limits_min
         tau_l += (
-            -self.joint_limit_kp * (arm_joint_pos - self.arm_joint_limits_min) - self.joint_limit_kd * arm_joint_vel
+            -self.joint_limit_kp * (arm_joint_pos - self.arm_joint_limits_min)
+            - self.joint_limit_kd * arm_joint_vel
         ) * exceed_min_mask
 
         # Gripper limits
@@ -645,20 +737,28 @@ class FACTRGravityCompensation:
             )
         else:
             tau_l_gripper = 0.0
-            
+
         return tau_l, tau_l_gripper
 
     def gravity_compensation(
-        self, arm_joint_pos: npt.NDArray[np.float64], arm_joint_vel: npt.NDArray[np.float64]
+        self,
+        arm_joint_pos: npt.NDArray[np.float64],
+        arm_joint_vel: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Compute gravity compensation torques using inverse dynamics."""
         self.tau_g = pin.rnea(  # type: ignore[attr-defined]
-            self.pin_model, self.pin_data, arm_joint_pos, arm_joint_vel, np.zeros_like(arm_joint_vel)
+            self.pin_model,
+            self.pin_data,
+            arm_joint_pos,
+            arm_joint_vel,
+            np.zeros_like(arm_joint_vel),
         )
         self.tau_g *= self.gravity_comp_modifier
         return self.tau_g
 
-    def friction_compensation(self, arm_joint_vel: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def friction_compensation(
+        self, arm_joint_vel: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         """Compute static friction compensation torques."""
         tau_ss = np.zeros(self.num_arm_joints)
         for i in range(self.num_arm_joints):
@@ -671,20 +771,26 @@ class FACTRGravityCompensation:
         return tau_ss
 
     def null_space_regulation(
-        self, arm_joint_pos: npt.NDArray[np.float64], arm_joint_vel: npt.NDArray[np.float64]
+        self,
+        arm_joint_pos: npt.NDArray[np.float64],
+        arm_joint_vel: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """Compute null-space regulation torques."""
         J = pin.computeJointJacobian(self.pin_model, self.pin_data, arm_joint_pos, self.num_arm_joints)  # type: ignore[attr-defined]
         J_dagger = np.linalg.pinv(J)
         null_space_projector = np.eye(self.num_arm_joints) - J_dagger @ J
         q_error = arm_joint_pos - self.null_space_joint_target[0 : self.num_arm_joints]
-        tau_n = null_space_projector @ (-self.null_space_kp * q_error - self.null_space_kd * arm_joint_vel)
+        tau_n = null_space_projector @ (
+            -self.null_space_kp * q_error - self.null_space_kd * arm_joint_vel
+        )
         return tau_n
 
     def control_loop_step(self) -> None:
         """Execute one step of the control loop."""
         # Get current joint states
-        leader_arm_pos, leader_arm_vel, leader_gripper_pos, leader_gripper_vel = self.get_leader_joint_states()
+        leader_arm_pos, leader_arm_vel, leader_gripper_pos, leader_gripper_vel = (
+            self.get_leader_joint_states()
+        )
 
         # Initialize torque commands
         torque_arm = np.zeros(self.num_arm_joints)
@@ -711,7 +817,7 @@ class FACTRGravityCompensation:
         """Run the main control loop."""
         print(f"Starting gravity compensation control loop at {1 / self.dt:.1f} Hz")
         print("Press Ctrl+C to stop")
-        
+
         self.running = True
         # Start teleop thread now that running is True
         if self.teleop_enabled and self.teleop_prepared and self.teleop_thread is None:
@@ -721,9 +827,9 @@ class FACTRGravityCompensation:
         try:
             while self.running:
                 start_time = time.time()
-                
+
                 self.control_loop_step()
-                
+
                 # Maintain loop timing
                 elapsed = time.time() - start_time
                 sleep_time = max(0, self.dt - elapsed)
@@ -731,7 +837,7 @@ class FACTRGravityCompensation:
                     time.sleep(sleep_time)
                 else:
                     print(f"Warning: Control loop overrun by {elapsed - self.dt:.4f}s")
-                    
+
         except KeyboardInterrupt:
             print("\nShutting down...")
         finally:
@@ -750,7 +856,9 @@ class FACTRGravityCompensation:
             if self.teleop_client is not None and hasattr(self.teleop_client, "close"):
                 self.teleop_client.close()
             # Attempt to stop underlying server if it has a stop
-            if self.teleop_robot_server is not None and hasattr(self.teleop_robot_server, "stop"):
+            if self.teleop_robot_server is not None and hasattr(
+                self.teleop_robot_server, "stop"
+            ):
                 try:
                     self.teleop_robot_server.stop()
                 except Exception:
@@ -770,7 +878,9 @@ class FACTRGravityCompensation:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Standalone FACTR Gravity Compensation")
+    parser = argparse.ArgumentParser(
+        description="Standalone FACTR Gravity Compensation"
+    )
     parser.add_argument(
         "--config",
         "-c",
@@ -809,6 +919,3 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-
-
- 
