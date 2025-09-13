@@ -1,0 +1,9 @@
+{
+    "documentId": "6239be13a6acc3b93318799e",
+    "assemblyName": "yam_active_gello_urdf",
+    "outputFormat": "urdf",
+    "merge_stls": "all",
+    "simplify_stls": true,
+    "max_stl_size": 0.4,
+    "additionalUrdfFile": "/mujoco.xml"
+}

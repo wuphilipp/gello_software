@@ -210,7 +210,7 @@ def main(args: Args) -> None:
     # Step 2: Physical setup instructions
     print("SETUP INSTRUCTIONS:")
     print(
-        "1. Position your YAM arm in the position shown in the build documentation image."
+        "1. Position your GELLO in the position shown in the build documentation image."
     )
     print("2. Ensure all Dynamixel motors are powered and connected")
     print("3. Make sure the gripper is attached (if using)")

@@ -1,0 +1,86 @@
+name: grav_comp_demo
+
+dynamixel:
+  # USB port name given by the command: ls /dev/serial/by-id/
+  dynamixel_port: "usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0"
+  # Servo types
+  servo_types: [
+    "XC330_T288_T", "XM430_W210_T", "XM430_W210_T",
+    "XC330_T288_T", "XC330_T288_T", "XC330_T288_T", "XC330_T288_T"
+  ]
+  # Servo joint directions to match that of the leader arm
+  joint_signs: [1, -1, -1, -1, 1, 1, 1]
+
+arm_teleop:
+  # URDF used for creating leader arm dynamics model to compute gravity compensation
+  # GELLO-specific path 
+  leader_urdf: "gello/factr/urdf/yam_active_gello/robot.urdf"
+  num_arm_joints: 6
+  arm_joint_limits_max: [3.14159, 3.14159, 3.14159, 3.14159, 3.14159, 3.14159]
+  arm_joint_limits_min: [-3.14159, -3.14159, -3.14159, -3.14159, -3.14159, -3.14159]
+  # Update joint limits for YAM (6 arm + 1 gripper)
+  # arm_joint_limits_max: [3.14159, 3.14159, -0.94, 1.92, 1.54, 3.14159]
+  # arm_joint_limits_min: [-3.14159, 0.0, -1.89, -1.54, -1.82, -3.14159]
+  arm_joint_limits_safety_margin: 0.1
+  initialization:
+    # These are your new start position (URDF coordinates) - system will calculate offsets automatically
+    calibration_joint_pos: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # The leader arm must be brought to this joint position before the follower starts mirroring the leader
+    initial_match_joint_pos: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+
+gripper_teleop:
+  # The maximum range (in rad) of the leader gripper trigger
+  actuation_range: 0.8
+
+controller:
+  frequency: 500
+  torque_feedback:
+    enable: False
+    gain: 3.0
+    damping: 0.0
+    motor_scalar: 94.5652173913
+  gravity_comp:
+    enable: True
+    gain: 0.8
+  null_space_regulation:
+    # Target position when not actively performing tasks (matches your new start position)
+    null_space_joint_target: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+    kp: 0.0
+    kd: 0.0
+  static_friction_comp:
+    enable_speed:   0.0
+    gain: 0.0
+  joint_limit_barrier:
+    kp: 0.0
+    kd: 0.0
+  joint_position_control:
+    interpolation_step_size: 0.5
+    kp: 1.03561658022
+    kd: 0.04315069084
+
+  gripper_feedback:
+    enable: False
+
+teleop:
+  enable: true
+  hz: 30
+  wait_for_server_timeout_s: 5.0
+  robot:
+    _target_: gello.robots.sim_robot.MujocoRobotServer
+    xml_path: third_party/mujoco_menagerie/i2rt_yam/yam.xml
+    gripper_xml_path: null
+    host: 127.0.0.1
+    port: 6001
+  mapping:
+    # Map leader joints to follower joints; default is [0,1,2,3,4,5]
+    # If your sim model has a different joint order, adjust accordingly.
+    index_map: [0, 1, 2, 3, 4, 5]
+    # Signs to apply per joint to align sim with leader frames
+    signs: [1, 1, -1, -1, 1, 1]
+    # Additional offsets (in radians) to apply to follower per joint after signs
+    # Auto-alignment will overwrite this at runtime unless auto_align is set false.
+    offsets: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+    # Enable auto alignment at start to zero follower relative to current leader
+    auto_align: true
+
+  gripper_config: [7, 241.4375, 300.9375]
