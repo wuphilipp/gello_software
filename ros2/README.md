@@ -211,6 +211,23 @@ The open com port could not be opened. Possible reasons are:
 The libfranka version and robot system version are not compatible. More information can be found [here](https://frankarobotics.github.io/docs/compatibility.html).
 Fix this by correcting the `LIBFRANKA_VERSION=0.15.0` in the [Dockerfile](./.devcontainer/Dockerfile) and update the `FRANKA_ROS2_VERSION` and `FRANKA_DESCRIPTION_VERSION` accordingly.
 
+### The movement of the follower robot is slightly jerky
+
+If the movements of the follower robot do not feel smooth or you experience frequent force threshold errors, this may be related to high USB latency on your machine. To fix this, try the following (non-permanent) fix **on your host PC**:
+
+1. Check which `ttyUSBx`/`ttyACMx` is mapped to your U2D2 or OpenRB-150 device: `ls -la /dev/serial/by-id/`
+2. Reduce the USB latency from the default 16ms to 1ms: `echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer` (replace `ttyUSB0` with your actual device)
+
+If this helps, you can add a permanent udev rule:
+1. Create a new file `/etc/udev/rules.d/99-gello.rules` **on your host PC**:
+    ```
+    # Lower latency_timer (1 instead of default 16 ms) & permission fix for U2D2 and OpenRB-150 devices
+    ACTION=="add", ATTRS{idVendor}=="0403", ATTRS{idProduct}=="6014" MODE="0666", ATTR{device/latency_timer}="1"
+    ACTION=="add", ATTRS{idVendor}=="2f5d", ATTRS{idProduct}=="2202" MODE="0666", ATTR{device/latency_timer}="1"
+    ```
+    > Note: This also sets the device permissions (`MODE="0666"`), this part is optional.
+2. Reload and trigger the new rules: `sudo udevadm control --reload-rules && sudo udevadm trigger`
+3. Unplug and replug your U2D2 or OpenRB-150 devices
 
 ## Acknowledgements
 The source code for the Robotiq gripper control is based on
