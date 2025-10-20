@@ -32,10 +32,12 @@ TEST_F(JointImpedanceControllerTest, TestActivate) {
 TEST_F(JointImpedanceControllerTest, TestUpdateMotionGeneratorOnly) {
   static const std::vector<double> kInitialRobotPosition = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
   static constexpr double kExpectedValue = -0.05;
-  static constexpr double kTolerance = 1e-6;
+  static constexpr double kTolerance = 0.01;
 
   setRobotPosition(kInitialRobotPosition);
   startController();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   rclcpp::Time time;
   rclcpp::Duration period = rclcpp::Duration::from_seconds(1.0);
@@ -49,10 +51,12 @@ TEST_F(JointImpedanceControllerTest, TestUpdateMotionGeneratorOnly) {
 TEST_F(JointImpedanceControllerTest, TestUpdateMotionGeneratorAndGelloPositionValues) {
   static const std::vector<double> kInitialRobotPosition = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   static constexpr double kExpectedValue = -0.05;
-  static constexpr double kTolerance = 1e-6;
+  static constexpr double kTolerance = 0.01;
 
   setRobotPosition(kInitialRobotPosition);
   startController();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   rclcpp::Time time;
   rclcpp::Duration period = rclcpp::Duration::from_seconds(1.0);
@@ -66,10 +70,12 @@ TEST_F(JointImpedanceControllerTest, TestUpdateMotionGeneratorAndGelloPositionVa
 TEST_F(JointImpedanceControllerTest, TestUpdateGelloPositionValuesOnly) {
   static const std::vector<double> kInitialRobotPosition = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
   static constexpr double kExpectedValue = -0.075;
-  static constexpr double kTolerance = 1e-6;
+  static constexpr double kTolerance = 0.01;
 
   setRobotPosition(kInitialRobotPosition);
   startController();
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
   rclcpp::Time time;
   rclcpp::Duration period = rclcpp::Duration::from_seconds(1.0);

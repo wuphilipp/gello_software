@@ -57,13 +57,17 @@ controller_interface::return_type JointImpedanceController::update(
 
   if (!motion_generator_initialized_) {
     // After starting the controller we wait for valid joint states from the input topic
-    // Until we get valid joint states we will send zero torques to the robot to allow the user to reposition the robot
+    // Until we get valid joint states we will send zero torques to the robot
+    // to allow the user to reposition the robot
     motion_generator_initialized_ = initializeMotionGenerator_();
-    for (int i = 0; i < num_joints; ++i) {
-      command_interfaces_[i].set_value(0.0);
-    }
 
-    return controller_interface::return_type::OK;
+    if (!motion_generator_initialized_) {
+      for (int i = 0; i < num_joints; ++i) {
+        command_interfaces_[i].set_value(0.0);
+      }
+
+      return controller_interface::return_type::OK;
+    }
   }
 
   if (!move_to_start_position_finished_) {
@@ -107,6 +111,7 @@ void JointImpedanceController::jointStateCallback_(const sensor_msgs::msg::Joint
                 "Received joint state size is smaller than expected size.");
     return;
   }
+
   std::copy(msg.position.begin(), msg.position.begin() + gello_position_values_.size(),
             gello_position_values_.begin());
 
@@ -180,7 +185,7 @@ CallbackReturn JointImpedanceController::on_configure(
 
 CallbackReturn JointImpedanceController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-
+  last_joint_state_time_ = get_node()->now();
   dq_filtered_.setZero();
   start_time_ = this->get_node()->now();
 
@@ -240,10 +245,9 @@ void JointImpedanceController::updateJointStates_() {
 }
 
 bool JointImpedanceController::initializeMotionGenerator_() {
-  last_joint_state_time_ = get_node()->now();
   if (!gello_position_values_valid_) {
-    // Only send a warning once to not spam the log
-    RCLCPP_WARN_ONCE(get_node()->get_logger(), "Waiting for valid joint states...");
+    // Only send a warning once every 10 secondsto not spam the log
+    RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(), 10 * 1000, "Waiting for valid joint states...");
     return false;
   }
 

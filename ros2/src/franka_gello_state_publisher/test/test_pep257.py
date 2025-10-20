@@ -20,6 +20,6 @@ from pathlib import Path
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    excluded_file = Path(__file__).resolve().parents[1] / "franka_gello_state_publisher/driver.py"
+    excluded_file = Path(__file__).resolve().parents[1] / "franka_gello_state_publisher/gello_publisher.py"
     rc = main(argv=[".", "test", "--exclude", str(excluded_file)])
     assert rc == 0, "Found code style errors / warnings"
