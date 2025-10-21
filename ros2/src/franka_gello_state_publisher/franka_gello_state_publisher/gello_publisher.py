@@ -92,7 +92,7 @@ class GelloPublisher(Node):
             return "INVALID_COM_PORT"
 
     def _declare_ros2_param(self, param: ParameterConfig):
-        """Declare ROS2 parameters"""
+        """Declare ROS2 parameters."""
         parameter_value = self.declare_parameter(
             param.descriptor.name, param.default, param.descriptor
         ).get_parameter_value()

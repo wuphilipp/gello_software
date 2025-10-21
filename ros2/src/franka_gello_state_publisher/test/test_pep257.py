@@ -14,12 +14,10 @@
 
 from ament_pep257.main import main
 import pytest
-from pathlib import Path
 
 
 @pytest.mark.linter
 @pytest.mark.pep257
 def test_pep257():
-    excluded_file = Path(__file__).resolve().parents[1] / "franka_gello_state_publisher/gello_publisher.py"
-    rc = main(argv=[".", "test", "--exclude", str(excluded_file)])
+    rc = main(argv=[".", "test"])
     assert rc == 0, "Found code style errors / warnings"
