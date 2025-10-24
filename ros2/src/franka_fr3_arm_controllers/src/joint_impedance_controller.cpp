@@ -55,7 +55,24 @@ controller_interface::return_type JointImpedanceController::update(
   Vector7d q_goal;
   Vector7d tau_d_calculated;
 
+  if (!motion_generator_initialized_) {
+    // After starting the controller we wait for valid joint states from the input topic
+    // Until we get valid joint states we will send zero torques to the robot
+    // to allow the user to reposition the robot
+    motion_generator_initialized_ = initializeMotionGenerator_();
+
+    if (!motion_generator_initialized_) {
+      for (int i = 0; i < num_joints; ++i) {
+        command_interfaces_[i].set_value(0.0);
+      }
+
+      return controller_interface::return_type::OK;
+    }
+  }
+
   if (!move_to_start_position_finished_) {
+    // We have received valid joint states and initialized the motion generator
+    // Now we move smoothly to the first joint position received from the input topic
     auto trajectory_time = this->get_node()->now() - start_time_;
     auto motion_generator_output = motion_generator_->getDesiredJointPositions(trajectory_time);
     move_to_start_position_finished_ = motion_generator_output.second;
@@ -64,6 +81,8 @@ controller_interface::return_type JointImpedanceController::update(
   }
 
   if (move_to_start_position_finished_) {
+    // After reaching the start position we follow the joint position from the input topic
+    // This is the normal operation mode of the controller
     if (!gello_position_values_valid_) {
       RCLCPP_FATAL(get_node()->get_logger(), "Timeout: No valid joint states received from Gello");
       rclcpp::shutdown();  // Exit the node permanently
@@ -92,6 +111,7 @@ void JointImpedanceController::jointStateCallback_(const sensor_msgs::msg::Joint
                 "Received joint state size is smaller than expected size.");
     return;
   }
+
   std::copy(msg.position.begin(), msg.position.begin() + gello_position_values_.size(),
             gello_position_values_.begin());
 
@@ -165,8 +185,7 @@ CallbackReturn JointImpedanceController::on_configure(
 
 CallbackReturn JointImpedanceController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  initializeMotionGenerator_();
-
+  last_joint_state_time_ = get_node()->now();
   dq_filtered_.setZero();
   start_time_ = this->get_node()->now();
 
@@ -225,12 +244,12 @@ void JointImpedanceController::updateJointStates_() {
   }
 }
 
-void JointImpedanceController::initializeMotionGenerator_() {
-  last_joint_state_time_ = get_node()->now();
-  while (!gello_position_values_valid_) {
-    RCLCPP_WARN(get_node()->get_logger(), "Waiting for valid joint states...");
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-    last_joint_state_time_ = get_node()->now();
+bool JointImpedanceController::initializeMotionGenerator_() {
+  if (!gello_position_values_valid_) {
+    // Only send a warning once every 10 secondsto not spam the log
+    RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(), 10 * 1000,
+                         "Waiting for valid joint states...");
+    return false;
   }
 
   Vector7d q_goal;
@@ -243,6 +262,7 @@ void JointImpedanceController::initializeMotionGenerator_() {
 
   const double motion_generator_speed_factor = 0.2;
   motion_generator_ = std::make_unique<MotionGenerator>(motion_generator_speed_factor, q_, q_goal);
+  return true;
 }
 
 }  // namespace franka_fr3_arm_controllers
