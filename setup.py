@@ -22,5 +22,6 @@ setuptools.setup(
     license="MIT",
     install_requires=[
         "numpy",
+        "dynamixel-sdk",
     ],
 )
