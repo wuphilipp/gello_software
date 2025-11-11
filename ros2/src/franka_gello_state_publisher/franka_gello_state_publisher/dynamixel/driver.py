@@ -11,54 +11,79 @@ from dynamixel_sdk.packet_handler import PacketHandler
 from dynamixel_sdk.port_handler import PortHandler
 from dynamixel_sdk.robotis_def import COMM_SUCCESS
 
+
 # Configuration loader for motor types
 def load_motor_config(motor_type: str = "xl330") -> dict:
-    """Load motor configuration from YAML file.
-    
-    Args:
-        motor_type (str): The type of motor to load configuration for.
-        
-    Returns:
-        dict: The motor configuration dictionary.
+    """
+    Load motor configuration from YAML file.
+
+    Parameters
+    ----------
+    motor_type : str, optional
+        The type of motor to load configuration for (default is "xl330").
+
+    Returns
+    -------
+    dict
+        The motor configuration dictionary.
+
     """
     config_dir = Path(__file__).parent / "motor_configs"
     config_path = config_dir / f"{motor_type}.yaml"
-    
+
     if not config_path.exists():
         available_types = [f.stem for f in config_dir.glob("*.yaml")]
-        raise ValueError(f"Motor type '{motor_type}' not found. Available types: {available_types}")
-    
-    with open(config_path, 'r') as f:
+        raise ValueError(
+            f"Motor type '{motor_type}' not found. Available types: {available_types}"
+        )
+
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
-    
+
     return config
+
 
 class DynamixelDriverProtocol(Protocol):
     def get_joints(self) -> np.ndarray:
-        """Get the current joint angles in radians.
+        """
+        Get the current joint angles in radians.
 
-        Returns:
-            np.ndarray: An array of joint angles.
+        Returns
+        -------
+        np.ndarray
+            An array of joint angles.
+
         """
         ...
 
     def write_value_by_name(self, name: str, values: Sequence[int | None]):
-        """Set a group of values by name.
+        """
+        Set a group of values by name.
 
-        Args:
-            name (str): The name of the control parameter.
-            values (Sequence[int | None]): A list of values to set for each servo.
+        Parameters
+        ----------
+        name : str
+            The name of the control parameter.
+        values : Sequence[int | None]
+            A list of values to set for each servo.
+
         """
         ...
 
     def read_value_by_name(self, name: str) -> Sequence[int]:
-        """Read a group of values by name.
+        """
+        Read a group of values by name.
 
-        Args:
-            name (str): The name of the control parameter to read.
+        Parameters
+        ----------
+        name : str
+            The name of the control parameter to read.
 
-        Returns:
-            Sequence[int]: A list of values read from the servos.
+        Returns
+        -------
+        Sequence[int]
+            A list of values read from the servos.
+
         """
         ...
 
@@ -70,12 +95,12 @@ class DynamixelDriverProtocol(Protocol):
 class FakeDynamixelDriver(DynamixelDriverProtocol):
     def __init__(self, ids: Sequence[int], motor_type: str = "xl330"):
         self._ids = ids
-        
+
         # Load motor configuration
         self._motor_config = load_motor_config(motor_type)
         self._ctrl_table = self._motor_config["control_table"]
         self._pulses_per_revolution = self._motor_config["pulses_per_revolution"]
-        
+
         self._storage_map = {
             "goal_position": np.zeros(len(ids), dtype=int),
             "goal_current": np.zeros(len(ids), dtype=int),
@@ -139,26 +164,34 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
     def close(self):
         pass
 
+
 class DynamixelDriver(DynamixelDriverProtocol):
     def __init__(
-        self, 
-        ids: Sequence[int], 
-        port: str = "/dev/ttyUSB0", 
+        self,
+        ids: Sequence[int],
+        port: str = "/dev/ttyUSB0",
         baudrate: int = 57600,
-        motor_type: str = "xl330"
+        motor_type: str = "xl330",
     ):
-        """Initialize the DynamixelDriver class.
+        """
+        Initialize the DynamixelDriver class.
 
-        Args:
-            ids (Sequence[int]): A list of IDs for the Dynamixel servos.
-            port (str): The USB port to connect to the arm.
-            baudrate (int): The baudrate for communication.
-            motor_type (str): The type of motor to use (e.g., "xl330").
+        Parameters
+        ----------
+        ids : Sequence[int]
+            A list of IDs for the Dynamixel servos.
+        port : str, optional
+            The USB port to connect to the arm (default is "/dev/ttyUSB0").
+        baudrate : int, optional
+            The baudrate for communication (default is 57600).
+        motor_type : str, optional
+            The type of motor to use, e.g., "xl330" (default is "xl330").
+
         """
         self._ids = ids
         self._joint_angles = None
         self._lock = Lock()
-        
+
         # Load motor configuration
         self._motor_config = load_motor_config(motor_type)
         self._ctrl_table = self._motor_config["control_table"]
@@ -182,9 +215,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
             # Add parameters for each Dynamixel servo to the group sync read
             for dxl_id in self._ids:
                 if not self._groupSyncReadHandlers[key].addParam(dxl_id):
-                    raise RuntimeError(
-                        f"Failed to add parameter for Dynamixel with ID {dxl_id}"
-                    )
+                    raise RuntimeError(f"Failed to add parameter for Dynamixel with ID {dxl_id}")
             if "read_only" not in entry or not entry["read_only"]:
                 self._groupSyncWriteHandlers[key] = GroupSyncWrite(
                     self._portHandler,
@@ -232,9 +263,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 param = [(value >> (8 * i)) & 0xFF for i in range(value_length)]
                 result = groupSyncWriteHandler.addParam(dxl_id, param)
                 if not result:
-                    raise RuntimeError(
-                        f"Failed to set {name} for Dynamixel with ID {dxl_id}"
-                    )
+                    raise RuntimeError(f"Failed to set {name} for Dynamixel with ID {dxl_id}")
             comm_result = groupSyncWriteHandler.txPacket()
             if comm_result != COMM_SUCCESS:
                 raise RuntimeError(f"Failed to syncwrite {name}")
@@ -250,9 +279,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
             value_max=self._ctrl_table[name].get("max", None),
         )
 
-    def _read_group(
-        self, name: str, groupSyncReadHandler, value_length: int
-    ) -> list[int]:
+    def _read_group(self, name: str, groupSyncReadHandler, value_length: int) -> list[int]:
         with self._lock:
             result = groupSyncReadHandler.txRxPacket()
             if result != COMM_SUCCESS:
@@ -268,9 +295,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     value = int(np.int32(np.uint32(value)))
                     values.append(value)
                 else:
-                    raise RuntimeError(
-                        f"Failed to get {name} for Dynamixel with ID {dxl_id}"
-                    )
+                    raise RuntimeError(f"Failed to get {name} for Dynamixel with ID {dxl_id}")
             return values
 
     def read_value_by_name(self, name: str) -> list[int]:
@@ -327,7 +352,7 @@ def main():
 
     # Create a DynamixelDriver instance
     driver = DynamixelDriver(ids)
-    
+
     # Test setting torque mode
     driver.write_value_by_name("torque_enable", [1] * len(ids))
     driver.write_value_by_name("torque_enable", [0] * len(ids))
