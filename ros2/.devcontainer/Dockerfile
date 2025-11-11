@@ -73,5 +73,5 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
   rosdep install --from-paths . --ignore-src -r -y && \
   colcon build --install-base /opt/ros/humble/franka --cmake-args -DCMAKE_BUILD_TYPE=Release && \
   cd .. && \
-  rm -rf /tmp/rqt_reconfigure \
+  rm -rf /tmp/rqt_reconfigure && \
   rm -rf /var/lib/apt/lists/*"

@@ -9,9 +9,7 @@ from dynamixel_sdk.group_sync_read import GroupSyncRead
 from dynamixel_sdk.group_sync_write import GroupSyncWrite
 from dynamixel_sdk.packet_handler import PacketHandler
 from dynamixel_sdk.port_handler import PortHandler
-from dynamixel_sdk.robotis_def import (
-    COMM_SUCCESS,
-)
+from dynamixel_sdk.robotis_def import COMM_SUCCESS
 
 # Configuration loader for motor types
 def load_motor_config(motor_type: str = "xl330") -> dict:
@@ -297,8 +295,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     self._groupSyncReadHandlers["present_position"],
                     self._ctrl_table["present_position"]["len"],
                 )
-                _joint_angles = np.array(_joint_angles, dtype=int)
-                self._joint_angles = _joint_angles
+                self._joint_angles = np.array(_joint_angles, dtype=int)
             except RuntimeError as e:
                 print(f"warning, comm failed: {e}")
                 continue

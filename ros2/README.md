@@ -154,7 +154,7 @@ This is done by setting the following parameters in the configuration file. Each
 When the GELLO publisher is started, these parameters are used to configure the Dynamixel motors. The motors then operate in their internal "Current-based Position Control" mode with a current limit set to 600mA. Check the [Dynamixel documentation](https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/) for more information on the control parameters.
 
 > 💡 **Hint:**  
-> The `example_fr3_config.yaml` file gives a good starting point for these values for a tabletop mounted GELLO:
+> The example configuration files give a good starting point for these values:
 > - springs in joints 1, 2, 4 and gripper.
 > - damping in all joints, stronger for lower joints
 > - `goal_position` values correspond to the calibration pose.
