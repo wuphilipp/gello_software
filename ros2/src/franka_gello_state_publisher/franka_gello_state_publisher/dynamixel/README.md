@@ -8,7 +8,7 @@ Motor configurations are stored in the `motor_configs/` subdirectory, with one Y
 
 ### File Structure:
 ```
-gello/dynamixel/
+franka_gello_state_publisher/franka_gello_state_publisher/dynamixel/
 ├── driver.py
 ├── motor_configs/
 │   ├── xl330.yaml

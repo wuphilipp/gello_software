@@ -1,61 +1,49 @@
 import time
-from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
 
 import numpy as np
-import yaml
 from dynamixel_sdk.group_sync_read import GroupSyncRead
 from dynamixel_sdk.group_sync_write import GroupSyncWrite
 from dynamixel_sdk.packet_handler import PacketHandler
 from dynamixel_sdk.port_handler import PortHandler
 from dynamixel_sdk.robotis_def import (
     COMM_SUCCESS,
+    DXL_HIBYTE,
+    DXL_HIWORD,
+    DXL_LOBYTE,
+    DXL_LOWORD,
 )
 
-# Configuration loader for motor types
-def load_motor_config(motor_type: str = "xl330") -> dict:
-    """Load motor configuration from YAML file.
-    
-    Args:
-        motor_type (str): The type of motor to load configuration for.
-        
-    Returns:
-        dict: The motor configuration dictionary.
-    """
-    config_dir = Path(__file__).parent / "motor_configs"
-    config_path = config_dir / f"{motor_type}.yaml"
-    
-    if not config_path.exists():
-        available_types = [f.stem for f in config_dir.glob("*.yaml")]
-        raise ValueError(f"Motor type '{motor_type}' not found. Available types: {available_types}")
-    
-    with open(config_path, 'r') as f:
-        config = yaml.safe_load(f)
-    
-    return config
+# Constants
+ADDR_TORQUE_ENABLE = 64
+ADDR_GOAL_POSITION = 116
+LEN_GOAL_POSITION = 4
+ADDR_PRESENT_POSITION = 132
+LEN_PRESENT_POSITION = 4
+TORQUE_ENABLE = 1
+TORQUE_DISABLE = 0
+
 
 class DynamixelDriverProtocol(Protocol):
-    def set_joints(self, joint_angles: Sequence[float | None]):
+    def set_joints(self, joint_angles: Sequence[float]):
         """Set the joint angles for the Dynamixel servos.
 
         Args:
-            joint_angles (Sequence[float | None]): A list of joint angles.
+            joint_angles (Sequence[float]): A list of joint angles.
         """
         ...
 
     def torque_enabled(self) -> bool:
-        """Check if torque is enabled for at least one of the Dynamixel servos.
-        If you want to check which servos have torque enabled, you can use the read_value_by_name method.
+        """Check if torque is enabled for the Dynamixel servos.
 
         Returns:
-            bool: True if torque is enabled for one of the servos, False if it is disabled for all.
+            bool: True if torque is enabled, False if it is disabled.
         """
         ...
 
     def set_torque_mode(self, enable: bool):
-        """Enable or disable torque for all Dynamixel servos.
-        If you want to enable torque for a specific servo, you can use the write_value_by_name method.
+        """Set the torque mode for the Dynamixel servos.
 
         Args:
             enable (bool): True to enable torque, False to disable.
@@ -70,126 +58,41 @@ class DynamixelDriverProtocol(Protocol):
         """
         ...
 
-    def write_value_by_name(self, name: str, values: Sequence[int | None]):
-        """Set a group of values by name.
-
-        Args:
-            name (str): The name of the control parameter.
-            values (Sequence[int | None]): A list of values to set for each servo.
-        """
-        ...
-
-    def read_value_by_name(self, name: str) -> Sequence[int]:
-        """Read a group of values by name.
-
-        Args:
-            name (str): The name of the control parameter to read.
-
-        Returns:
-            Sequence[int]: A list of values read from the servos.
-        """
-        ...
-
     def close(self):
         """Close the driver."""
-        ...
 
 
 class FakeDynamixelDriver(DynamixelDriverProtocol):
-    def __init__(self, ids: Sequence[int], motor_type: str = "xl330"):
+    def __init__(self, ids: Sequence[int]):
         self._ids = ids
-        
-        # Load motor configuration
-        self._motor_config = load_motor_config(motor_type)
-        self._ctrl_table = self._motor_config["control_table"]
-        self._pulses_per_revolution = self._motor_config["pulses_per_revolution"]
-        
-        self._storage_map = {
-            "goal_position": np.zeros(len(ids), dtype=int),
-            "goal_current": np.zeros(len(ids), dtype=int),
-            "kp_d": np.zeros(len(ids), dtype=int),
-            "kp_i": np.zeros(len(ids), dtype=int),
-            "kp_p": np.zeros(len(ids), dtype=int),
-            "operating_mode": np.zeros(len(ids), dtype=int),
-            "torque_enable": np.zeros(len(ids), dtype=int),
-        }
+        self._joint_angles = np.zeros(len(ids), dtype=int)
+        self._torque_enabled = False
 
-    def _pulses_to_rad(self, pulses) -> np.ndarray:
-        """Convert pulses to radians using motor-specific configuration."""
-        return np.array(pulses) / self._pulses_per_revolution * 2 * np.pi
-
-    def _rad_to_pulses(self, rad: float) -> int:
-        """Convert radians to pulses using motor-specific configuration."""
-        return int(rad / (2 * np.pi) * self._pulses_per_revolution)
-
-    def _set_group(
-        self,
-        name: str,
-        values: Sequence[int | None],
-        value_min: int | None = None,
-        value_max: int | None = None,
-    ):
-        if len(values) != len(self._ids):
-            raise ValueError(f"The length of {name} must match the number of servos")
-        for dxl_id, value in zip(self._ids, values):
-            if value is None:
-                continue
-            if value_min is not None:
-                value = max(value, value_min)
-            if value_max is not None:
-                value = min(value, value_max)
-            self._storage_map[name][self._ids.index(dxl_id)] = value
-            print(f"Set {name} {value} for ID {dxl_id}", flush=True)
-
-    def write_value_by_name(self, name: str, values: Sequence[int | None]):
-        self._set_group(
-            name=name,
-            values=values,
-            value_min=self._ctrl_table[name].get("min", None),
-            value_max=self._ctrl_table[name].get("max", None),
-        )
-
-    def _read_group(self, name: str) -> Sequence[int]:
-        if name == "present_position":
-            name = "goal_position"
-        elif name == "present_current":
-            name = "goal_current"
-        if name not in self._storage_map:
-            raise ValueError(f"Register {name} not found.")
-        return self._storage_map[name].copy().tolist()
-
-    def read_value_by_name(self, name: str) -> Sequence[int]:
-        return self._read_group(name)
-
-    def set_joints(self, joint_angles: Sequence[float | None]):
-        self.write_value_by_name(
-            "goal_position",
-            [
-                self._rad_to_pulses(angle) if angle is not None else None
-                for angle in joint_angles
-            ],
-        )
-
-    def get_joints(self) -> np.ndarray:
-        return self._pulses_to_rad(self._storage_map["goal_position"].copy())
+    def set_joints(self, joint_angles: Sequence[float]):
+        if len(joint_angles) != len(self._ids):
+            raise ValueError(
+                "The length of joint_angles must match the number of servos"
+            )
+        if not self._torque_enabled:
+            raise RuntimeError("Torque must be enabled to set joint angles")
+        self._joint_angles = np.array(joint_angles)
 
     def torque_enabled(self) -> bool:
-        return bool(np.any(self._storage_map["torque_enable"]))
+        return self._torque_enabled
 
     def set_torque_mode(self, enable: bool):
-        torque_value = 1 if enable else 0
-        self.write_value_by_name("torque_enable", [torque_value] * len(self._ids))
+        self._torque_enabled = enable
+
+    def get_joints(self) -> np.ndarray:
+        return self._joint_angles.copy()
 
     def close(self):
         pass
 
+
 class DynamixelDriver(DynamixelDriverProtocol):
     def __init__(
-        self, 
-        ids: Sequence[int], 
-        port: str = "/dev/ttyUSB0", 
-        baudrate: int = 57600,
-        motor_type: str = "xl330"
+        self, ids: Sequence[int], port: str = "/dev/ttyUSB0", baudrate: int = 57600
     ):
         """Initialize the DynamixelDriver class.
 
@@ -197,45 +100,26 @@ class DynamixelDriver(DynamixelDriverProtocol):
             ids (Sequence[int]): A list of IDs for the Dynamixel servos.
             port (str): The USB port to connect to the arm.
             baudrate (int): The baudrate for communication.
-            motor_type (str): The type of motor to use (e.g., "xl330").
         """
         self._ids = ids
         self._joint_angles = None
         self._lock = Lock()
-        
-        # Load motor configuration
-        self._motor_config = load_motor_config(motor_type)
-        self._ctrl_table = self._motor_config["control_table"]
-        self._operating_modes = self._motor_config["operating_modes"]
-        self._pulses_per_revolution = self._motor_config["pulses_per_revolution"]
 
         # Initialize the port handler, packet handler, and group sync read/write
         self._portHandler = PortHandler(port)
         self._packetHandler = PacketHandler(2.0)
-
-        # Create group sync read/write handlers for each control table entry
-        self._groupSyncReadHandlers = {}
-        self._groupSyncWriteHandlers = {}
-        for key, entry in self._ctrl_table.items():
-            self._groupSyncReadHandlers[key] = GroupSyncRead(
-                self._portHandler,
-                self._packetHandler,
-                entry["addr"],
-                entry["len"],
-            )
-            # Add parameters for each Dynamixel servo to the group sync read
-            for dxl_id in self._ids:
-                if not self._groupSyncReadHandlers[key].addParam(dxl_id):
-                    raise RuntimeError(
-                        f"Failed to add parameter for Dynamixel with ID {dxl_id}"
-                    )
-            if "read_only" not in entry or not entry["read_only"]:
-                self._groupSyncWriteHandlers[key] = GroupSyncWrite(
-                    self._portHandler,
-                    self._packetHandler,
-                    entry["addr"],
-                    entry["len"],
-                )
+        self._groupSyncRead = GroupSyncRead(
+            self._portHandler,
+            self._packetHandler,
+            ADDR_PRESENT_POSITION,
+            LEN_PRESENT_POSITION,
+        )
+        self._groupSyncWrite = GroupSyncWrite(
+            self._portHandler,
+            self._packetHandler,
+            ADDR_GOAL_POSITION,
+            LEN_GOAL_POSITION,
+        )
 
         # Open the port and set the baudrate
         if not self._portHandler.openPort():
@@ -244,143 +128,122 @@ class DynamixelDriver(DynamixelDriverProtocol):
         if not self._portHandler.setBaudRate(baudrate):
             raise RuntimeError(f"Failed to change the baudrate, {baudrate}")
 
-        # Disable torque for all Dynamixel servos
+        # Add parameters for each Dynamixel servo to the group sync read
+        for dxl_id in self._ids:
+            if not self._groupSyncRead.addParam(dxl_id):
+                raise RuntimeError(
+                    f"Failed to add parameter for Dynamixel with ID {dxl_id}"
+                )
+
+        # Disable torque for each Dynamixel servo
+        self._torque_enabled = False
         try:
-            self.set_torque_mode(False)
+            self.set_torque_mode(self._torque_enabled)
         except Exception as e:
             print(f"port: {port}, {e}")
 
         self._stop_thread = Event()
         self._start_reading_thread()
 
-    def _set_group(
-        self,
-        name: str,
-        values: Sequence[int | None],
-        groupSyncWriteHandler,
-        value_length: int,
-        value_min: int | None = None,
-        value_max: int | None = None,
-    ):
-        if len(values) != len(self._ids):
-            raise ValueError(f"The length of {name} must match the number of servos")
-        with self._lock:
-            for dxl_id, value in zip(self._ids, values):
-                if value is None:
-                    continue
-                if value_min is not None:
-                    value = max(value, value_min)
-                if value_max is not None:
-                    value = min(value, value_max)
-                # Convert value to little-endian byte array of length value_length
-                param = [(value >> (8 * i)) & 0xFF for i in range(value_length)]
-                result = groupSyncWriteHandler.addParam(dxl_id, param)
-                if not result:
-                    raise RuntimeError(
-                        f"Failed to set {name} for Dynamixel with ID {dxl_id}"
-                    )
-            comm_result = groupSyncWriteHandler.txPacket()
-            if comm_result != COMM_SUCCESS:
-                raise RuntimeError(f"Failed to syncwrite {name}")
-            groupSyncWriteHandler.clearParam()
+    def set_joints(self, joint_angles: Sequence[float]):
+        if len(joint_angles) != len(self._ids):
+            raise ValueError(
+                "The length of joint_angles must match the number of servos"
+            )
+        if not self._torque_enabled:
+            raise RuntimeError("Torque must be enabled to set joint angles")
 
-    def write_value_by_name(self, name: str, values: Sequence[int | None]):
-        self._set_group(
-            name=name,
-            values=values,
-            groupSyncWriteHandler=self._groupSyncWriteHandlers[name],
-            value_length=self._ctrl_table[name]["len"],
-            value_min=self._ctrl_table[name].get("min", None),
-            value_max=self._ctrl_table[name].get("max", None),
-        )
+        for dxl_id, angle in zip(self._ids, joint_angles):
+            # Convert the angle to the appropriate value for the servo
+            position_value = int(angle * 2048 / np.pi)
 
-    def _read_group(
-        self, name: str, groupSyncReadHandler, value_length: int
-    ) -> list[int]:
+            # Allocate goal position value into byte array
+            param_goal_position = [
+                DXL_LOBYTE(DXL_LOWORD(position_value)),
+                DXL_HIBYTE(DXL_LOWORD(position_value)),
+                DXL_LOBYTE(DXL_HIWORD(position_value)),
+                DXL_HIBYTE(DXL_HIWORD(position_value)),
+            ]
+
+            # Add goal position value to the Syncwrite parameter storage
+            dxl_addparam_result = self._groupSyncWrite.addParam(
+                dxl_id, param_goal_position
+            )
+            if not dxl_addparam_result:
+                raise RuntimeError(
+                    f"Failed to set joint angle for Dynamixel with ID {dxl_id}"
+                )
+
+        # Syncwrite goal position
+        dxl_comm_result = self._groupSyncWrite.txPacket()
+        if dxl_comm_result != COMM_SUCCESS:
+            raise RuntimeError("Failed to syncwrite goal position")
+
+        # Clear syncwrite parameter storage
+        self._groupSyncWrite.clearParam()
+
+    def torque_enabled(self) -> bool:
+        return self._torque_enabled
+
+    def set_torque_mode(self, enable: bool):
+        torque_value = TORQUE_ENABLE if enable else TORQUE_DISABLE
         with self._lock:
-            result = groupSyncReadHandler.txRxPacket()
-            if result != COMM_SUCCESS:
-                raise RuntimeError(f"Failed to sync read {name}, comm result: {result}")
-            values = []
             for dxl_id in self._ids:
-                if groupSyncReadHandler.isAvailable(
-                    dxl_id, self._ctrl_table[name]["addr"], value_length
-                ):
-                    value = groupSyncReadHandler.getData(
-                        dxl_id, self._ctrl_table[name]["addr"], value_length
-                    )
-                    value = int(np.int32(np.uint32(value)))
-                    values.append(value)
-                else:
+                dxl_comm_result, dxl_error = self._packetHandler.write1ByteTxRx(
+                    self._portHandler, dxl_id, ADDR_TORQUE_ENABLE, torque_value
+                )
+                if dxl_comm_result != COMM_SUCCESS or dxl_error != 0:
+                    print(dxl_comm_result)
+                    print(dxl_error)
                     raise RuntimeError(
-                        f"Failed to get {name} for Dynamixel with ID {dxl_id}"
+                        f"Failed to set torque mode for Dynamixel with ID {dxl_id}"
                     )
-            return values
 
-    def read_value_by_name(self, name: str) -> list[int]:
-        return self._read_group(
-            name=name,
-            groupSyncReadHandler=self._groupSyncReadHandlers[name],
-            value_length=self._ctrl_table[name]["len"],
-        )
-
-    def set_joints(self, joint_angles: Sequence[float | None]):
-        joint_angles_pulses = [
-            self._rad_to_pulses(rad) if rad is not None else None for rad in joint_angles
-        ]
-        self.write_value_by_name("goal_position", joint_angles_pulses)
+        self._torque_enabled = enable
 
     def _start_reading_thread(self):
-        self._reading_thread = Thread(target=self._read_joint_angles_loop)
+        self._reading_thread = Thread(target=self._read_joint_angles)
         self._reading_thread.daemon = True
         self._reading_thread.start()
 
-    def _read_joint_angles_loop(self):
+    def _read_joint_angles(self):
         # Continuously read joint angles and update the joint_angles array
         while not self._stop_thread.is_set():
             time.sleep(0.001)
-            try:
-                _joint_angles = self._read_group(
-                    "present_position",
-                    self._groupSyncReadHandlers["present_position"],
-                    self._ctrl_table["present_position"]["len"],
-                )
-                _joint_angles = np.array(_joint_angles, dtype=int)
+            with self._lock:
+                _joint_angles = np.zeros(len(self._ids), dtype=int)
+                dxl_comm_result = self._groupSyncRead.txRxPacket()
+                if dxl_comm_result != COMM_SUCCESS:
+                    print(f"warning, comm failed: {dxl_comm_result}")
+                    continue
+                for i, dxl_id in enumerate(self._ids):
+                    if self._groupSyncRead.isAvailable(
+                        dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
+                    ):
+                        angle = self._groupSyncRead.getData(
+                            dxl_id, ADDR_PRESENT_POSITION, LEN_PRESENT_POSITION
+                        )
+                        angle = np.int32(np.uint32(angle))
+                        _joint_angles[i] = angle
+                    else:
+                        raise RuntimeError(
+                            f"Failed to get joint angles for Dynamixel with ID {dxl_id}"
+                        )
                 self._joint_angles = _joint_angles
-            except RuntimeError as e:
-                print(f"warning, comm failed: {e}")
-                continue
+            # self._groupSyncRead.clearParam() # TODO what does this do? should i add it
 
     def get_joints(self) -> np.ndarray:
         # Return a copy of the joint_angles array to avoid race conditions
         while self._joint_angles is None:
             time.sleep(0.1)
+        # with self._lock:
         _j = self._joint_angles.copy()
-        return self._pulses_to_rad(_j)
-
-    def torque_enabled(self) -> bool:
-        try:
-            torque_values = self.read_value_by_name("torque_enable")
-            return any(val == 1 for val in torque_values)
-        except RuntimeError:
-            return False
-
-    def set_torque_mode(self, enable: bool):
-        torque_value = 1 if enable else 0
-        self.write_value_by_name("torque_enable", [torque_value] * len(self._ids))
+        return _j / 2048.0 * np.pi
 
     def close(self):
         self._stop_thread.set()
         self._reading_thread.join()
         self._portHandler.closePort()
-
-    def _pulses_to_rad(self, pulses) -> np.ndarray:
-        """Convert pulses to radians using motor-specific configuration."""
-        return np.array(pulses) / self._pulses_per_revolution * 2 * np.pi
-
-    def _rad_to_pulses(self, rad: float) -> int:
-        """Convert radians to pulses using motor-specific configuration."""
-        return int(rad / (2 * np.pi) * self._pulses_per_revolution)
 
 
 def main():

@@ -1,9 +1,7 @@
 import numpy as np
-from ament_index_python.packages import get_package_prefix
-from os import path as os_path
-from sys import path as sys_path
 from dataclasses import dataclass, field
 from typing import List, TypedDict, Iterator, Tuple
+from franka_gello_state_publisher.dynamixel.driver import DynamixelDriver
 
 
 class GelloHardwareParams(TypedDict):
@@ -103,19 +101,9 @@ class GelloHardware:
 
         self._initialize_parameters()
 
-    def _add_dynamixel_driver_path(self) -> None:
-        """Add dynamixel driver to Python path."""
-        gello_path = os_path.abspath(
-            os_path.join(get_package_prefix("franka_gello_state_publisher"), "../../../")
-        )
-        sys_path.insert(0, gello_path)
-
     def _initialize_driver(self) -> None:
         """Initialize dynamixel driver with joint IDs and port."""
         joint_ids = list(range(1, self._num_total_joints + 1))
-        self._add_dynamixel_driver_path()
-        from gello.dynamixel.driver import DynamixelDriver
-
         self._driver = DynamixelDriver(joint_ids, port=self._com_port, baudrate=57600)
 
     def _initialize_parameters(self) -> None:
@@ -153,7 +141,7 @@ class GelloHardware:
 
     def disable_torque(self) -> None:
         """Disable torque on all joints."""
-        self._driver.set_torque_mode(False)
+        self._driver.write_value_by_name("torque_enable", [0] * len(self._driver._ids))
 
     def _goal_position_to_pulses(self, goals: list[float]) -> list[int]:
         """Convert goal positions from radians to dynamixel pulses."""
