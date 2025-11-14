@@ -22,7 +22,11 @@ class GelloPublisher(Node):
 
         hardware_params: GelloHardwareParams = self._setup_hardware_parameters()
 
-        self.gello_hardware = GelloHardware(hardware_params)
+        try:
+            self.gello_hardware = GelloHardware(hardware_params)
+        except ConnectionError as e:
+            self.get_logger().error(f"Failed to initialize GELLO hardware: {e}")
+            raise
 
         self.arm_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
         self.gripper_joint_publisher = self.create_publisher(
@@ -34,6 +38,7 @@ class GelloPublisher(Node):
             ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
         )
 
+        self.get_logger().info("Publishing GELLO joint states.")
         self.timer = self.create_timer(1 / self.PUBLISHING_RATE, self.publish_joint_jog)
 
     def parameter_event_callback(self, event: ParameterEvent) -> None:
@@ -109,7 +114,12 @@ class GelloPublisher(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    gello_publisher = GelloPublisher()
+
+    try:
+        gello_publisher = GelloPublisher()
+    except ConnectionError:
+        rclpy.try_shutdown()
+        return
 
     try:
         rclpy.spin(gello_publisher)
