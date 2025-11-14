@@ -1,7 +1,7 @@
 import os
 import yaml
 from launch import LaunchDescription
-from launch.actions import DeclareLaunchArgument, OpaqueFunction
+from launch.actions import DeclareLaunchArgument, OpaqueFunction, Shutdown
 from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
@@ -29,6 +29,7 @@ def generate_robot_nodes(context):
                 name="gello_publisher",
                 namespace=namespace,
                 output="screen",
+                on_exit=Shutdown(),
                 parameters=[
                     {"com_port": "/dev/serial/by-id/" + config["com_port"]},
                     {"gello_name": item_name},
