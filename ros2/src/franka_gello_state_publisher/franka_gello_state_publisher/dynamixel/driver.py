@@ -344,28 +344,3 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def _rad_to_pulses(self, rad: float) -> int:
         """Convert radians to pulses using motor-specific configuration."""
         return int(rad / (2 * np.pi) * self._pulses_per_revolution)
-
-
-def main():
-    # Set the port, baudrate, and servo IDs
-    ids = [1]
-
-    # Create a DynamixelDriver instance
-    driver = DynamixelDriver(ids)
-
-    # Test setting torque mode
-    driver.write_value_by_name("torque_enable", [1] * len(ids))
-    driver.write_value_by_name("torque_enable", [0] * len(ids))
-
-    # Test reading the joint angles
-    try:
-        while True:
-            joint_angles = driver.get_joints()
-            print(f"Joint angles for IDs {ids}: {joint_angles}")
-            # print(f"Joint angles for IDs {ids[1]}: {joint_angles[1]}")
-    except KeyboardInterrupt:
-        driver.close()
-
-
-if __name__ == "__main__":
-    main()  # Test the driver
