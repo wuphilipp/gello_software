@@ -246,7 +246,7 @@ void JointImpedanceController::updateJointStates_() {
 
 bool JointImpedanceController::initializeMotionGenerator_() {
   if (!gello_position_values_valid_) {
-    // Only send a warning once every 10 secondsto not spam the log
+    // Only send a warning once every 10 seconds in order not to spam the log
     RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(), 10 * 1000,
                          "Waiting for valid joint states...");
     return false;
