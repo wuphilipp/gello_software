@@ -8,16 +8,19 @@ from gello.robots.robot import Robot
 class URRobot(Robot):
     """A class representing a UR robot."""
 
-    def __init__(self, robot_ip: str = "192.168.1.10", no_gripper: bool = False):
+    def __init__(self, robot_ip: str = "192.168.1.5", no_gripper: bool = True):
         import rtde_control
         import rtde_receive
 
         [print("in ur robot") for _ in range(4)]
+        print(robot_ip)
         try:
             self.robot = rtde_control.RTDEControlInterface(robot_ip)
         except Exception as e:
             print(e)
             print(robot_ip)
+        [print("in ur robot") for _ in range(4)]
+
 
         self.r_inter = rtde_receive.RTDEReceiveInterface(robot_ip)
         if not no_gripper:
@@ -122,7 +125,7 @@ class URRobot(Robot):
 
 
 def main():
-    robot_ip = "192.168.1.11"
+    robot_ip = "192.168.1.5"
     ur = URRobot(robot_ip, no_gripper=True)
     print(ur)
     ur.set_freedrive_mode(True)

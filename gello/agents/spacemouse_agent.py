@@ -1,6 +1,6 @@
 import threading
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass,field
 from typing import Dict, Optional
 
 import numpy as np
@@ -35,19 +35,24 @@ def apply_transfer(mat: np.ndarray, xyz: np.ndarray) -> np.ndarray:
 
 
 @dataclass
-class SpacemouseConfig:
-    angle_scale: float = 0.24
-    translation_scale: float = 0.06
-    # only control the xyz, rotation direction, not the gripper
-    invert_control: np.ndarray = np.ones(6)
-    rotation_mode: str = "euler"
+class SpaceMouseConfig:
+    invert_control: np.ndarray = field(
+        default_factory=lambda: np.array([1, 1, 1, 1, 1, 1], dtype=np.float32)
+    )
+    scale_xyz: np.ndarray = field(
+        default_factory=lambda: np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    )
+    scale_rpy: np.ndarray = field(
+        default_factory=lambda: np.array([1.0, 1.0, 1.0], dtype=np.float32)
+    )
+    deadzone: float = 0.05
 
 
 class SpacemouseAgent(Agent):
     def __init__(
         self,
         robot_type: str,
-        config: SpacemouseConfig = SpacemouseConfig(),
+        config: SpaceMouseConfig = SpaceMouseConfig(),
         device_path: Optional[str] = None,
         verbose: bool = True,
         invert_button: bool = False,

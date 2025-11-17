@@ -111,15 +111,7 @@ def main(args):
 
         # System setup specific. This reset configuration works well on our setup. If you are mounting the robot
         # differently, you need a separate reset joint configuration.
-        reset_joints_left = np.deg2rad([0, -90, -90, -90, 90, 0, 0])
-        reset_joints_right = np.deg2rad([0, -90, 90, -90, -90, 0, 0])
-        reset_joints = np.concatenate([reset_joints_left, reset_joints_right])
-        curr_joints = env.get_obs()["joint_positions"]
-        max_delta = (np.abs(curr_joints - reset_joints)).max()
-        steps = min(int(max_delta / 0.01), 100)
-
-        for jnt in np.linspace(curr_joints, reset_joints, steps):
-            env.step(jnt)
+        
     else:
         if args.agent == "gello":
             gello_port = args.gello_port

@@ -1,0 +1,273 @@
+<mujoco model="unnamed_model">
+  <compiler autolimits="true" angle="radian"/>
+  <option impratio="10" integrator="implicitfast" cone="elliptic"/>
+  <default>
+    <default class="/"/>
+    <default class="ur5e/">
+      <default class="ur5e/ur5e">
+        <material specular="0.5" shininess="0.25"/>
+        <joint axis="0 1 0" range="-6.2831900000000003 6.2831900000000003" armature="0.10000000000000001"/>
+        <site group="4" rgba="0.5 0.5 0.5 0.29999999999999999" size="0.001"/>
+        <general ctrlrange="-6.2831000000000001 6.2831000000000001" forcerange="-150 150" gaintype="fixed" biastype="affine" gainprm="2000" biasprm="0 -2000 -400"/>
+        <default class="ur5e/size3">
+          <default class="ur5e/size3_limited">
+            <joint range="-3.1415000000000002 3.1415000000000002"/>
+            <general ctrlrange="-3.1415000000000002 3.1415000000000002"/>
+          </default>
+        </default>
+        <default class="ur5e/size1">
+          <general forcerange="-28 28" gainprm="500" biasprm="0 -500 -100"/>
+        </default>
+        <default class="ur5e/visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="ur5e/collision">
+          <geom type="capsule" group="3"/>
+          <default class="ur5e/eef_collision">
+            <geom type="cylinder"/>
+          </default>
+        </default>
+      </default>
+    </default>
+    <default class="ur5e/robotiq_2f85/">
+      <default class="ur5e/robotiq_2f85/2f85">
+        <mesh scale="0.001 0.001 0.001"/>
+        <joint axis="1 0 0"/>
+        <general biastype="affine"/>
+        <default class="ur5e/robotiq_2f85/driver">
+          <joint solreflimit="0.0050000000000000001 1" solimplimit="0.94999999999999996 0.98999999999999999 0.001" range="0 0.80000000000000004" armature="0.0050000000000000001" damping="0.10000000000000001"/>
+        </default>
+        <default class="ur5e/robotiq_2f85/follower">
+          <joint pos="0 -0.017999999999999999 0.0064999999999999997" solreflimit="0.0050000000000000001 1" solimplimit="0.94999999999999996 0.98999999999999999 0.001" range="-0.872664 0.872664" armature="0.001"/>
+        </default>
+        <default class="ur5e/robotiq_2f85/spring_link">
+          <joint stiffness="0.050000000000000003" range="-0.29670597283 0.80000000000000004" springref="2.6200000000000001" armature="0.001" damping="0.00125"/>
+        </default>
+        <default class="ur5e/robotiq_2f85/coupler">
+          <joint solreflimit="0.0050000000000000001 1" solimplimit="0.94999999999999996 0.98999999999999999 0.001" range="-1.5700000000000001 0" armature="0.001"/>
+        </default>
+        <default class="ur5e/robotiq_2f85/visual">
+          <geom type="mesh" contype="0" conaffinity="0" group="2"/>
+        </default>
+        <default class="ur5e/robotiq_2f85/collision">
+          <geom type="mesh" group="3"/>
+          <default class="ur5e/robotiq_2f85/pad_box1">
+            <geom type="box" priority="1" size="0.010999999999999999 0.0040000000000000001 0.0093749999999999997" rgba="0.55000000000000004 0.55000000000000004 0.55000000000000004 1" friction="0.69999999999999996" mass="0" solref="0.0040000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" pos="0 -0.0025999999999999999 0.028125000000000001"/>
+          </default>
+          <default class="ur5e/robotiq_2f85/pad_box2">
+            <geom type="box" priority="1" size="0.010999999999999999 0.0040000000000000001 0.0093749999999999997" rgba="0.45000000000000001 0.45000000000000001 0.45000000000000001 1" friction="0.59999999999999998" mass="0" solref="0.0040000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" pos="0 -0.0025999999999999999 0.0093749999999999997"/>
+          </default>
+        </default>
+      </default>
+    </default>
+  </default>
+  <asset>
+    <material name="ur5e/black" class="ur5e/ur5e" rgba="0.033000000000000002 0.033000000000000002 0.033000000000000002 1"/>
+    <material name="ur5e/jointgray" class="ur5e/ur5e" rgba="0.27800000000000002 0.27800000000000002 0.27800000000000002 1"/>
+    <material name="ur5e/linkgray" class="ur5e/ur5e" rgba="0.81999999999999995 0.81999999999999995 0.81999999999999995 1"/>
+    <material name="ur5e/urblue" class="ur5e/ur5e" rgba="0.48999999999999999 0.67800000000000005 0.80000000000000004 1"/>
+    <mesh name="ur5e/base_0" class="ur5e/" file="base_0-d5328a99917358d9aa384f12743fe73698461d1c.obj"/>
+    <mesh name="ur5e/base_1" class="ur5e/" file="base_1-d1c667ae5f87b9c900fdeadad850205153846396.obj"/>
+    <mesh name="ur5e/shoulder_0" class="ur5e/" file="shoulder_0-89051b80580d45ef39cb220bf068742b01770552.obj"/>
+    <mesh name="ur5e/shoulder_1" class="ur5e/" file="shoulder_1-50ba15e82459989cf7f17cba7b1aafbca2781206.obj"/>
+    <mesh name="ur5e/shoulder_2" class="ur5e/" file="shoulder_2-29ad171bec79e2912abb81d250aaf5ff9a67bc60.obj"/>
+    <mesh name="ur5e/upperarm_0" class="ur5e/" file="upperarm_0-16bfdf8d1b19d35ef0adbc4cf29ab0c7edb62dcf.obj"/>
+    <mesh name="ur5e/upperarm_1" class="ur5e/" file="upperarm_1-c53724435bec35e1b608145457af767b038f4fd1.obj"/>
+    <mesh name="ur5e/upperarm_2" class="ur5e/" file="upperarm_2-199e0d0c1baa55a078742ed298800ff26d072c09.obj"/>
+    <mesh name="ur5e/upperarm_3" class="ur5e/" file="upperarm_3-62f2bba935d9ab94800a49bcb6ede7b0fa9dd071.obj"/>
+    <mesh name="ur5e/forearm_0" class="ur5e/" file="forearm_0-7994229075bdd0e4a5c860ca174278ee8eda8229.obj"/>
+    <mesh name="ur5e/forearm_1" class="ur5e/" file="forearm_1-c72848167eef89e0d9801ddd7da516e7e878776e.obj"/>
+    <mesh name="ur5e/forearm_2" class="ur5e/" file="forearm_2-3a33518f421ed893ff9b0d759af07b0e5900e78c.obj"/>
+    <mesh name="ur5e/forearm_3" class="ur5e/" file="forearm_3-54cad2556a94cdda04a7cef5c84554a7d9f3ab03.obj"/>
+    <mesh name="ur5e/wrist1_0" class="ur5e/" file="wrist1_0-6876ccb9d0084054268dd6aec007e5a61aea6c2d.obj"/>
+    <mesh name="ur5e/wrist1_1" class="ur5e/" file="wrist1_1-0f7e6640a9dfb98e58078997f5f82bd433879387.obj"/>
+    <mesh name="ur5e/wrist1_2" class="ur5e/" file="wrist1_2-3f6dcae8c736e2c42db3746db7f24ac4516aaca7.obj"/>
+    <mesh name="ur5e/wrist2_0" class="ur5e/" file="wrist2_0-fdb3f7bc360f8f37f6be6270c8b507291dc9b01c.obj"/>
+    <mesh name="ur5e/wrist2_1" class="ur5e/" file="wrist2_1-258ca475798c530d954723dc29f3d67086ead0d9.obj"/>
+    <mesh name="ur5e/wrist2_2" class="ur5e/" file="wrist2_2-c6734971531db7f2f09e746377aa9faccb69b192.obj"/>
+    <mesh name="ur5e/wrist3" class="ur5e/" file="wrist3-a1fffb4f599e121fb18be40e087b6fd7fb164e59.obj"/>
+    <material name="ur5e/robotiq_2f85/metal" class="ur5e/robotiq_2f85/" rgba="0.57999999999999996 0.57999999999999996 0.57999999999999996 1"/>
+    <material name="ur5e/robotiq_2f85/silicone" class="ur5e/robotiq_2f85/" rgba="0.18820000000000001 0.18820000000000001 0.18820000000000001 1"/>
+    <material name="ur5e/robotiq_2f85/gray" class="ur5e/robotiq_2f85/" rgba="0.4627 0.4627 0.4627 1"/>
+    <material name="ur5e/robotiq_2f85/black" class="ur5e/robotiq_2f85/" rgba="0.14899999999999999 0.14899999999999999 0.14899999999999999 1"/>
+    <mesh name="ur5e/robotiq_2f85/base_mount" class="ur5e/robotiq_2f85/2f85" file="base_mount-22e57178defe77afb6bdd333bfae16607f1eb3dd.stl"/>
+    <mesh name="ur5e/robotiq_2f85/base" class="ur5e/robotiq_2f85/2f85" file="base-e5dacbcc3971bfdb549ff8c7d38ea873ca7f2933.stl"/>
+    <mesh name="ur5e/robotiq_2f85/driver" class="ur5e/robotiq_2f85/2f85" file="driver-97efa43184c575b31ff1f3980641896f51492762.stl"/>
+    <mesh name="ur5e/robotiq_2f85/coupler" class="ur5e/robotiq_2f85/2f85" file="coupler-0a4240dc94992944cca6ec9e270ff1658fa86c55.stl"/>
+    <mesh name="ur5e/robotiq_2f85/follower" class="ur5e/robotiq_2f85/2f85" file="follower-39e4b8048f1395ee38cb45b37b5fec0e6f2aaec9.stl"/>
+    <mesh name="ur5e/robotiq_2f85/pad" class="ur5e/robotiq_2f85/2f85" file="pad-e6a633b2c81740b1f783ec4c6e695c8cc570f09d.stl"/>
+    <mesh name="ur5e/robotiq_2f85/silicone_pad" class="ur5e/robotiq_2f85/2f85" file="silicone_pad-c284384f3ca6dcdc24d6188a5d1a2d4c42c412ac.stl"/>
+    <mesh name="ur5e/robotiq_2f85/spring_link" class="ur5e/robotiq_2f85/2f85" file="spring_link-8f50234325193b84e9f86b7a63a24560a389c9bf.stl"/>
+  </asset>
+  <worldbody>
+    <body name="ur5e/">
+      <light name="ur5e/spotlight" class="ur5e/" mode="targetbodycom" target="ur5e/wrist_2_link" pos="0 -1 2"/>
+      <body name="ur5e/base" childclass="ur5e/ur5e" quat="0 0 0 -1">
+        <inertial pos="0 0 0" mass="4" diaginertia="0.0044333315599999999 0.0044333315599999999 0.0071999999999999998"/>
+        <geom name="ur5e//unnamed_geom_0" class="ur5e/visual" material="ur5e/black" mesh="ur5e/base_0"/>
+        <geom name="ur5e//unnamed_geom_1" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/base_1"/>
+        <body name="ur5e/shoulder_link" pos="0 0 0.16300000000000001">
+          <inertial pos="0 0 0" mass="3.7000000000000002" diaginertia="0.010267500000000001 0.010267500000000001 0.0066600000000000001"/>
+          <joint name="ur5e/shoulder_pan_joint" class="ur5e/size3" axis="0 0 1"/>
+          <geom name="ur5e//unnamed_geom_2" class="ur5e/visual" material="ur5e/urblue" mesh="ur5e/shoulder_0"/>
+          <geom name="ur5e//unnamed_geom_3" class="ur5e/visual" material="ur5e/black" mesh="ur5e/shoulder_1"/>
+          <geom name="ur5e//unnamed_geom_4" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/shoulder_2"/>
+          <geom name="ur5e//unnamed_geom_5" class="ur5e/collision" size="0.059999999999999998 0.059999999999999998" pos="0 0 -0.040000000000000001"/>
+          <body name="ur5e/upper_arm_link" pos="0 0.13800000000000001 0" quat="1 0 1 0">
+            <inertial pos="0 0 0.21249999999999999" mass="8.3930000000000007" diaginertia="0.13388600000000001 0.13388600000000001 0.0151074"/>
+            <joint name="ur5e/shoulder_lift_joint" class="ur5e/size3"/>
+            <geom name="ur5e//unnamed_geom_6" class="ur5e/visual" material="ur5e/linkgray" mesh="ur5e/upperarm_0"/>
+            <geom name="ur5e//unnamed_geom_7" class="ur5e/visual" material="ur5e/black" mesh="ur5e/upperarm_1"/>
+            <geom name="ur5e//unnamed_geom_8" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/upperarm_2"/>
+            <geom name="ur5e//unnamed_geom_9" class="ur5e/visual" material="ur5e/urblue" mesh="ur5e/upperarm_3"/>
+            <geom name="ur5e//unnamed_geom_10" class="ur5e/collision" size="0.059999999999999998 0.059999999999999998" pos="0 -0.040000000000000001 0" quat="1 1 0 0"/>
+            <geom name="ur5e//unnamed_geom_11" class="ur5e/collision" size="0.050000000000000003 0.20000000000000001" pos="0 0 0.20000000000000001"/>
+            <body name="ur5e/forearm_link" pos="0 -0.13100000000000001 0.42499999999999999">
+              <inertial pos="0 0 0.19600000000000001" mass="2.2749999999999999" diaginertia="0.031179599999999998 0.031179599999999998 0.0040949999999999997"/>
+              <joint name="ur5e/elbow_joint" class="ur5e/size3_limited"/>
+              <geom name="ur5e//unnamed_geom_12" class="ur5e/visual" material="ur5e/urblue" mesh="ur5e/forearm_0"/>
+              <geom name="ur5e//unnamed_geom_13" class="ur5e/visual" material="ur5e/linkgray" mesh="ur5e/forearm_1"/>
+              <geom name="ur5e//unnamed_geom_14" class="ur5e/visual" material="ur5e/black" mesh="ur5e/forearm_2"/>
+              <geom name="ur5e//unnamed_geom_15" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/forearm_3"/>
+              <geom name="ur5e//unnamed_geom_16" class="ur5e/collision" size="0.055 0.059999999999999998" pos="0 0.080000000000000002 0" quat="1 1 0 0"/>
+              <geom name="ur5e//unnamed_geom_17" class="ur5e/collision" size="0.037999999999999999 0.19" pos="0 0 0.20000000000000001"/>
+              <body name="ur5e/wrist_1_link" pos="0 0 0.39200000000000002" quat="1 0 1 0">
+                <inertial pos="0 0.127 0" mass="1.2190000000000001" diaginertia="0.0025598999999999999 0.0025598999999999999 0.0021941999999999999"/>
+                <joint name="ur5e/wrist_1_joint" class="ur5e/size1"/>
+                <geom name="ur5e//unnamed_geom_18" class="ur5e/visual" material="ur5e/black" mesh="ur5e/wrist1_0"/>
+                <geom name="ur5e//unnamed_geom_19" class="ur5e/visual" material="ur5e/urblue" mesh="ur5e/wrist1_1"/>
+                <geom name="ur5e//unnamed_geom_20" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/wrist1_2"/>
+                <geom name="ur5e//unnamed_geom_21" class="ur5e/collision" size="0.040000000000000001 0.070000000000000007" pos="0 0.050000000000000003 0" quat="1 1 0 0"/>
+                <body name="ur5e/wrist_2_link" pos="0 0.127 0">
+                  <inertial pos="0 0 0.10000000000000001" mass="1.2190000000000001" diaginertia="0.0025598999999999999 0.0025598999999999999 0.0021941999999999999"/>
+                  <joint name="ur5e/wrist_2_joint" class="ur5e/size1" axis="0 0 1"/>
+                  <geom name="ur5e//unnamed_geom_22" class="ur5e/visual" material="ur5e/black" mesh="ur5e/wrist2_0"/>
+                  <geom name="ur5e//unnamed_geom_23" class="ur5e/visual" material="ur5e/urblue" mesh="ur5e/wrist2_1"/>
+                  <geom name="ur5e//unnamed_geom_24" class="ur5e/visual" material="ur5e/jointgray" mesh="ur5e/wrist2_2"/>
+                  <geom name="ur5e//unnamed_geom_25" class="ur5e/collision" size="0.040000000000000001 0.059999999999999998" pos="0 0 0.040000000000000001"/>
+                  <geom name="ur5e//unnamed_geom_26" class="ur5e/collision" size="0.040000000000000001 0.040000000000000001" pos="0 0.02 0.10000000000000001" quat="1 1 0 0"/>
+                  <body name="ur5e/wrist_3_link" pos="0 0 0.10000000000000001">
+                    <inertial pos="0 0.077168299999999995 0" quat="1 0 0 1" mass="0.18890000000000001" diaginertia="0.00013213400000000001 9.90863e-05 9.90863e-05"/>
+                    <joint name="ur5e/wrist_3_joint" class="ur5e/size1"/>
+                    <geom name="ur5e//unnamed_geom_27" class="ur5e/visual" material="ur5e/linkgray" mesh="ur5e/wrist3"/>
+                    <geom name="ur5e//unnamed_geom_28" class="ur5e/eef_collision" size="0.040000000000000001 0.02" pos="0 0.080000000000000002 0" quat="1 1 0 0"/>
+                    <site name="ur5e/attachment_site" pos="0 0.10000000000000001 0" quat="-1 1 0 0"/>
+                    <body pos="0 0.10000000000000001 0" quat="-1 1 0 0" name="ur5e/robotiq_2f85/">
+                      <body name="ur5e/robotiq_2f85/base_mount" childclass="ur5e/robotiq_2f85/2f85" pos="0 0 0.0070000000000000001">
+                        <geom name="ur5e/robotiq_2f85//unnamed_geom_0" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/base_mount"/>
+                        <geom name="ur5e/robotiq_2f85//unnamed_geom_1" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/base_mount"/>
+                        <body name="ur5e/robotiq_2f85/base" pos="0 0 0.0038" quat="1 0 0 -1">
+                          <inertial pos="0 -2.7039400000000001e-05 0.035467499999999999" quat="1 -0.00152849 0 0" mass="0.77744100000000005" diaginertia="0.00026028500000000002 0.000225381 0.00015270799999999999"/>
+                          <geom name="ur5e/robotiq_2f85//unnamed_geom_2" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/base"/>
+                          <geom name="ur5e/robotiq_2f85//unnamed_geom_3" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/base"/>
+                          <site name="ur5e/robotiq_2f85/pinch" type="sphere" group="5" rgba="0.90000000000000002 0.90000000000000002 0.90000000000000002 1" size="0.0050000000000000001" pos="0 0 0.14499999999999999"/>
+                          <body name="ur5e/robotiq_2f85/right_driver" pos="0 0.030601099999999999 0.054904000000000001">
+                            <inertial pos="2.96931e-12 0.017754700000000002 0.00107314" quat="0.68130100000000005 0.73200299999999996 0 0" mass="0.0089956299999999993" diaginertia="1.72352e-06 1.6090599999999999e-06 3.22006e-07"/>
+                            <joint name="ur5e/robotiq_2f85/right_driver_joint" class="ur5e/robotiq_2f85/driver"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_4" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/gray" mesh="ur5e/robotiq_2f85/driver"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_5" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/driver"/>
+                            <body name="ur5e/robotiq_2f85/right_coupler" pos="0 0.0315 -0.0041000000000000003">
+                              <inertial pos="0 0.0030120899999999998 0.023217499999999999" quat="0.70563600000000004 -0.045590400000000003 0.045590400000000003 0.70563600000000004" mass="0.0140974" diaginertia="4.1620600000000001e-06 3.5221600000000001e-06 8.8813100000000003e-07"/>
+                              <joint name="ur5e/robotiq_2f85/right_coupler_joint" class="ur5e/robotiq_2f85/coupler"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_6" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/coupler"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_7" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/coupler"/>
+                            </body>
+                          </body>
+                          <body name="ur5e/robotiq_2f85/right_spring_link" pos="0 0.0132 0.060900000000000003">
+                            <inertial pos="-8.6500500000000008e-09 0.018162399999999999 0.021265800000000001" quat="0.66340299999999996 -0.24473700000000001 0.24473700000000001 0.66340299999999996" mass="0.022164199999999998" diaginertia="8.9685299999999993e-06 6.7173299999999996e-06 2.6393100000000001e-06"/>
+                            <joint name="ur5e/robotiq_2f85/right_spring_link_joint" class="ur5e/robotiq_2f85/spring_link"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_8" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/spring_link"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_9" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/spring_link"/>
+                            <body name="ur5e/robotiq_2f85/right_follower" pos="0 0.055 0.037499999999999999">
+                              <inertial pos="0 -0.011046 0.012478599999999999" quat="1 0.16639999999999999 0 0" mass="0.012522200000000001" diaginertia="2.6741500000000001e-06 2.4559000000000001e-06 6.0203100000000003e-07"/>
+                              <joint name="ur5e/robotiq_2f85/right_follower_joint" class="ur5e/robotiq_2f85/follower"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_10" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/follower"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_11" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/follower"/>
+                              <body name="ur5e/robotiq_2f85/right_pad" pos="0 -0.0189 0.013520000000000001">
+                                <geom name="ur5e/robotiq_2f85/right_pad1" class="ur5e/robotiq_2f85/pad_box1"/>
+                                <geom name="ur5e/robotiq_2f85/right_pad2" class="ur5e/robotiq_2f85/pad_box2"/>
+                                <inertial pos="0 -0.0025000000000000001 0.018499999999999999" quat="0.70710700000000004 0 0 0.70710700000000004" mass="0.0035000000000000001" diaginertia="4.7395799999999999e-07 3.6458299999999998e-07 1.23958e-07"/>
+                                <geom name="ur5e/robotiq_2f85//unnamed_geom_14" class="ur5e/robotiq_2f85/visual" mesh="ur5e/robotiq_2f85/pad"/>
+                                <body name="ur5e/robotiq_2f85/right_silicone_pad">
+                                  <geom name="ur5e/robotiq_2f85//unnamed_geom_15" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/silicone_pad"/>
+                                </body>
+                              </body>
+                            </body>
+                          </body>
+                          <body name="ur5e/robotiq_2f85/left_driver" pos="0 -0.030601099999999999 0.054904000000000001" quat="0 0 0 1">
+                            <inertial pos="0 0.017754700000000002 0.00107314" quat="0.68130100000000005 0.73200299999999996 0 0" mass="0.0089956299999999993" diaginertia="1.72352e-06 1.6090599999999999e-06 3.22006e-07"/>
+                            <joint name="ur5e/robotiq_2f85/left_driver_joint" class="ur5e/robotiq_2f85/driver"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_16" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/gray" mesh="ur5e/robotiq_2f85/driver"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_17" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/driver"/>
+                            <body name="ur5e/robotiq_2f85/left_coupler" pos="0 0.0315 -0.0041000000000000003">
+                              <inertial pos="0 0.0030120899999999998 0.023217499999999999" quat="0.70563600000000004 -0.045590400000000003 0.045590400000000003 0.70563600000000004" mass="0.0140974" diaginertia="4.1620600000000001e-06 3.5221600000000001e-06 8.8813100000000003e-07"/>
+                              <joint name="ur5e/robotiq_2f85/left_coupler_joint" class="ur5e/robotiq_2f85/coupler"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_18" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/coupler"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_19" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/coupler"/>
+                            </body>
+                          </body>
+                          <body name="ur5e/robotiq_2f85/left_spring_link" pos="0 -0.0132 0.060900000000000003" quat="0 0 0 1">
+                            <inertial pos="-8.6500500000000008e-09 0.018162399999999999 0.021265800000000001" quat="0.66340299999999996 -0.24473700000000001 0.24473700000000001 0.66340299999999996" mass="0.022164199999999998" diaginertia="8.9685299999999993e-06 6.7173299999999996e-06 2.6393100000000001e-06"/>
+                            <joint name="ur5e/robotiq_2f85/left_spring_link_joint" class="ur5e/robotiq_2f85/spring_link"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_20" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/spring_link"/>
+                            <geom name="ur5e/robotiq_2f85//unnamed_geom_21" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/spring_link"/>
+                            <body name="ur5e/robotiq_2f85/left_follower" pos="0 0.055 0.037499999999999999">
+                              <inertial pos="0 -0.011046 0.012478599999999999" quat="1 0.16639999999999999 0 0" mass="0.012522200000000001" diaginertia="2.6741500000000001e-06 2.4559000000000001e-06 6.0203100000000003e-07"/>
+                              <joint name="ur5e/robotiq_2f85/left_follower_joint" class="ur5e/robotiq_2f85/follower"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_22" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/follower"/>
+                              <geom name="ur5e/robotiq_2f85//unnamed_geom_23" class="ur5e/robotiq_2f85/collision" mesh="ur5e/robotiq_2f85/follower"/>
+                              <body name="ur5e/robotiq_2f85/left_pad" pos="0 -0.0189 0.013520000000000001">
+                                <geom name="ur5e/robotiq_2f85/left_pad1" class="ur5e/robotiq_2f85/pad_box1"/>
+                                <geom name="ur5e/robotiq_2f85/left_pad2" class="ur5e/robotiq_2f85/pad_box2"/>
+                                <inertial pos="0 -0.0025000000000000001 0.018499999999999999" quat="1 0 0 1" mass="0.0035000000000000001" diaginertia="4.7395799999999999e-07 3.6458299999999998e-07 1.23958e-07"/>
+                                <geom name="ur5e/robotiq_2f85//unnamed_geom_26" class="ur5e/robotiq_2f85/visual" mesh="ur5e/robotiq_2f85/pad"/>
+                                <body name="ur5e/robotiq_2f85/left_silicone_pad">
+                                  <geom name="ur5e/robotiq_2f85//unnamed_geom_27" class="ur5e/robotiq_2f85/visual" material="ur5e/robotiq_2f85/black" mesh="ur5e/robotiq_2f85/silicone_pad"/>
+                                </body>
+                              </body>
+                            </body>
+                          </body>
+                        </body>
+                      </body>
+                    </body>
+                  </body>
+                </body>
+              </body>
+            </body>
+          </body>
+        </body>
+      </body>
+    </body>
+  </worldbody>
+  <contact>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_0" body1="ur5e/robotiq_2f85/base" body2="ur5e/robotiq_2f85/left_driver"/>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_1" body1="ur5e/robotiq_2f85/base" body2="ur5e/robotiq_2f85/right_driver"/>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_2" body1="ur5e/robotiq_2f85/base" body2="ur5e/robotiq_2f85/left_spring_link"/>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_3" body1="ur5e/robotiq_2f85/base" body2="ur5e/robotiq_2f85/right_spring_link"/>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_4" body1="ur5e/robotiq_2f85/right_coupler" body2="ur5e/robotiq_2f85/right_follower"/>
+    <exclude name="ur5e/robotiq_2f85//unnamed_contact_5" body1="ur5e/robotiq_2f85/left_coupler" body2="ur5e/robotiq_2f85/left_follower"/>
+  </contact>
+  <equality>
+    <connect name="ur5e/robotiq_2f85//unnamed_equality_0" class="ur5e/robotiq_2f85/" solref="0.0050000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" body1="ur5e/robotiq_2f85/right_follower" body2="ur5e/robotiq_2f85/right_coupler" anchor="0 0 0"/>
+    <connect name="ur5e/robotiq_2f85//unnamed_equality_1" class="ur5e/robotiq_2f85/" solref="0.0050000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" body1="ur5e/robotiq_2f85/left_follower" body2="ur5e/robotiq_2f85/left_coupler" anchor="0 0 0"/>
+    <joint name="ur5e/robotiq_2f85//unnamed_equality_2" class="ur5e/robotiq_2f85/" solref="0.0050000000000000001 1" solimp="0.94999999999999996 0.98999999999999999 0.001" joint1="ur5e/robotiq_2f85/right_driver_joint" joint2="ur5e/robotiq_2f85/left_driver_joint" polycoef="0 1 0 0 0"/>
+  </equality>
+  <tendon>
+    <fixed name="ur5e/robotiq_2f85/split" class="ur5e/robotiq_2f85/">
+      <joint joint="ur5e/robotiq_2f85/right_driver_joint" coef="0.5"/>
+      <joint joint="ur5e/robotiq_2f85/left_driver_joint" coef="0.5"/>
+    </fixed>
+  </tendon>
+  <actuator>
+    <general name="ur5e/shoulder_pan" class="ur5e/size3" joint="ur5e/shoulder_pan_joint"/>
+    <general name="ur5e/shoulder_lift" class="ur5e/size3" joint="ur5e/shoulder_lift_joint"/>
+    <general name="ur5e/elbow" class="ur5e/size3_limited" joint="ur5e/elbow_joint"/>
+    <general name="ur5e/wrist_1" class="ur5e/size1" joint="ur5e/wrist_1_joint"/>
+    <general name="ur5e/wrist_2" class="ur5e/size1" joint="ur5e/wrist_2_joint"/>
+    <general name="ur5e/wrist_3" class="ur5e/size1" joint="ur5e/wrist_3_joint"/>
+    <general name="ur5e/robotiq_2f85/fingers_actuator" class="ur5e/robotiq_2f85/2f85" ctrlrange="0 255" forcerange="-5 5" tendon="ur5e/robotiq_2f85/split" gainprm="0.31372549999999999 0 0" biasprm="0 -100 -10"/>
+  </actuator>
+  <keyframe>
+    <key name="ur5e/home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0 0 0 0 0 0 0 0 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0 0"/>
+  </keyframe>
+</mujoco>

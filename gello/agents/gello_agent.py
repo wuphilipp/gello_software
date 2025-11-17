@@ -78,7 +78,7 @@ PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
         ),  # Reversed: now starts open (-30) and closes on press (24)
     ),
     # Left UR
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBEIA-if00-port0": DynamixelRobotConfig(
+    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAKRKDY-if00-port0": DynamixelRobotConfig(
         joint_ids=(1, 2, 3, 4, 5, 6),
         joint_offsets=(
             0,

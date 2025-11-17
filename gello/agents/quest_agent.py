@@ -75,14 +75,14 @@ class SingleArmQuestAgent(Agent):
         pose_data, button_data = self.oculus_reader.get_transformations_and_buttons()
         if len(pose_data) == 0 or len(button_data) == 0:
             print("no data, quest not yet ready")
-            return np.concatenate([current_qpos, [current_gripper_angle]])
+            return np.concatenate([current_qpos])
 
         new_gripper_angle = current_gripper_angle
         if button_data[gripper_open_key]:
             new_gripper_angle = 1
         if button_data[gripper_close_key]:
             new_gripper_angle = 0
-        arm_not_move_return = np.concatenate([current_qpos, [new_gripper_angle]])
+        arm_not_move_return = np.concatenate([current_qpos]) #todo: add gripper back
         if len(pose_data) == 0:
             print("no data, quest not yet ready")
             return arm_not_move_return
@@ -126,7 +126,7 @@ class SingleArmQuestAgent(Agent):
                 else:
                     print("ik failed, using the original qpos")
                     return arm_not_move_return
-                command = np.concatenate([new_qpos, [new_gripper_angle]])
+                command = np.concatenate([new_qpos]) #todo: add gripper back
                 return command
 
             else:  # last state is not in active
