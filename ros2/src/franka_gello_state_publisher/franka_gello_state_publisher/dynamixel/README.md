@@ -48,13 +48,16 @@ operating_modes:
 
 ```python
 from gello.dynamixel.driver import DynamixelDriver
-
-driver = DynamixelDriver(
-    ids=[1, 2, 3], 
-    port="/dev/ttyUSB0", 
-    baudrate=57600, 
-    motor_type="xl330"
-)
+try:
+  driver = DynamixelDriver(
+      ids=[1, 2, 3], 
+      port="/dev/ttyUSB0", 
+      baudrate=57600, 
+      motor_type="xl330"
+  )
+except ConnectionError as e:
+  print(f"Error initializing DynamixelDriver: {e}")
+  return
 ```
 
 ### Fake Driver for Testing

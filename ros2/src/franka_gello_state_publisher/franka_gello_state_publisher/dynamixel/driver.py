@@ -2,6 +2,7 @@ import time
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
+from serial import SerialException
 
 import numpy as np
 import yaml
@@ -187,8 +188,17 @@ class DynamixelDriver(DynamixelDriverProtocol):
         motor_type : str, optional
             The type of motor to use, e.g., "xl330" (default is "xl330").
 
+        Raises
+        ------
+        ConnectionError
+            If the port cannot be opened or is already in use.
+        RuntimeError
+            If there is an error reading or writing to the servos.
+
         """
         self._ids = ids
+        self._port = port
+        self._baudrate = baudrate
         self._joint_angles = None
         self._lock = Lock()
 
@@ -199,7 +209,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._pulses_per_revolution = self._motor_config["pulses_per_revolution"]
 
         # Initialize the port handler, packet handler, and group sync read/write
-        self._portHandler = PortHandler(port)
+        self._portHandler = PortHandler(self._port)
         self._packetHandler = PacketHandler(2.0)
 
         # Create group sync read/write handlers for each control table entry
@@ -225,17 +235,26 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 )
 
         # Open the port and set the baudrate
-        if not self._portHandler.openPort():
-            raise RuntimeError("Failed to open the port")
+        try:
+            self._portHandler.openPort()
+            self._portHandler.setBaudRate(self._baudrate)
+        except SerialException:
+            raise ConnectionError(
+                f"Could not open port {self._port}. Make sure you have specified the correct port, "
+                "that the device is connected and that you have proper permissions to access it."
+            ) from None
 
-        if not self._portHandler.setBaudRate(baudrate):
-            raise RuntimeError(f"Failed to change the baudrate, {baudrate}")
+        # Verify connection by attempting to read the model number
+        try:
+            self.read_value_by_name("model_number")
+        except (RuntimeError, SerialException):
+            raise ConnectionError(
+                f"Port {self._port} opened but could not read from motors. Make sure no other "
+                "process is using the same port, that all motors are wired correctly and get power."
+            ) from None
 
         # Disable torque for all Dynamixel servos
-        try:
-            self.write_value_by_name("torque_enable", [0] * len(self._ids))
-        except Exception as e:
-            print(f"port: {port}, {e}")
+        self.write_value_by_name("torque_enable", [0] * len(self._ids))
 
         self._stop_thread = Event()
         self._start_reading_thread()

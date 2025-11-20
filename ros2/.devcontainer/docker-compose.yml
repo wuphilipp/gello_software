@@ -4,6 +4,8 @@ services:
     privileged: true
     restart: no
     network_mode: host
+    init: true # Ensure signal forwarding to child processes
+    stop_signal: SIGINT # ros2 launch needs SIGINT to shutdown gracefully
     volumes:
       - ../../:/workspace
       - /dev/serial/by-id:/dev/serial/by-id

@@ -1,7 +1,6 @@
 import rclpy
+from rclpy.executors import ExternalShutdownException
 from glob import glob
-from sys import exit
-from signal import signal, SIGINT, SIGTERM
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
@@ -23,10 +22,11 @@ class GelloPublisher(Node):
 
         hardware_params: GelloHardwareParams = self._setup_hardware_parameters()
 
-        self.gello_hardware = GelloHardware(hardware_params)
-
-        signal(SIGINT, self._signal_handler)  # Handle Ctrl+C gracefully
-        signal(SIGTERM, self._signal_handler)  # Handle termination signals
+        try:
+            self.gello_hardware = GelloHardware(hardware_params)
+        except ConnectionError as e:
+            self.get_logger().error(f"Failed to initialize GELLO hardware: {e}")
+            raise
 
         self.arm_joint_publisher = self.create_publisher(JointState, "gello/joint_states", 10)
         self.gripper_joint_publisher = self.create_publisher(
@@ -38,6 +38,7 @@ class GelloPublisher(Node):
             ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
         )
 
+        self.get_logger().info("Publishing GELLO joint states.")
         self.timer = self.create_timer(1 / self.PUBLISHING_RATE, self.publish_joint_jog)
 
     def parameter_event_callback(self, event: ParameterEvent) -> None:
@@ -110,31 +111,24 @@ class GelloPublisher(Node):
 
         return hardware_params
 
-    def _signal_handler(self, signum, frame):
-        """Handle system signals for graceful shutdown."""
-        if signum == SIGINT or signum == SIGTERM:
-            self.get_logger().info(f"Received signal {signum}, shutting down gracefully...")
-            self._safe_shutdown()
-            exit(0)
-        else:
-            self.get_logger().warn(f"Received unexpected signal {signum}")
-
-    def _safe_shutdown(self):
-        """Safely shutdown hardware."""
-        try:
-            self.get_logger().info("Disabling GELLO torque...")
-            self.gello_hardware.disable_torque()
-            self.get_logger().info("GELLO torque disabled successfully")
-        except Exception as e:
-            self.get_logger().error(f"Error disabling torque: {e}")
-
 
 def main(args=None):
     rclpy.init(args=args)
-    gello_publisher = GelloPublisher()
-    rclpy.spin(gello_publisher)
-    gello_publisher.destroy_node()
-    rclpy.shutdown()
+
+    try:
+        gello_publisher = GelloPublisher()
+    except ConnectionError:
+        rclpy.try_shutdown()
+        return
+
+    try:
+        rclpy.spin(gello_publisher)
+    except (KeyboardInterrupt, ExternalShutdownException):
+        pass
+    finally:
+        gello_publisher.gello_hardware.disable_torque()
+        gello_publisher.destroy_node()
+        rclpy.try_shutdown()
 
 
 if __name__ == "__main__":
