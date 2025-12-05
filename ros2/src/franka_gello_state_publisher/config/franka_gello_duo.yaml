@@ -1,0 +1,40 @@
+# This configuration works with the pre-assembled "Franka GELLO Duo" by Franka Robotics GmbH
+# See https://franka.de/documents
+
+LEFT:
+  com_port: "usb-ROBOTIS_OpenRB-150_xxxxxxxx" # REPLACE WITH YOUR ID
+  namespace: "left"
+  num_arm_joints: 7
+  joint_signs: [1, -1, 1, -1, 1, 1, 1]
+  gripper: true
+  best_offsets: [3.142, 3.142, 0.000, 0.000, 0.000, 1.571, 3.142] # rad
+  gripper_range_rad: [2.00, 3.22]
+  # Optional Dynamixel control parameters for all arm joints (+ gripper):
+  # Warning: If using the OpenRB-150 instead of the U2D2 communication converter,
+  #          do not enable torque until an external 5V power supply is connected to the board's
+  #          power terminal and the jumper is set to "VIN(DXL)". Using USB power for torque
+  #          operation may damage your computer's USB port.
+  dynamixel_torque_enable: [     0,     0,     0,     0,     0,     0,     0,     0] # 1 on, 0 off
+  dynamixel_goal_position: [   0.0,   0.0,   0.0,-1.571,   0.0, 1.571,   0.0, 3.509] # rad
+  dynamixel_kp_p:          [    30,    60,     0,    30,     0,     0,     0,    50]
+  dynamixel_kp_i:          [     0,     0,     0,     0,     0,     0,     0,     0]
+  dynamixel_kp_d:          [   250,   100,    80,    60,    30,    10,     5,     0]
+
+RIGHT:
+  com_port: "usb-ROBOTIS_OpenRB-150_xxxxxxxx" # REPLACE WITH YOUR ID
+  namespace: "right"
+  num_arm_joints: 7
+  joint_signs: [1, -1, 1, -1, 1, 1, 1]
+  gripper: true
+  best_offsets: [3.142, 3.142, 6.283, 0.000, 6.283, 1.571, 3.142] # rad
+  gripper_range_rad: [2.00, 3.22]
+  # Optional Dynamixel control parameters for all arm joints (+ gripper):
+  # Warning: If using the OpenRB-150 instead of the U2D2 communication converter,
+  #          do not enable torque until an external 5V power supply is connected to the board's
+  #          power terminal and the jumper is set to "VIN(DXL)". Using USB power for torque
+  #          operation may damage your computer's USB port.
+  dynamixel_torque_enable: [     0,     0,     0,     0,     0,     0,     0,     0] # 1 on, 0 off
+  dynamixel_goal_position: [   0.0,   0.0,   0.0,-1.571,   0.0, 1.571,   0.0, 3.509] # rad
+  dynamixel_kp_p:          [    30,    60,     0,    30,     0,     0,     0,    50]
+  dynamixel_kp_i:          [     0,     0,     0,     0,     0,     0,     0,     0]
+  dynamixel_kp_d:          [   250,   100,    80,    60,    30,    10,     5,     0]

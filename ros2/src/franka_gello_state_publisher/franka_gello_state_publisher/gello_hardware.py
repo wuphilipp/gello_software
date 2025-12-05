@@ -73,7 +73,9 @@ class GelloHardware:
     def __init__(
         self,
         hardware_config: GelloHardwareParams,
+        logger,
     ) -> None:
+        self._logger = logger
         self._com_port = hardware_config["com_port"]
         self._gello_name = hardware_config["gello_name"]
         self._num_arm_joints = hardware_config["num_arm_joints"]
@@ -110,6 +112,17 @@ class GelloHardware:
         """Write all dynamixel configuration parameters to hardware."""
         for param_name, param_value in self._dynamixel_control_config:
             self._driver.write_value_by_name(param_name, param_value)
+            if (
+                param_name == "torque_enable"
+                and any(v == 1 for v in param_value)
+                and "OpenRB-150" in self._com_port
+            ):
+                self._logger.warning(
+                    "Enabling torque... Please make sure you have connected an external power "
+                    "supply to the OpenRB-150 board and that the jumper is set to 'VIN(DXL)'. "
+                    "Using the USB connection as a power source for torque operation may cause "
+                    "damage to your PC."
+                )
 
     def update_dynamixel_control_parameter(
         self, param_name: str, param_value: list[float] | list[int]

@@ -1,4 +1,5 @@
 import time
+from glob import glob
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
@@ -239,10 +240,15 @@ class DynamixelDriver(DynamixelDriverProtocol):
             self._portHandler.openPort()
             self._portHandler.setBaudRate(self._baudrate)
         except SerialException:
-            raise ConnectionError(
-                f"Could not open port {self._port}. Make sure you have specified the correct port, "
-                "that the device is connected and that you have proper permissions to access it."
-            ) from None
+            detected_ports = self._detect_com_ports()
+            if self._port in detected_ports:
+                msg = "Check that you have permissions to access it."
+            elif detected_ports:
+                ports_list = ", ".join(detected_ports)
+                msg = f"Did you specify the correct port? Detected ports: {ports_list}"
+            else:
+                msg = "Is the device connected? No supported devices were detected."
+            raise ConnectionError(f"Could not open port {self._port}. {msg}") from None
 
         # Verify connection by attempting to read the model number
         try:
@@ -363,3 +369,14 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def _rad_to_pulses(self, rad: float) -> int:
         """Convert radians to pulses using motor-specific configuration."""
         return int(rad / (2 * np.pi) * self._pulses_per_revolution)
+
+    def _detect_com_ports(self) -> list[str]:
+        """Detect available com_ports of supported communication converters."""
+        SUPPORTED_CONVERTERS = [
+            "usb-FTDI_USB__-__Serial_Converter",
+            "usb-ROBOTIS_OpenRB-150",
+        ]
+        matches = []
+        for converter in SUPPORTED_CONVERTERS:
+            matches.extend(glob(f"/dev/serial/by-id/{converter}*"))
+        return matches

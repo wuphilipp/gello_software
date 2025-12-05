@@ -90,27 +90,35 @@ colcon test
 ## Getting Started
 
 ### 1. **Run the GELLO Publisher**  
-#### Step 1: Determine your GELLO USB ID
+#### Step 1: Determine the port IDs of your communication converters
       
-To proceed, you need to know the USB ID of your GELLO device. This can be determined by running:
+To proceed, you need to know the port IDs of your communication converters (U2D2 or OpenRB-150).
+This can be determined by running:
 
 ```bash
 ls /dev/serial/by-id
 ```
 
 Example output:
+- U2D2: `usb-FTDI_USB__-__Serial_Converter_FT7WBG6` 
+- OpenRB-150: `usb-ROBOTIS_OpenRB-150_2B375CB3503059384C2E3120FF053624-if00`
+
+Use the ID to update the `com_port` parameter in your GELLO configuration file located in `/workspace/ros2/src/franka_gello_state_publisher/config/`.
+
+Rebuild the project to ensure the updated configuration is applied:
 
 ```bash
-usb-FTDI_USB__-__Serial_Converter_FT7WBG6
+cd /workspace/ros2
+colcon build
 ```
 
-In this case, the `GELLO_USB_ID` would be `/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT7WBG6`.
+#### Step 2: Configure your GELLO
 
-#### Step 2: Configure your GELLO 
-      
-If not done already, follow the instructions of the [`Create the GELLO configuration and determining joint ID's` section in the main README.md](../README.md#create-the-gello-configuration-and-determining-joint-ids). 
+If you are using the "Franka GELLO Duo" variant and assembled it carefully according to the assembly instructions, the default configuration file provided in `franka_gello_state_publisher/config/` should work out of the box and you can proceed with **Step 3**.
 
-Use the output of the `gello_get_offset.py` script to update the `best_offsets` and `gripper_range_rad` in the `/workspace/ros2/src/franka_gello_state_publisher/config/gello_config.yaml` file.
+If you have a different variant or still encounter configuration issues, please follow the instructions of the [`Create the GELLO configuration and determining joint ID's` section in the main README.md](../README.md#create-the-gello-configuration-and-determining-joint-ids). 
+
+Use the output of the `gello_get_offset.py` script to update the `best_offsets` and `gripper_range_rad` in your GELLO configuration file located in `/workspace/ros2/src/franka_gello_state_publisher/config/`.
       
 Rebuild the project to ensure the updated configuration is applied:
 
@@ -127,12 +135,12 @@ Create a configuration file in `src/franka_gello_state_publisher/config/` or mod
 ros2 launch franka_gello_state_publisher main.launch.py [config_file:=your_config.yaml]
 ```
 
-The `config_file` argument is **optional**. If not provided, it defaults to `example_fr3_config.yaml` in the `franka_gello_state_publisher/config/` directory.
+The `config_file` argument is **optional**. If not provided, it defaults to `example_single.yaml` in the `franka_gello_state_publisher/config/` directory.
 
 **Configuration parameters:**
 
-- `com_port`: the previously determined <GELLO_USB_ID>
-- `namespace`: ROS 2 namespace (must match the robot and the gripper).
+- `com_port`: the previously determined port ID of your communication converter
+- `namespace`: ROS 2 namespace (must match the robot and the gripper)
 - `num_joints`: 7 for Franka FR3
 - `joint_signs`: as used for calibration
 - `gripper`: true if Gello gripper state shall be used
@@ -152,6 +160,10 @@ This is done by setting the following parameters in the configuration file. Each
   - `dynamixel_kd_d`: Derivative gains. Determines the damping behavior. Sensible values: 0 to ~1000.
 
 When the GELLO publisher is started, these parameters are used to configure the Dynamixel motors. The motors then operate in their internal "Current-based Position Control" mode with a current limit set to 600mA. Check the [Dynamixel documentation](https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/) for more information on the control parameters.
+
+> ⚠️ **Warning for OpenRB-150:**  
+> If using the OpenRB-150 instead of the U2D2 communication converter, do not enable torque until an external 5V power supply is connected to the board's power terminal and the jumper is set to "VIN(DXL)". Using USB power for torque operation may damage your computer's USB port.
+> Please refer to the [OpenRB-150 manual](https://emanual.robotis.com/docs/en/parts/controller/openrb-150/#when-running-5v-dynamixel-with-the-usb-power) for more information.
 
 > 💡 **Hint:**  
 > The example configuration files give a good starting point for these values:

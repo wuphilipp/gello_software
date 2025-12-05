@@ -1,6 +1,9 @@
-# Dynamixel Motor Configuration
+# Dynamixel Driver
 
 This directory contains the configuration-driven Dynamixel driver that supports multiple motor types through YAML configuration files.
+The Dynamixel motors can be connected to the system via a communication converter:
+- [U2D2](https://emanual.robotis.com/docs/en/parts/interface/u2d2/)
+- [OpenRB-150](https://emanual.robotis.com/docs/en/parts/controller/openrb-150/)
 
 ## Configuration File Structure
 

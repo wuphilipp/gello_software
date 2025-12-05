@@ -12,6 +12,7 @@ class ParameterConfig:
 class GelloParameterConfig:
     """Configuration class for GELLO ROS2 parameters."""
 
+    DEFAULT_COM_PORT = "/dev/ttyUSB0"
     DEFAULT_NUM_JOINTS = 7
     DEFAULT_JOINT_SIGNS = [1] * DEFAULT_NUM_JOINTS
     DEFAULT_BEST_OFFSETS = [0.0] * DEFAULT_NUM_JOINTS
@@ -19,7 +20,7 @@ class GelloParameterConfig:
     DEFAULT_CONTROL_GAINS = [0] * DEFAULT_NUM_JOINTS
     DEFAULT_GOAL_POSITION = [0.0] * DEFAULT_NUM_JOINTS
 
-    def __init__(self, default_com_port: str):
+    def __init__(self):
         self.hardware_params = [
             ParameterConfig(
                 ParameterDescriptor(
@@ -28,7 +29,7 @@ class GelloParameterConfig:
                     description="USB serial port path",
                     read_only=True,
                 ),
-                default_com_port,
+                self.DEFAULT_COM_PORT,
             ),
             ParameterConfig(
                 ParameterDescriptor(
@@ -37,7 +38,7 @@ class GelloParameterConfig:
                     description="GELLO device identifier",
                     read_only=True,
                 ),
-                default_com_port,
+                self.DEFAULT_COM_PORT,
             ),
             ParameterConfig(
                 ParameterDescriptor(

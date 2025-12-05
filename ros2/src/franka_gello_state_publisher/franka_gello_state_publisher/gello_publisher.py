@@ -1,6 +1,5 @@
 import rclpy
 from rclpy.executors import ExternalShutdownException
-from glob import glob
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
@@ -23,7 +22,7 @@ class GelloPublisher(Node):
         hardware_params: GelloHardwareParams = self._setup_hardware_parameters()
 
         try:
-            self.gello_hardware = GelloHardware(hardware_params)
+            self.gello_hardware = GelloHardware(hardware_params, self.get_logger())
         except ConnectionError as e:
             self.get_logger().error(f"Failed to initialize GELLO hardware: {e}")
             raise
@@ -82,16 +81,6 @@ class GelloPublisher(Node):
         self.gello_hardware.disable_torque()
         super().destroy_node()
 
-    def _determine_default_com_port(self) -> str:
-        """Auto-detect GELLO device COM port or return invalid placeholder."""
-        matches = glob("/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter*")
-        if matches:
-            self.get_logger().info(f"Auto-detected com_ports: {matches}")
-            return matches[0]
-        else:
-            self.get_logger().warn("No com_ports detected. Please specify the com_port manually.")
-            return "INVALID_COM_PORT"
-
     def _declare_ros2_param(self, param: ParameterConfig):
         """Declare ROS2 parameters."""
         parameter_value = self.declare_parameter(
@@ -102,8 +91,7 @@ class GelloPublisher(Node):
 
     def _setup_hardware_parameters(self):
         """Declare and setup all hardware configuration parameters."""
-        default_com_port = self._determine_default_com_port()
-        config = GelloParameterConfig(default_com_port)
+        config = GelloParameterConfig()
 
         hardware_params: GelloHardwareParams = {}
         for param in config:
