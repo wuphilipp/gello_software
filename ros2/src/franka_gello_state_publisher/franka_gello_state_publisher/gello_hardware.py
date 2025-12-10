@@ -1,3 +1,4 @@
+import time
 import numpy as np
 from dataclasses import dataclass, field
 from typing import List, TypedDict, Iterator, Tuple
@@ -102,6 +103,7 @@ class GelloHardware:
         )
 
         self._initialize_parameters()
+        self._driver.start_joint_polling()
 
     def _initialize_driver(self) -> None:
         """Initialize dynamixel driver with joint IDs and port."""
@@ -123,6 +125,7 @@ class GelloHardware:
                     "Using the USB connection as a power source for torque operation may cause "
                     "damage to your PC."
                 )
+        time.sleep(0.1)  # Dynamixels are not immediately ready after these parameter writes
 
     def update_dynamixel_control_parameter(
         self, param_name: str, param_value: list[float] | list[int]
