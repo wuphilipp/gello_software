@@ -1,4 +1,5 @@
 import time
+from glob import glob
 from pathlib import Path
 from threading import Event, Lock, Thread
 from typing import Protocol, Sequence
@@ -88,7 +89,15 @@ class DynamixelDriverProtocol(Protocol):
         """
         ...
 
-    def close(self):
+    def start_joint_polling(self) -> None:
+        """Start the background polling thread."""
+        ...
+
+    def stop_joint_polling(self) -> None:
+        """Stop the background polling thread."""
+        ...
+
+    def close(self) -> None:
         """Close the driver."""
         ...
 
@@ -162,7 +171,13 @@ class FakeDynamixelDriver(DynamixelDriverProtocol):
     def get_joints(self) -> np.ndarray:
         return self._pulses_to_rad(self._storage_map["goal_position"].copy())
 
-    def close(self):
+    def start_joint_polling(self) -> None:
+        pass
+
+    def stop_joint_polling(self) -> None:
+        pass
+
+    def close(self) -> None:
         pass
 
 
@@ -173,6 +188,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         port: str = "/dev/ttyUSB0",
         baudrate: int = 57600,
         motor_type: str = "xl330",
+        autostart_polling: bool = False,
     ):
         """
         Initialize the DynamixelDriver class.
@@ -187,6 +203,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
             The baudrate for communication (default is 57600).
         motor_type : str, optional
             The type of motor to use, e.g., "xl330" (default is "xl330").
+        autostart_polling : bool, optional
+            Whether to automatically start the joint polling thread (default is False).
 
         Raises
         ------
@@ -199,7 +217,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self._ids = ids
         self._port = port
         self._baudrate = baudrate
-        self._joint_angles = None
+        self._buffered_joint_positions = None
         self._lock = Lock()
 
         # Load motor configuration
@@ -239,10 +257,15 @@ class DynamixelDriver(DynamixelDriverProtocol):
             self._portHandler.openPort()
             self._portHandler.setBaudRate(self._baudrate)
         except SerialException:
-            raise ConnectionError(
-                f"Could not open port {self._port}. Make sure you have specified the correct port, "
-                "that the device is connected and that you have proper permissions to access it."
-            ) from None
+            detected_ports = self._detect_com_ports()
+            if self._port in detected_ports:
+                msg = "Check that you have permissions to access it."
+            elif detected_ports:
+                ports_list = ", ".join(detected_ports)
+                msg = f"Did you specify the correct port? Detected ports: {ports_list}"
+            else:
+                msg = "Is the device connected? No supported devices were detected."
+            raise ConnectionError(f"Could not open port {self._port}. {msg}") from None
 
         # Verify connection by attempting to read the model number
         try:
@@ -257,7 +280,11 @@ class DynamixelDriver(DynamixelDriverProtocol):
         self.write_value_by_name("torque_enable", [0] * len(self._ids))
 
         self._stop_thread = Event()
-        self._start_reading_thread()
+        self._polling_thread = None
+        self._is_polling = False
+
+        if autostart_polling:
+            self.start_joint_polling()
 
     def _set_group(
         self,
@@ -285,7 +312,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
                     raise RuntimeError(f"Failed to set {name} for Dynamixel with ID {dxl_id}")
             comm_result = groupSyncWriteHandler.txPacket()
             if comm_result != COMM_SUCCESS:
-                raise RuntimeError(f"Failed to syncwrite {name}")
+                result_string = self._packetHandler.getTxRxResult(comm_result)
+                raise RuntimeError(f"Failed to syncwrite {name}, {result_string}")
             groupSyncWriteHandler.clearParam()
 
     def write_value_by_name(self, name: str, values: Sequence[int | None]):
@@ -302,7 +330,8 @@ class DynamixelDriver(DynamixelDriverProtocol):
         with self._lock:
             result = groupSyncReadHandler.txRxPacket()
             if result != COMM_SUCCESS:
-                raise RuntimeError(f"Failed to sync read {name}, comm result: {result}")
+                result_string = self._packetHandler.getTxRxResult(result)
+                raise RuntimeError(f"Failed to sync read {name}, {result_string}")
             values = []
             for dxl_id in self._ids:
                 if groupSyncReadHandler.isAvailable(
@@ -324,36 +353,48 @@ class DynamixelDriver(DynamixelDriverProtocol):
             value_length=self._ctrl_table[name]["len"],
         )
 
-    def _start_reading_thread(self):
-        self._reading_thread = Thread(target=self._read_joint_angles_loop)
-        self._reading_thread.daemon = True
-        self._reading_thread.start()
+    def start_joint_polling(self) -> None:
+        if self._is_polling:
+            return
+        self._stop_thread.clear()
+        self._polling_thread = Thread(target=self._joint_polling_loop)
+        self._polling_thread.daemon = True
+        self._polling_thread.start()
+        self._is_polling = True
 
-    def _read_joint_angles_loop(self):
-        # Continuously read joint angles and update the joint_angles array
+    def stop_joint_polling(self) -> None:
+        if not self._is_polling:
+            return
+        self._stop_thread.set()
+        if self._polling_thread is not None:
+            self._polling_thread.join()
+        self._is_polling = False
+
+    def _joint_polling_loop(self):
+        # Continuously read joint positions and update the _buffered_joint_positions array
+
         while not self._stop_thread.is_set():
             time.sleep(0.001)
             try:
-                _joint_angles = self._read_group(
-                    "present_position",
-                    self._groupSyncReadHandlers["present_position"],
-                    self._ctrl_table["present_position"]["len"],
+                self._buffered_joint_positions = np.array(
+                    self.read_value_by_name("present_position"), dtype=int
                 )
-                self._joint_angles = np.array(_joint_angles, dtype=int)
             except RuntimeError as e:
-                print(f"warning, comm failed: {e}")
+                print(f"Warning: {e}")
                 continue
 
     def get_joints(self) -> np.ndarray:
-        # Return a copy of the joint_angles array to avoid race conditions
-        while self._joint_angles is None:
-            time.sleep(0.1)
-        _j = self._joint_angles.copy()
-        return self._pulses_to_rad(_j)
+        if self._is_polling:
+            # If polling, return _buffered_joint_positions array, use copy to avoid race conditions
+            while self._buffered_joint_positions is None:
+                time.sleep(0.01)
+            return self._pulses_to_rad(self._buffered_joint_positions.copy())
+        else:
+            joint_positions = np.array(self.read_value_by_name("present_position"), dtype=int)
+            return self._pulses_to_rad(joint_positions)
 
-    def close(self):
-        self._stop_thread.set()
-        self._reading_thread.join()
+    def close(self) -> None:
+        self.stop_joint_polling()
         self._portHandler.closePort()
 
     def _pulses_to_rad(self, pulses) -> np.ndarray:
@@ -363,3 +404,14 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def _rad_to_pulses(self, rad: float) -> int:
         """Convert radians to pulses using motor-specific configuration."""
         return int(rad / (2 * np.pi) * self._pulses_per_revolution)
+
+    def _detect_com_ports(self) -> list[str]:
+        """Detect available com_ports of supported communication converters."""
+        SUPPORTED_CONVERTERS = [
+            "usb-FTDI_USB__-__Serial_Converter",
+            "usb-ROBOTIS_OpenRB-150",
+        ]
+        matches = []
+        for converter in SUPPORTED_CONVERTERS:
+            matches.extend(glob(f"/dev/serial/by-id/{converter}*"))
+        return matches
