@@ -46,24 +46,16 @@ RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
   rm -rf /tmp/rqt_reconfigure && \
   rm -rf /var/lib/apt/lists/*"
 
-# Install libfranka
-ARG LIBFRANKA_VERSION=0.17.0
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-  git clone --recursive https://github.com/frankarobotics/libfranka --branch ${LIBFRANKA_VERSION} \
-  && cd libfranka \
-  && mkdir build \
-  && cd build \
-  && cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=OFF .. \
-  && cmake --build . -j $(nproc) \
-  && cpack -G DEB \
-  && dpkg -i libfranka*.deb \ 
-  && cd ../../ && rm -r libfranka"
+# Install libfranka, franka_ros2 and franka_description
+# Note: The versions need to be set according to your robot's system version
+# https://frankarobotics.github.io/docs/compatibility.html
+ARG LIBFRANKA_VERSION=0.18.2
+ARG FRANKA_ROS2_VERSION=v2.1.0
+ARG FRANKA_DESCRIPTION_VERSION=1.3.0
 
-# Install franka_ros2
-ARG FRANKA_ROS2_VERSION=v2.0.4
-ARG FRANKA_DESCRIPTION_VERSION=1.0.2
 RUN /bin/bash -c 'source /opt/ros/humble/setup.bash && \
-  mkdir -p /tmp/franka_ros2 && cd /tmp/franka_ros2 && \
+mkdir -p /tmp/franka_ros2 && cd /tmp/franka_ros2 && \
+  git clone --recursive https://github.com/frankarobotics/libfranka --branch ${LIBFRANKA_VERSION} \
   git clone --recursive https://github.com/frankarobotics/franka_ros2.git --branch ${FRANKA_ROS2_VERSION} && \
   git clone --recursive https://github.com/frankarobotics/franka_description.git --branch ${FRANKA_DESCRIPTION_VERSION} && \
   apt-get update && \

@@ -46,6 +46,9 @@ To start the Dev-Container, open the `ros2` sub-folder of this repository (not t
 
 If you choose not to use the Dev-Container, please refer to the [Local Setup](#option-2-local-setup) section below for manual installation instructions.
 
+> 💡 **Hint:**  
+> The Dev-Container uses specific versions of `libfranka`, `franka_ros2`, and `franka_description` that are compatible with certain robot system versions. Please ensure these versions match your robot's system version by referring to the [compatibility documentation](https://frankarobotics.github.io/docs/compatibility.html). If necessary, you can modify the version arguments in the Dockerfile to match your robot's requirements.
+
 ### Option 2: Local Setup
 
 #### Prerequisites
