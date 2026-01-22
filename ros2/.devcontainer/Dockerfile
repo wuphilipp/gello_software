@@ -55,7 +55,7 @@ ARG FRANKA_DESCRIPTION_VERSION=1.3.0
 
 RUN /bin/bash -c 'source /opt/ros/humble/setup.bash && \
 mkdir -p /tmp/franka_ros2 && cd /tmp/franka_ros2 && \
-  git clone --recursive https://github.com/frankarobotics/libfranka --branch ${LIBFRANKA_VERSION} \
+  git clone --recursive https://github.com/frankarobotics/libfranka --branch ${LIBFRANKA_VERSION} && \
   git clone --recursive https://github.com/frankarobotics/franka_ros2.git --branch ${FRANKA_ROS2_VERSION} && \
   git clone --recursive https://github.com/frankarobotics/franka_description.git --branch ${FRANKA_DESCRIPTION_VERSION} && \
   apt-get update && \
