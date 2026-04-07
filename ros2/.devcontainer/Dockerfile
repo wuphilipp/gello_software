@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y \
   libfmt-dev \
   libpoco-dev \
   ros-humble-pinocchio \
+  ros-humble-rmw-cyclonedds-cpp \
   # Install ros packages
   python3-colcon-common-extensions \
   python3-colcon-mixin \

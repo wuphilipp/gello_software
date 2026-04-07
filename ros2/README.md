@@ -2,40 +2,6 @@
 
 This folder contains all required ROS 2 packages for using GELLO with a Franka FR3 robot.
 
-## Packages Overview
-
-### 1. `franka_fr3_arm_controllers`
-This package provides a Joint Impedance controller for the Franka FR3. It subscribes to the GELLO joint states and sends torque commands to the robot.
-
-#### Key Features:
-- Implements a `JointImpedanceController` for controlling the robot's torques.
-- Subscribes to `/gello/joint_states` topic for the GELLO joint states.
-
-#### Launch Files:
-- **`franka.launch.py`**: Launches the Franka robot ros interfaces.
-- **`franka_fr3_arm_controllers.launch.py`**: Launches the Joint Impedance controller.
-
-### 2. `franka_gello_state_publisher`
-This package provides a ROS 2 node that reads input from the GELLO and publishes it as `sensor_msgs/msg/JointState` messages.
-
-#### Key Features:
-- Publishes GELLO state to the `/gello/joint_states` topic.
-- Optionally sets the internal control parameters of the Dynamixel motors. This allows for [virtual springs and dampers](#virtual-springs-dampers) in the GELLO joints.
-
-#### Launch Files:
-- **`main.launch.py`**: Launches the GELLO publisher node.
-
-### 3. `franka_gripper_manager`
-This package provides a ROS 2 node for managing the gripper connected to the Franka robot. Supported grippers are either the `Franka Hand` or the `Robotiq 2F-85`. It allows sending commands to control the gripper's width and perform homing actions. 
-
-#### Key Features:
-- Subscribes to `/gripper/gripper_client/target_gripper_width_percent` for gripper width commands.
-- Supports homing and move actions for the gripper.
-
-#### Launch Files:
-- **`franka_gripper_client.launch.py`**: Launches the gripper manager node for the `Franka Hand`.
-- **`robotiq_gripper_controller_client.launch.py`**: Launches the gripper manager node for the `Robotiq 2F-85`.
-
 ## Setup Environment
 
 ### Option 1: VS-Code Dev-Container (recommended)
@@ -59,6 +25,7 @@ If you choose not to use the Dev-Container, please refer to the [Local Setup](#o
   Refer to the [Franka Robotics documentation](https://frankarobotics.github.io/docs/index.html) for installation steps and compatibility information.
 - **ros2_robotiq_gripper** (if required) must be installed.  
   See the [ros2_robotiq_gripper GitHub repository](https://github.com/PickNikRobotics/ros2_robotiq_gripper) for installation and usage instructions.
+- We recommend using Cyclone DDS as ROS 2 RMW. Refer to [the ROS 2 documentation](https://docs.ros.org/en/humble/Installation/RMW-Implementations/DDS-Implementations/Working-with-Eclipse-CycloneDDS.html) for installation instructions and detailed information.
 
 > 💡 **Hint:**  
 > You can also find example installation commands for `libfranka`, `franka_ros2`, and `ros2_robotiq_gripper` in the [Dockerfile](./.devcontainer/Dockerfile) located in the `ros2/.devcontainer` directory. These commands can be copy-pasted for your local setup.
@@ -69,28 +36,41 @@ After installing the prerequisites, you may need to install additional dependenc
 
 If you add new dependencies to your packages, remember to update the relevant `requirements.txt`, `requirements_dev.txt` or `package.xml` files and re-run the script.
 
-## Build and Test
+## Getting Started - Pre-assembled Franka GELLO Single with the Franka Hand
 
-> ⚠️ **Important:**  
-> All commands for building and testing must be executed from the `ros2` directory of this repository.
+- Configure the `com_port` in `franka_gello_single.yaml` and `example_fr3_config_franka_hand.yaml`, and set the `robot_ip` in `example_fr3_config.yaml`. For a complete description, see the [Detailed Launch Routine](#detailed-launch-routine) section.
+- Run the following commands:
+    ```bash
+      # Follow the Setup Environment section. If using Option 2, substitute /workspace/ with the path to the gello_software folder
+      # Go to the ROS 2 workspace, build it, and source it
+      cd /workspace/ros2 && colcon build && source install/setup.bash
+      # Start the GELLO node
+      ros2 launch franka_gello_state_publisher main.launch.py config_file:=franka_gello_single.yaml
+      # Start the Franka Hand node
+      ros2 launch franka_gripper_manager franka_gripper_client.launch.py config_file:=example_fr3_config_franka_hand.yaml
+      # Hold the GELLO and place it in a comfortable position with some distance from the base pin
+      # Start the robot node (the robot position will sync directly to the GELLO position. Avoid moving the GELLO abruptly during synchronization)
+      ros2 launch franka_fr3_arm_controllers franka_fr3_arm_controllers.launch.py robot_config_file:=example_fr3_config.yaml
+    ```
 
-### Building the project
+## Getting Started - Pre-assembled Franka GELLO Duo with the Franka Vision and Manipulation Kit
 
-To build the project, use the following `colcon` command with CMake arguments, required for clang-tidy:
+- Configure the `com_port` in `franka_gello_duo.yaml` and `example_fr3_duo_config_robotiq.yaml`, and set the `robot_ip` in `example_fr3_duo_config.yaml`. For a complete description, see the [Detailed Launch Routine](#detailed-launch-routine) section.
+- Run the following commands:
+    ```bash
+      # Follow the Setup Environment section. If using Option 2, substitute /workspace/ with the path to the gello_software folder
+      # Go to the ROS 2 workspace, build it, and source it
+      cd /workspace/ros2 && colcon build && source install/setup.bash
+      # Start the GELLO node
+      ros2 launch franka_gello_state_publisher main.launch.py config_file:=franka_gello_duo.yaml
+      # Start the Robotiq gripper node
+      ros2 launch franka_gripper_manager robotiq_gripper_controller_client.launch.py config_file:=example_fr3_duo_config_robotiq.yaml
+      # Hold the GELLOs and place them in a comfortable position with some distance from the base pins
+      # Start the robot node (the robot position will sync directly to the GELLO position. Avoid moving the GELLOs abruptly during synchronization)
+      ros2 launch franka_fr3_arm_controllers franka_fr3_arm_controllers.launch.py robot_config_file:=example_fr3_duo_config.yaml
+    ```
 
-```bash
-colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
-```
-
-### Testing the project
-
-The packages come with a set of tests, which can be executed using the following command:
-
-```bash
-colcon test 
-```
-
-## Getting Started
+## Detailed Launch Routine and Configuration
 
 ### 1. **Run the GELLO Publisher**  
 #### Step 1: Determine the port IDs of your communication converters
@@ -251,6 +231,61 @@ The `config_file` argument is **optional**. If not provided, it defaults either 
 
 - `namespace`: ROS 2 namespace (must match the robot and the Gello state publisher).
 - `com_port`: **(Robotiq only)** The `ROBOTIQ_USB_ID` can be determined by `ls /dev/serial/by-id`
+
+## Packages Overview
+
+### 1. `franka_fr3_arm_controllers`
+This package provides a Joint Impedance controller for the Franka FR3. It subscribes to the GELLO joint states and sends torque commands to the robot.
+
+#### Key Features:
+- Implements a `JointImpedanceController` for controlling the robot's torques.
+- Subscribes to `/gello/joint_states` topic for the GELLO joint states.
+
+#### Launch Files:
+- **`franka.launch.py`**: Launches the Franka robot ros interfaces.
+- **`franka_fr3_arm_controllers.launch.py`**: Launches the Joint Impedance controller.
+
+### 2. `franka_gello_state_publisher`
+This package provides a ROS 2 node that reads input from the GELLO and publishes it as `sensor_msgs/msg/JointState` messages.
+
+#### Key Features:
+- Publishes GELLO state to the `/gello/joint_states` topic.
+- Optionally sets the internal control parameters of the Dynamixel motors. This allows for [virtual springs and dampers](#virtual-springs-dampers) in the GELLO joints.
+
+#### Launch Files:
+- **`main.launch.py`**: Launches the GELLO publisher node.
+
+### 3. `franka_gripper_manager`
+This package provides a ROS 2 node for managing the gripper connected to the Franka robot. Supported grippers are either the `Franka Hand` or the `Robotiq 2F-85`. It allows sending commands to control the gripper's width and perform homing actions. 
+
+#### Key Features:
+- Subscribes to `/gripper/gripper_client/target_gripper_width_percent` for gripper width commands.
+- Supports homing and move actions for the gripper.
+
+#### Launch Files:
+- **`franka_gripper_client.launch.py`**: Launches the gripper manager node for the `Franka Hand`.
+- **`robotiq_gripper_controller_client.launch.py`**: Launches the gripper manager node for the `Robotiq 2F-85`.
+
+## Build and Test
+
+> ⚠️ **Important:**  
+> All commands for building and testing must be executed from the `ros2` directory of this repository.
+
+### Building the project
+
+To build the project, use the following `colcon` command with CMake arguments, required for clang-tidy:
+
+```bash
+colcon build --cmake-args -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCHECK_TIDY=ON
+```
+
+### Testing the project
+
+The packages come with a set of tests, which can be executed using the following command:
+
+```bash
+colcon test 
+```
 
 ## Troubleshooting
 
