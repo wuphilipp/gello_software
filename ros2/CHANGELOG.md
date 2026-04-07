@@ -2,6 +2,11 @@
 
 > This changelog covers only the changes relevant to the ROS 2 implementation of GELLO.
 
+## `ros2-v2.1.0` - 2026-04-08
+ - Updated the Dockerfile and Docker Compose files to support Cyclone DDS as the ROS 2 RMW.
+ - **Behavioral**: Cyclone DDS is now the default RMW in the devcontainer.
+ - Added getting started guide for Franka GELLO Duo.
+
 ## `ros2-v2.0.0` - 2026-02-16
  - Published joint positions are now independent of the GELLO's joint positions on power-on.
  - Added assembly offset calculation script which differs from the one in the non-ROS part of this repository.

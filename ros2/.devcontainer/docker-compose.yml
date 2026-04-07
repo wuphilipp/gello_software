@@ -1,5 +1,5 @@
 services:
-  gello-ros2: 
+  gello-ros2:
     build: .
     privileged: true
     restart: no
@@ -15,4 +15,5 @@ services:
       DISPLAY: ${DISPLAY}
       QT_X11_NO_MITSH: "1"
       XAUTHORITY: /tmp/.docker.xauth
-      
+      RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
+      ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}
