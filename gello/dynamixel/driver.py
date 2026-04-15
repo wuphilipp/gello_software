@@ -455,7 +455,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 _velocities = np.zeros(len(self._ids), dtype=int)
                 dxl_comm_result = self._groupSyncRead.txRxPacket()
                 if dxl_comm_result != COMM_SUCCESS:
-                    print(f"warning, comm failed: {dxl_comm_result}")
+                    # print(f"warning, comm failed: {dxl_comm_result}")
                     continue
                 for i, dxl_id in enumerate(self._ids):
                     # velocity
