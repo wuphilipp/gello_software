@@ -1,5 +1,11 @@
 # GELLO Setup for Franka Panda
 
+## Clone The Repo
+```bash
+git clone https://github.com/berkecyln/gello-franka-freiburg.git
+cd gello-franka-freiburg
+```
+
 ---
 
 ## 1. One-Time System Setup
@@ -29,7 +35,7 @@ cat /sys/bus/usb-serial/devices/ttyUSB0/latency_timer
 ```
 
 ### Set unique motor IDs
-Each Dynamixel servo needs a unique ID. Do this **one motor at a time** using Dynamixel Wizard.
+Each Dynamixel servo needs a unique ID. Do this **one motor at a time** using Dynamixel Wizard 2.0.
 
 1. Install [Dynamixel Wizard 2.0](https://emanual.robotis.com/docs/en/software/dynamixel/dynamixel_wizard2/)
 2. Connect **one motor at a time** to the U2D2 controller
@@ -45,7 +51,6 @@ Each Dynamixel servo needs a unique ID. Do this **one motor at a time** using Dy
 ```bash
 conda create -n gello python=3.11 -y
 conda activate gello
-cd ~/robot/gello_software
 git submodule init && git submodule update
 pip install -r requirements.txt
 pip install -e .
@@ -67,9 +72,14 @@ Current port: `usb-FTDI_USB__-__Serial_Converter_FTAO4UAS-if00-port0`
 ## 4. Calibration
 
 Maps each GELLO servo to the matching robot joint angle. Redo if you reassemble the arm
-or change any servo horn position.
+or change any servo horn position. Run this every time the GELLO joint configuration is changed drastically.
 
-**Step 1 — Move robot to calibration pose** (from `robotio` env, see robot_io docs):
+**Step 1 — Physically match GELLO to the calibration pose by hand.**
+<p align="center">
+  <img src="imgs/fr3_gello_calib_pose.jpeg" />
+</p>
+
+**Step 2 — Move robot to calibration pose** (from `robotio` env, see robot_io docs):
 ```bash
 conda activate robotio
 cd ~/robot/robot_io
@@ -77,15 +87,14 @@ python robot_io/examples/move_to_gello_calib_pose.py
 ```
 Target: `[0, 0, 0, -1.5708, 0, 1.5708, 0.7854]` rad — gripper in natural forward orientation.
 
-**Step 2 — Physically match GELLO to robot pose.** Joint 7 (wrist) is critical — the
-gripper head must point in the same direction as the robot gripper.
+**Step 3 — Compute offsets** (from `gello` env):
 
-**Step 3 — Compute offsets:**
+Check gello port with: `ls /dev/serial/by-id/` and replace if different than below.
 ```bash
-conda activate robotio
+conda activate gello
 cd ~/robot/gello_software
 python scripts/gello_get_offset.py \
-  --port /dev/ttyUSB0 \
+  --port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO4UAS-if00-port0 \
   --start-joints 0 0 0 -1.5708 0 1.5708 0.7854 \
   --joint-signs 1 1 1 -1 1 -1 1 \
   --gripper
@@ -96,6 +105,8 @@ python scripts/gello_get_offset.py \
 joint_offsets=(X * np.pi / 2, ...),   # from script output
 gripper_config=(8, open_deg, close_deg),
 ```
+
+> If a joint moves in the wrong direction in simulation, flip its sign (1 → -1) and re-run step 3.
 
 ---
 
@@ -109,21 +120,19 @@ gripper_config=(8, open_deg, close_deg),
 | Joint offsets | `(0, 1, 0, 1, 2, 3, 3) × π/2` |
 | Gripper | motor 8, open=113°, close=71° |
 
+> The above config can differ with different gello joint configurations.
+
 ---
 
 ## 6. Simulation Test
 
 Terminal 1 — MuJoCo sim:
 ```bash
-conda activate gello
-cd ~/robot/gello_software
 python experiments/launch_nodes.py --robot sim_panda
 ```
 
 Terminal 2 — GELLO controller:
 ```bash
-conda activate gello
-cd ~/robot/gello_software
 python experiments/run_env.py \
   --agent gello \
   --gello-port /dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTAO4UAS-if00-port0 \

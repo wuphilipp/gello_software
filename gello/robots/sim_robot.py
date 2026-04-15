@@ -140,6 +140,8 @@ class MujocoRobotServer:
         print_joints: bool = False,
     ):
         self._has_gripper = gripper_xml_path is not None
+        if "panda" in xml_path and not self._has_gripper:
+            self._has_gripper = True
         arena = build_scene(xml_path, gripper_xml_path)
 
         assets: Dict[str, str] = {}
@@ -179,7 +181,7 @@ class MujocoRobotServer:
         )
         if self._has_gripper:
             _joint_state = joint_state.copy()
-            _joint_state[-1] = _joint_state[-1] * 255
+            _joint_state[-1] = 255 - (_joint_state[-1] * 255)
             self._joint_cmd = _joint_state
         else:
             self._joint_cmd = joint_state.copy()
