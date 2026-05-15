@@ -44,20 +44,19 @@ class DynamixelRobotConfig:
 
 
 PORT_CONFIG_MAP: Dict[str, DynamixelRobotConfig] = {
-    # xArm
-    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FT3M9NVB-if00-port0": DynamixelRobotConfig(
-        joint_ids=(1, 2, 3, 4, 5, 6, 7),
+    # xArm Lite 6 (this build) — calibrated 2026-05-14 via generate_yam_config.py
+    "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTB8HQU5-if00-port0": DynamixelRobotConfig(
+        joint_ids=(1, 2, 3, 4, 5, 6),
         joint_offsets=(
-            3 * np.pi / 2,
-            2 * np.pi / 2,
-            1 * np.pi / 2,
-            4 * np.pi / 2,
-            -2 * np.pi / 2 + 2 * np.pi,
-            3 * np.pi / 2,
-            4 * np.pi / 2,
+            3.14159,
+            3.14159,
+            3.14159,
+            3.14159,
+            3.14159,
+            6.28319,
         ),
-        joint_signs=(1, -1, 1, 1, 1, -1, 1),
-        gripper_config=(8, 195, 152),
+        joint_signs=(1.0, 1.0, 1.0, 1.0, 1.0, 1.0),
+        gripper_config=(7, 82.2, 22.7),
     ),
     # yam
     "/dev/serial/by-id/usb-FTDI_USB__-__Serial_Converter_FTA2U4GA-if00-port0": DynamixelRobotConfig(

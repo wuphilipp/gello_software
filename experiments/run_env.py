@@ -139,15 +139,23 @@ def main(args):
                 "start_joints": args.start_joints,
             }
             if args.start_joints is None:
-                reset_joints = np.deg2rad(
-                    [0, -90, 90, -90, -90, 0, 0]
-                )  # Change this to your own reset joints
+                reset_joints = np.array(
+                    [0, 0, np.pi / 2, 0, 0, 0, 0]
+                )  # xArm Lite 6: matches GELLO leader's calibration reference pose.
             else:
                 reset_joints = np.array(args.start_joints)
 
             curr_joints = env.get_obs()["joint_positions"]
             if reset_joints.shape == curr_joints.shape:
                 max_delta = (np.abs(curr_joints - reset_joints)).max()
+                if max_delta > 0.8:
+                    print(
+                        f"\nReset aborted: max joint delta {max_delta:.3f} rad > 0.8."
+                    )
+                    print(f"  current: {[f'{x:.3f}' for x in curr_joints]}")
+                    print(f"  reset:   {[f'{x:.3f}' for x in reset_joints]}")
+                    print("Manually drive the xArm closer to the reset pose, then re-run.")
+                    return
                 steps = min(int(max_delta / 0.01), 100)
 
                 for jnt in np.linspace(curr_joints, reset_joints, steps):
