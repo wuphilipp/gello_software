@@ -24,9 +24,9 @@ class URRobot(Robot):
             from gello.robots.robotiq_gripper import RobotiqGripper
 
             self.gripper = RobotiqGripper()
-            self.gripper.connect(hostname=robot_ip, port=63352)
+            # self.gripper.connect(hostname=robot_ip, port=63352) # whq
             print("gripper connected")
-            # gripper.activate()
+            # gripper.activate() # whq
 
         [print("connect") for _ in range(4)]
 
@@ -60,7 +60,8 @@ class URRobot(Robot):
         """
         robot_joints = self.r_inter.getActualQ()
         if self._use_gripper:
-            gripper_pos = self._get_gripper_pos()
+            # gripper_pos = self._get_gripper_pos() # whq
+            gripper_pos = 0
             pos = np.append(robot_joints, gripper_pos)
         else:
             pos = robot_joints
@@ -85,7 +86,7 @@ class URRobot(Robot):
         )
         if self._use_gripper:
             gripper_pos = joint_state[-1] * 255
-            self.gripper.move(gripper_pos, 255, 10)
+            # self.gripper.move(gripper_pos, 255, 10) # whq
         self.robot.waitPeriod(t_start)
 
     def freedrive_enabled(self) -> bool:
