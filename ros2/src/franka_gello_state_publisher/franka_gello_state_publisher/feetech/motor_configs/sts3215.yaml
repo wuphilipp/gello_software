@@ -1,0 +1,91 @@
+# Motor configuration for Feetech STS3215 (SMS/STS series, magnetic encoder)
+# Reference: references/FTServo_Python/documents/舵机协议内存表-磁编码版本.xlsx
+#            scservo_sdk/sms_sts.py
+# Position uses 15-bit signed encoding (scs_tohost / scs_toscs)
+
+pulses_per_revolution: 4096
+default_baudrate: 1000000
+default_goal_speed: 2400
+default_acc: 50
+position_encoding_bits: 15
+
+# WritePosEx / SyncWritePosEx writes 7 bytes starting at acc:
+# [acc, goal_position_l, goal_position_h, goal_time_l, goal_time_h, goal_speed_l, goal_speed_h]
+sync_write_block:
+  addr: 41
+  len: 7
+
+control_table:
+  # --- EPROM (read-only) ---
+  firmware_version:       { addr: 0, len: 2, read_only: true }  # addr 0-1: 固件主/次版本号
+  model_number:           { addr: 3, len: 2, read_only: true }  # addr 3-4: 舵机主/次版本号
+
+  # --- EPROM (read/write, torque must be off) ---
+  id:                     { addr: 5, len: 1, min: 0, max: 253 }
+  baud_rate:              { addr: 6, len: 1, min: 0, max: 7 }
+  return_delay_time:      { addr: 7, len: 1, min: 0, max: 254, unit: "2 [μsec]" }
+  response_level:         { addr: 8, len: 1, min: 0, max: 1 }
+  min_angle_limit:        { addr: 9, len: 2, min: 0, max: 4094, unit: "1 [pulse]" }
+  max_angle_limit:        { addr: 11, len: 2, min: 1, max: 4095, unit: "1 [pulse]" }
+  max_temperature_limit:  { addr: 13, len: 1, min: 0, max: 100, unit: "1 [°C]" }
+  max_voltage_limit:      { addr: 14, len: 1, min: 0, max: 254, unit: "0.1 [V]" }
+  min_voltage_limit:      { addr: 15, len: 1, min: 0, max: 254, unit: "0.1 [V]" }
+  max_torque_limit:       { addr: 16, len: 2, min: 0, max: 1000, unit: "0.001" }
+  phase:                  { addr: 18, len: 1, min: 0, max: 254 }
+  unload_condition:       { addr: 19, len: 1, min: 0, max: 254 }
+  led_alarm_condition:    { addr: 20, len: 1, min: 0, max: 254 }
+  kp_p:                   { addr: 21, len: 1, min: 0, max: 254 }
+  kp_d:                   { addr: 22, len: 1, min: 0, max: 254 }
+  kp_i:                   { addr: 23, len: 1, min: 0, max: 254 }
+  min_startup_force:      { addr: 24, len: 1, min: 0, max: 254, unit: "0.001" }
+  integral_limit:         { addr: 25, len: 1, min: 0, max: 254 }
+  cw_dead_zone:           { addr: 26, len: 1, min: 0, max: 32 }
+  ccw_dead_zone:          { addr: 27, len: 1, min: 0, max: 32 }
+  protection_current:     { addr: 28, len: 2, min: 0, max: 511, unit: "6.5 [mA]" }
+  angular_resolution:     { addr: 30, len: 1, min: 1, max: 3 }
+  position_offset:        { addr: 31, len: 2, min: -2047, max: 2047, unit: "1 [pulse]" }
+  mode:                   { addr: 33, len: 1, min: 0, max: 3 }
+  protection_torque:      { addr: 34, len: 1, min: 0, max: 100, unit: "0.01" }
+  protection_time:        { addr: 35, len: 1, min: 0, max: 254, unit: "10 [ms]" }
+  overload_torque:        { addr: 36, len: 1, min: 0, max: 100, unit: "0.01" }
+  speed_loop_kp_p:        { addr: 37, len: 1, min: 0, max: 254 }
+  overcurrent_protection_time: { addr: 38, len: 1, min: 0, max: 254, unit: "10 [ms]" }
+  speed_loop_ki:          { addr: 39, len: 1, min: 0, max: 254, unit: "0.1" }
+
+  # --- SRAM (read/write) ---
+  torque_enable:          { addr: 40, len: 1, min: 0, max: 128 }  # 128 = 当前位置校正为 2048
+  acc:                    { addr: 41, len: 1, min: 0, max: 254, unit: "100 [step/s^2]" }
+  goal_position:          { addr: 42, len: 2, min: -32766, max: 32766, unit: "1 [pulse]" }
+  goal_time:              { addr: 44, len: 2, min: 0, max: 1000, unit: "0.001" }
+  goal_speed:             { addr: 46, len: 2, min: -32766, max: 32766, unit: "1 [step/s]" }
+  torque_limit:           { addr: 48, len: 2, min: 0, max: 1000, unit: "0.01" }
+  lock:                   { addr: 55, len: 1, min: 0, max: 1 }
+
+  # --- SRAM (read-only) ---
+  present_position:       { addr: 56, len: 2, unit: "1 [pulse]", read_only: true }
+  present_speed:          { addr: 58, len: 2, unit: "1 [step/s]", read_only: true }
+  present_load:           { addr: 60, len: 2, unit: "0.001", read_only: true }
+  present_voltage:        { addr: 62, len: 1, unit: "0.1 [V]", read_only: true }
+  present_temperature:    { addr: 63, len: 1, unit: "1 [°C]", read_only: true }
+  async_write_flag:       { addr: 64, len: 1, read_only: true }
+  servo_status:           { addr: 65, len: 1, read_only: true }
+  moving:                 { addr: 66, len: 1, min: 0, max: 1, read_only: true }
+  present_current:        { addr: 69, len: 2, unit: "6.5 [mA]", read_only: true }
+
+eeprom_area_end: 39
+
+operating_modes:
+  0: "Position Control Mode"
+  1: "Constant Speed Mode (Wheel)"
+  2: "PWM Control Mode"
+  3: "Step Servo Mode"
+
+baud_rate_values:
+  0: 1000000
+  1: 500000
+  2: 250000
+  3: 128000
+  4: 115200
+  5: 76800
+  6: 57600
+  7: 38400

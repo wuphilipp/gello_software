@@ -16,7 +16,7 @@ setup(
         ("share/" + package_name + "/config", glob.glob("config/*.yaml")),
         ("share/" + package_name + "/launch", ["launch/main.launch.py"]),
     ],
-    install_requires=["setuptools", "dynamixel_sdk"],
+    install_requires=["setuptools", "dynamixel_sdk", "ftservo-python-sdk"],
     zip_safe=True,
     maintainer="Franka Robotics GmbH",
     maintainer_email="support@franka.de",
