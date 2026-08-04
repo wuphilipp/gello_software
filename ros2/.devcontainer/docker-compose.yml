@@ -1,3 +1,7 @@
+# GUI (turtlesim, RViz, rqt): requires host X11 + a valid cookie bind-mounted into the container.
+# Host path is under ~/.cache (avoids /tmp/.docker.xauth root-owned or stale permission issues).
+# devcontainer.json initializeCommand creates/refreshes that file when possible.
+# Fallback on Linux host: xhost +local:root   (dev only; weakens X access control)
 services:
   gello-ros2:
     build: .
@@ -10,10 +14,11 @@ services:
       - ../../:/workspace
       - /dev/serial/by-id:/dev/serial/by-id
       - /tmp/.X11-unix:/tmp/.X11-unix:rw
-      - /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      #- /tmp/.docker.xauth:/tmp/.docker.xauth:rw
+      - ${HOME}/.cache/gello-ros2-devcontainer/docker.xauth:/tmp/.docker.xauth:rw
     environment:
       DISPLAY: ${DISPLAY}
-      QT_X11_NO_MITSH: "1"
+      QT_X11_NO_MITSHM: "1"
       XAUTHORITY: /tmp/.docker.xauth
       RMW_IMPLEMENTATION: ${RMW_IMPLEMENTATION:-rmw_cyclonedds_cpp}
       ROS_DOMAIN_ID: ${ROS_DOMAIN_ID:-0}

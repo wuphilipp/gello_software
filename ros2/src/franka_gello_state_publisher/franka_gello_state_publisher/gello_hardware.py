@@ -6,7 +6,17 @@ from franka_gello_state_publisher.dynamixel.driver import DynamixelDriver
 
 
 class GelloHardwareParams(TypedDict):
-    """Type-safe parameter dictionary for GelloHardware initialization."""
+    """
+    Type-safe parameter dictionary for GelloHardware initialization.
+    
+    TypedDict 是 Python 标准库 typing 里的一个类，用来定义类型安全的字典。
+
+    当你定义一个 TypedDict 时，你可以指定字典中每个键的类型。
+
+    当你访问字典中的键时，Python 会检查这个键的类型，如果类型不匹配，就会抛出 TypeError 异常。
+
+    当你设置字典中的键时，Python 会检查这个键的类型，如果类型不匹配，就会抛出 TypeError 异常。
+    """
 
     com_port: str
     gello_name: str
@@ -88,7 +98,7 @@ class GelloHardware:
     OPERATING_MODE = 5  # CURRENT_BASED_POSITION_MODE
     CURRENT_LIMIT = 600  # mA
 
-    @staticmethod
+    @staticmethod # 指明这是一个静态方法，不需要实例化就可以调用，例如：GelloHardware.normalize_joint_positions(raw_positions, assembly_offsets, joint_signs)，而不需要self.normalize_joint_positions(...)。
     def normalize_joint_positions(
         raw_positions: np.ndarray,
         assembly_offsets: np.ndarray,
@@ -172,8 +182,8 @@ class GelloHardware:
             goal_position=self._goal_position_to_pulses(
                 hardware_config["dynamixel_goal_position"]
             ).copy(),
-            goal_current=[self.CURRENT_LIMIT] * self._num_total_joints,
-            operating_mode=[self.OPERATING_MODE] * self._num_total_joints,
+            goal_current=[self.CURRENT_LIMIT] * self._num_total_joints, # [600, 600, 600, 600, 600, 600, 600, 600] 给每个 Dynamixel 设置目标电流/电流限制值
+            operating_mode=[self.OPERATING_MODE] * self._num_total_joints, # [5, 5, 5, 5, 5, 5, 5, 5] 基于电流的位置控制模式
         )
 
         self._initialize_parameters()
@@ -212,7 +222,7 @@ class GelloHardware:
 
         self._dynamixel_control_config[clean_name] = param_value
         self._driver.write_value_by_name(clean_name, self._dynamixel_control_config[clean_name])
-        if clean_name == "torque_enable":
+        if clean_name == "torque_enable": # 当扭矩使能时，需要重新写入目标位置
             self._driver.write_value_by_name(
                 "goal_position", self._dynamixel_control_config["goal_position"]
             )

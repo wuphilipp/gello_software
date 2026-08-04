@@ -3,6 +3,7 @@
   "dockerComposeFile": "docker-compose.yml",
   "service": "gello-ros2",
   "overrideCommand": true,
+  "initializeCommand": "bash -lc 'mkdir -p \"${localEnv:HOME}/.cache/gello-ros2-devcontainer\" && umask 077 && XA=\"${localEnv:HOME}/.cache/gello-ros2-devcontainer/docker.xauth\" && touch \"$XA\" && if command -v xauth >/dev/null 2>&1 && [ -n \"${DISPLAY:-}\" ]; then xauth nlist \"$DISPLAY\" | sed -e \"s/^..../ffff/\" | xauth -f \"$XA\" nmerge - 2>/dev/null || true; fi'",
   "customizations": {
       "vscode": {
           "extensions": [

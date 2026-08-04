@@ -8,5 +8,6 @@
   ],
   "reportMissingImports": false,
   "reportMissingTypeStubs": false,
-  "reportGeneralTypeIssues": false
+  "reportGeneralTypeIssues": false,
+  "reportUnusedImport": false
 }

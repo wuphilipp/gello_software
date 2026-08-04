@@ -298,7 +298,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         if len(values) != len(self._ids):
             raise ValueError(f"The length of {name} must match the number of servos")
         with self._lock:
-            for dxl_id, value in zip(self._ids, values):
+            for dxl_id, value in zip(self._ids, values): # 遍历每个电机ID和对应的值
                 if value is None:
                     continue
                 if value_min is not None:
@@ -306,7 +306,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
                 if value_max is not None:
                     value = min(value, value_max)
                 # Convert value to little-endian byte array of length value_length
-                param = [(value >> (8 * i)) & 0xFF for i in range(value_length)]
+                param = [(value >> (8 * i)) & 0xFF for i in range(value_length)] # 将value转换为little-endian字节数组
                 result = groupSyncWriteHandler.addParam(dxl_id, param)
                 if not result:
                     raise RuntimeError(f"Failed to set {name} for Dynamixel with ID {dxl_id}")

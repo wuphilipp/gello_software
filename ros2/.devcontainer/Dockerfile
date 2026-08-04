@@ -10,29 +10,39 @@ RUN apt-get update && apt-get install -y \
   libpoco-dev \
   ros-humble-pinocchio \
   ros-humble-rmw-cyclonedds-cpp \
+  # RQt with Introspection plugins (rqt_graph, rqt_topic, etc.)
+  ros-humble-rqt \
+  ros-humble-rqt-common-plugins \
+  # Qt (for GUI apps like hello_qt)
+  qtbase5-dev \
+  qtbase5-dev-tools \
+  qt5-qmake \
+  libqt5x11extras5 \
   # Install ros packages
   python3-colcon-common-extensions \
   python3-colcon-mixin \
+  ros-humble-turtlesim \
+  ros-humble-rviz2 \
   python3-pip \
   python3-vcstool \
   && rm -rf /var/lib/apt/lists/*
 
-# Install robotiq gripper
-ARG ROS2_ROBOTIQ_GRIPPER_COMMIT_HASH="2ff85455d4b9f973c4b0bab1ce95fb09367f0d26"
-RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
-  mkdir tmp_build && \
-  cd tmp_build && \
-  git clone https://github.com/PickNikRobotics/ros2_robotiq_gripper.git && \
-  cd ros2_robotiq_gripper && git checkout ${ROS2_ROBOTIQ_GRIPPER_COMMIT_HASH} && cd .. && \
-  sed -i 's/kGripperMaxSpeed = 0.150;/kGripperMaxSpeed = 1.0;/g' ros2_robotiq_gripper/robotiq_driver/src/hardware_interface.cpp && \
-  vcs import . --input ros2_robotiq_gripper/ros2_robotiq_gripper.humble.repos && \
-  apt-get update && \
-  rosdep update && \
-  rosdep install --from-paths . --ignore-src -r -y && \
-  colcon build --install-base /opt/ros/humble/franka --cmake-args -DCMAKE_BUILD_TYPE=Release && \
-  cd .. && \
-  rm -rf tmp_build && \
-  rm -rf /var/lib/apt/lists/*"
+# # Install robotiq gripper
+# ARG ROS2_ROBOTIQ_GRIPPER_COMMIT_HASH="2ff85455d4b9f973c4b0bab1ce95fb09367f0d26"
+# RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \
+#   mkdir tmp_build && \
+#   cd tmp_build && \
+#   git clone https://github.com/PickNikRobotics/ros2_robotiq_gripper.git && \
+#   cd ros2_robotiq_gripper && git checkout ${ROS2_ROBOTIQ_GRIPPER_COMMIT_HASH} && cd .. && \
+#   sed -i 's/kGripperMaxSpeed = 0.150;/kGripperMaxSpeed = 1.0;/g' ros2_robotiq_gripper/robotiq_driver/src/hardware_interface.cpp && \
+#   vcs import . --input ros2_robotiq_gripper/ros2_robotiq_gripper.humble.repos && \
+#   apt-get update && \
+#   rosdep update && \
+#   rosdep install --from-paths . --ignore-src -r -y && \
+#   colcon build --install-base /opt/ros/humble/franka --cmake-args -DCMAKE_BUILD_TYPE=Release && \
+#   cd .. && \
+#   rm -rf tmp_build && \
+#   rm -rf /var/lib/apt/lists/*"
 
 # Install rqt reconfigure from source (for array parameters)
 RUN /bin/bash -c "source /opt/ros/humble/setup.bash && \

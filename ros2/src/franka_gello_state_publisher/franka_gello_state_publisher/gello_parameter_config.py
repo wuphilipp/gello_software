@@ -3,6 +3,27 @@ from rcl_interfaces.msg import ParameterDescriptor, ParameterType
 from typing import Any, Iterator
 
 
+"""
+@dataclass 是 Python 标准库 dataclasses 里的装饰器。它会自动帮这个类生成一些常用方法，最重要的是 __init__()。
+等价于你手写：
+
+class ParameterConfig:
+    def __init__(self, descriptor, default):
+        self.descriptor = descriptor
+        self.default = default
+"""
+"""
+ParameterDescriptor 是 ROS2 里用来描述参数元信息的对象。
+它不是参数的值本身，而是告诉 ROS2：
+
+参数叫什么名字
+参数是什么类型
+参数说明是什么
+是否只读
+有什么额外约束
+
+
+"""
 @dataclass
 class ParameterConfig:
     descriptor: ParameterDescriptor
@@ -139,3 +160,15 @@ class GelloParameterConfig:
     def __iter__(self) -> Iterator[ParameterConfig]:
         """Return an iterator over the parameter configurations."""
         return iter(self.hardware_params)
+
+    """
+    __iter__ 是 Python 标准库里的魔法方法，用来实现迭代器协议。
+    
+    Python 的规则是：只要一个对象实现了 __iter__()，它就可以被 for 循环遍历。
+
+    迭代器协议定义了对象如何被迭代。
+
+    当你对一个对象使用 for 循环时，Python 会调用它的 __iter__ 方法，返回一个迭代器对象。
+
+    然后 for 循环会反复调用这个迭代器对象的 __next__ 方法，直到它抛出 StopIteration 异常，表示迭代结束。
+"""

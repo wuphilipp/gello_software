@@ -49,7 +49,7 @@ class GelloPublisher(Node):
             # Skip parameters that are not related to the Dynamixel control parameters
             if not param.name.startswith("dynamixel_"):
                 continue
-            param_value = parameter_value_to_python(param.value)
+            param_value = parameter_value_to_python(param.value)# 用于将ParameterValue对象转换为Python对象
             self.gello_hardware.update_dynamixel_control_parameter(param.name, param_value)
 
     def publish_joint_jog(self) -> None:
@@ -91,9 +91,11 @@ class GelloPublisher(Node):
 
     def _setup_hardware_parameters(self):
         """Declare and setup all hardware configuration parameters."""
-        config = GelloParameterConfig()
+        config = GelloParameterConfig() 
 
         hardware_params: GelloHardwareParams = {}
+        # GelloParameterConfig 类定义了 __iter__() 方法, Python 的规则是：只要一个对象实现了 __iter__()，它就可以被 for 循环遍历。
+        # 所以 config 对象可以被 for 循环遍历，每次循环会返回一个 ParameterConfig 对象。
         for param in config:
             hardware_params[param.descriptor.name] = self._declare_ros2_param(param)
 
