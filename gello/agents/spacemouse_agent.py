@@ -74,9 +74,10 @@ class SpacemouseAgent(Agent):
         import pyspacemouse
 
         if self._device_path is None:
-            mouse = pyspacemouse.open()
+            mouse = pyspacemouse.open(axis_convention=pyspacemouse.AxisConvention.HID_Z_UP)
         else:
-            mouse = pyspacemouse.open(path=self._device_path)
+            mouse = pyspacemouse.open_by_path(self._device_path,
+                axis_convention=pyspacemouse.AxisConvention.HID_Z_UP)
         if mouse:
             while 1:
                 state = mouse.read()
@@ -143,21 +144,21 @@ class SpacemouseAgent(Agent):
         rot_transform_x = np.eye(4)
         rot_transform_x[:3, :3] = quaternion.as_rotation_matrix(
             quaternion.from_rotation_vector(
-                np.array([-p, 0, 0]) * self.config.angle_scale
+                np.array([r, 0, 0]) * self.config.angle_scale
             )
         )
 
         rot_transform_y = np.eye(4)
         rot_transform_y[:3, :3] = quaternion.as_rotation_matrix(
             quaternion.from_rotation_vector(
-                np.array([0, r, 0]) * self.config.angle_scale
+                np.array([0, p, 0]) * self.config.angle_scale
             )
         )
 
         rot_transform_z = np.eye(4)
         rot_transform_z[:3, :3] = quaternion.as_rotation_matrix(
             quaternion.from_rotation_vector(
-                np.array([0, 0, -y]) * self.config.angle_scale
+                np.array([0, 0, y]) * self.config.angle_scale
             )
         )
 
@@ -220,5 +221,5 @@ class SpacemouseAgent(Agent):
 if __name__ == "__main__":
     import pyspacemouse
 
-    success = pyspacemouse.open("/dev/hidraw4")
-    success = pyspacemouse.open("/dev/hidraw5")
+    success = pyspacemouse.open_by_path("/dev/hidraw4")
+    success = pyspacemouse.open_by_path("/dev/hidraw5")
