@@ -67,7 +67,12 @@ class RobotEnv:
         for name, camera in self._camera_dict.items():
             image, depth = camera.read()
             observations[f"{name}_rgb"] = image
-            observations[f"{name}_depth"] = depth
+            if depth is not None:  # cameras may stream colour only
+                observations[f"{name}_depth"] = depth
+            # Cameras are read serially and read() blocks in wait_for_frames(),
+            # so these stamps are how you detect image staleness after the fact:
+            # the spread across one get_obs() is the serial-blocking cost.
+            observations[f"{name}_stamp"] = time.time()
 
         robot_obs = self._robot.get_observations()
         assert "joint_positions" in robot_obs

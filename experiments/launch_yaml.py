@@ -1,5 +1,7 @@
 import atexit
+import os
 import signal
+import sys
 import threading
 import time
 from dataclasses import dataclass
@@ -15,6 +17,8 @@ from gello.utils.launch_utils import instantiate_from_dict
 # Global variables for cleanup
 active_threads = []
 active_servers = []
+active_cameras = {}
+active_save_interface = None
 cleanup_in_progress = False
 
 
@@ -25,19 +29,51 @@ def cleanup():
         return
     cleanup_in_progress = True
 
+    # First, before any other output: this finalises an in-progress episode and
+    # restores the terminal. signal_handler calls os._exit(0), which runs no
+    # atexit handlers, so this is all that stands between Ctrl-C and a shell
+    # left with no echo. It also clears the status line, so printing before it
+    # would interleave with it.
+    if active_save_interface is not None:
+        try:
+            active_save_interface.close()
+        except Exception as e:
+            print(f"Error closing save interface: {e}")
+
     print("Cleaning up resources...")
+
+    for name, camera in active_cameras.items():
+        try:
+            if hasattr(camera, "close"):
+                camera.close()
+        except Exception as e:
+            print(f"Error closing camera {name}: {e}")
+
     for server in active_servers:
         try:
-            if hasattr(server, "close"):
+            # ZMQServerRobot exposes stop(), not close() -- checking only for
+            # close() meant serve() was never asked to break out of its loop.
+            if hasattr(server, "stop"):
+                server.stop()
+            elif hasattr(server, "close"):
                 server.close()
         except Exception as e:
-            print(f"Error closing server: {e}")
+            print(f"Error stopping server: {e}")
 
     for thread in active_threads:
         if thread.is_alive():
             thread.join(timeout=2)
 
     print("Cleanup completed.")
+
+    # Both exit paths end in os._exit(), which does not flush buffered stdio.
+    # Interactive runs are line-buffered so nothing is lost, but piping to a log
+    # file is block-buffered and would silently drop the session summary.
+    try:
+        sys.stdout.flush()
+        sys.stderr.flush()
+    except Exception:
+        pass
 
 
 def wait_for_server_ready(port, host="127.0.0.1", timeout_seconds=5):
@@ -74,6 +110,20 @@ class Args:
     use_save_interface: bool = False
     """Enable saving data with keyboard interface."""
 
+    task: Optional[str] = None
+    """Natural-language task description. Used as the policy prompt and to group
+    episodes on disk. Prompted for interactively if omitted."""
+
+    data_dir: str = "data"
+    """Root directory for recorded episodes."""
+
+    jpeg_quality: int = 95
+    """JPEG quality for recorded RGB frames."""
+
+    monitor_port: Optional[int] = None
+    """Serve a live web monitor (camera view + recording status) on this port.
+    Try 8081, then open http://<host>:8081/ on a second screen."""
+
 
 def signal_handler(signum, frame):
     """Handle shutdown signals gracefully."""
@@ -104,17 +154,15 @@ def main():
             OmegaConf.load(args.right_config_path), resolve=True
         )
 
-    # Create agent
-    if bimanual:
-        from gello.agents.agent import BimanualAgent
-
-        agent = BimanualAgent(
-            agent_left=instantiate_from_dict(left_cfg["agent"]),
-            agent_right=instantiate_from_dict(right_cfg["agent"]),
-        )
-    else:
-        agent = instantiate_from_dict(left_cfg["agent"])
-
+    # Motor chains are brought up BEFORE the GELLO leaders.
+    #
+    # DynamixelDriver.__init__ starts a daemon thread that polls joint states
+    # over FTDI serial in a tight loop. Creating the agent first leaves one such
+    # thread per leader holding the GIL while DMChainCanInterface._motor_on()
+    # tries to land each motor's CAN reply inside a 10 ms timeout -- and the
+    # FTDI adapters share a USB 2.0 hub with the CAN adapters. Missing that
+    # window aborts bring-up on whichever motor id happened to be next, which is
+    # why the failing id moved around between runs.
     # Create robot(s)
     left_robot_cfg = left_cfg["robot"]
     if isinstance(left_robot_cfg.get("config"), str):
@@ -141,6 +189,17 @@ def main():
     else:
         robot = left_robot
         cfg = left_cfg
+
+    # Create agent
+    if bimanual:
+        from gello.agents.agent import BimanualAgent
+
+        agent = BimanualAgent(
+            agent_left=instantiate_from_dict(left_cfg["agent"]),
+            agent_right=instantiate_from_dict(right_cfg["agent"]),
+        )
+    else:
+        agent = instantiate_from_dict(left_cfg["agent"])
 
     # Handle different robot types
     if hasattr(robot, "serve"):  # MujocoRobotServer or ZMQServerRobot
@@ -194,7 +253,32 @@ def main():
         # Create client to communicate with hardware
         robot_client = ZMQClientRobot(port=hardware_port, host=hardware_host)
 
-    env = RobotEnv(robot_client, control_rate_hz=cfg.get("hz", 30))
+    # Cameras open LAST, after both motor chains are up.
+    #
+    # Ordering here is load-bearing and both directions hurt, so this is a
+    # trade, not a clean win. Cameras left streaming during motor bring-up add
+    # enough contention to blow the 10 ms CAN receive timeout in _motor_on(),
+    # which fails the second arm outright. Opening them afterwards instead
+    # stalls the already-running chains for ~0.65 s inside pipeline.start(),
+    # which holds the GIL -- survivable, but only because the configs enable
+    # i2rt's enable_auto_recovery so that stall is recovered rather than fatal.
+    #
+    # Cameras are shared across both arms, so they come from the primary config
+    # only, same convention as hz.
+    if bimanual and right_cfg.get("cameras"):
+        print("Warning: ignoring 'cameras' in the right config; cameras are read "
+              "from the left/primary config only.")
+    camera_cfg = cfg.get("cameras") or {}
+    if camera_cfg:
+        print(f"Opening {len(camera_cfg)} camera(s): {', '.join(camera_cfg)}")
+    else:
+        print("Warning: no 'cameras:' block in config; recording state only.")
+    camera_dict = instantiate_from_dict(camera_cfg)
+    active_cameras.update(camera_dict)
+
+    env = RobotEnv(
+        robot_client, control_rate_hz=cfg.get("hz", 30), camera_dict=camera_dict
+    )
 
     # Move robot to start_joints position if specified in config
     from gello.utils.launch_utils import move_to_start_position
@@ -212,16 +296,50 @@ def main():
     from gello.utils.control_utils import SaveInterface, run_control_loop
 
     # Initialize save interface if requested
+    global active_save_interface
     save_interface = None
     if args.use_save_interface:
         save_interface = SaveInterface(
-            data_dir=Path(args.left_config_path).parents[1] / "data",
+            data_dir=args.data_dir,
             agent_name=agent.__class__.__name__,
             expand_user=True,
+            task=args.task,
+            jpeg_quality=args.jpeg_quality,
+            monitor_port=args.monitor_port,
+            meta_extra={
+                "robot": robot.__class__.__name__,
+                "bimanual": bimanual,
+                "hz_target": cfg.get("hz", 30),
+                "cameras": {
+                    name: camera_cfg[name].get("device_id") for name in camera_dict
+                },
+                "config_paths": {
+                    "left": args.left_config_path,
+                    "right": args.right_config_path,
+                },
+                "configs": {
+                    "left": left_cfg,
+                    "right": right_cfg if bimanual else None,
+                },
+            },
         )
+        active_save_interface = save_interface
 
     # Run main control loop
     run_control_loop(env, agent, save_interface)
+
+    # Quitting with 'x' returns here normally, and a normal interpreter exit
+    # blocks on non-daemon threads: the ZMQ server thread plus i2rt's per-chain
+    # _set_torques_and_update_state and robot_server threads. None of them
+    # return on their own, so this used to print "Exiting." and hang. Take the
+    # same path SIGINT already takes.
+    #
+    # Deliberately NOT calling i2rt's robot.close(): its docstring is "safely
+    # close the robot by setting all torques to zero", which drops an arm that
+    # gravity compensation is currently holding up. Exiting this way leaves the
+    # motors on their last grav-comp command, exactly as Ctrl-C always has.
+    cleanup()
+    os._exit(0)
 
 
 if __name__ == "__main__":

@@ -33,6 +33,13 @@ class BimanualAgent(Agent):
         left_obs = {}
         right_obs = {}
         for key, val in obs.items():
+            if not isinstance(val, np.ndarray):
+                # Not everything in obs is a per-arm vector -- camera capture
+                # timestamps, for instance, are scalars describing a shared
+                # observation. Pass those through to both agents untouched
+                # instead of trying to halve them.
+                left_obs[key] = right_obs[key] = val
+                continue
             L = val.shape[0]
             half_dim = L // 2
             assert L == half_dim * 2, f"{key} must be even, something is wrong"

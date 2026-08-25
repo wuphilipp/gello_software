@@ -8,10 +8,27 @@ from gello.robots.robot import Robot
 class YAMRobot(Robot):
     """A class representing a simulated YAM robot."""
 
-    def __init__(self, channel="can0"):
+    def __init__(self, channel="can0", enable_auto_recovery: bool = False, **kwargs):
+        """Create a YAM arm.
+
+        Args:
+            channel: socketcan channel for this arm's motor chain.
+            enable_auto_recovery: forwarded to i2rt. When False (i2rt's default)
+                any transient motor comm error kills the control loop thread and
+                takes the run with it. Bimanual teleop with cameras generates
+                enough GIL and USB contention to produce those transients -- a
+                RealSense pipeline.start() blocks ~0.65 s holding the GIL, well
+                past the chain's 10 ms CAN receive timeout -- so collection
+                configs should turn this on and let the chain re-enable the
+                errored motor instead of failing fast.
+            **kwargs: any other get_yam_robot argument (gripper_type, ee_mass,
+                zero_gravity_mode, ...).
+        """
         from i2rt.robots.get_robot import get_yam_robot
 
-        self.robot = get_yam_robot(channel=channel)
+        self.robot = get_yam_robot(
+            channel=channel, enable_auto_recovery=enable_auto_recovery, **kwargs
+        )
 
         # YAM has 7 joints (6 arm joints + 1 gripper)
         self._joint_names = [

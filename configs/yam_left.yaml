@@ -1,0 +1,40 @@
+robot:
+  _target_: gello.robots.yam.YAMRobot
+  # Recover from transient motor comm errors instead of killing the run.
+  enable_auto_recovery: true
+  channel: can_follower_l
+agent:
+  _target_: gello.agents.gello_agent.GelloAgent
+  port: /dev/ttyUSB0
+  dynamixel_config:
+    _target_: gello.agents.gello_agent.DynamixelRobotConfig
+    joint_ids: [1, 2, 3, 4, 5, 6]
+    joint_offsets: [3.14159, 4.71239, 3.14159, 1.5708, 6.28319, 3.14159]
+    joint_signs: [1.0, -1.0, -1.0, -1.0, 1.0, 1.0]
+    gripper_config: [7, 55.0, 110.21484375]
+  start_joints: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]
+hz: 30
+max_steps: 1000
+
+# Shared across both arms - read from the primary (left) config only.
+# top is the D435; the two wrist cams are D405s.
+# exposure/gain from scripts/tune_exposure.py -- auto-exposure meters the
+# whole frame and blew out the white harness board (48-56% of pixels
+# clipped), taking the printed diagram with it. Fixed short exposures also
+# cut wrist motion blur ~13x. Re-tune if the lighting or camera poses change.
+cameras:
+  top:
+    _target_: gello.cameras.realsense_camera.RealSenseCamera
+    device_id: "213322071600"
+    exposure: 62
+    gain: 0
+  left_wrist:
+    _target_: gello.cameras.realsense_camera.RealSenseCamera
+    device_id: "260422273115"
+    exposure: 2522
+    gain: 32
+  right_wrist:
+    _target_: gello.cameras.realsense_camera.RealSenseCamera
+    device_id: "260422274958"
+    exposure: 2522
+    gain: 32

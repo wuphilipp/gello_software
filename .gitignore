@@ -9,12 +9,18 @@
 *.DS_Store
 
 # misc
+*.bak
 *logs*
 *runs*
 *tb_logs*
 *wandb*
 *wandb_logs*
 outputs/*
+
+# recorded data (teleop episodes, camera dumps) - never commit these
+data/
+images/
+stream/
 
 # python
 *__pycache__
