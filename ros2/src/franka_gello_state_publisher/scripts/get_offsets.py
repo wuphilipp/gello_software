@@ -11,7 +11,6 @@ from franka_gello_state_publisher.gello_hardware import GelloHardware
 
 # The offset in radians from the gripper open position to the closed position.
 GRIPPER_OPEN_TO_CLOSED_RAD = -1.22
-DEFAULT_BAUDRATE = 57600
 
 
 @dataclass
@@ -27,6 +26,9 @@ class Args:
 
     gripper: bool = True
     """Whether or not the gripper is attached."""
+
+    baudrate: int = 57600
+    """Host serial baudrate matching the Dynamixel chain (57600 factory, 115200 after provision)."""
 
     def __post_init__(self):
         assert len(self.joint_signs) == len(self.start_joints)
@@ -77,7 +79,7 @@ def determine_offsets(
 
 def main(args: Args) -> None:
     joint_ids = list(range(1, args.num_total_joints + 1))
-    driver = DynamixelDriver(joint_ids, port=args.port, baudrate=DEFAULT_BAUDRATE)
+    driver = DynamixelDriver(joint_ids, port=args.port, baudrate=args.baudrate)
     joints_raw = driver.get_joints()
     arm_joints_raw = np.array(joints_raw[: args.num_arm_joints])
     assembly_offsets = determine_offsets(

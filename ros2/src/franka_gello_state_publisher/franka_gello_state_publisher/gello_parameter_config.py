@@ -87,6 +87,31 @@ class GelloParameterConfig:
             ),
             ParameterConfig(
                 ParameterDescriptor(
+                    name="baudrate",
+                    type=ParameterType.PARAMETER_INTEGER,
+                    description="XL330 serial baudrate (57600 factory, 115200, or 1000000)",
+                    additional_constraints="57600, 115200, or 1000000",
+                    read_only=True,
+                ),
+                57600,
+            ),
+            ParameterConfig(
+                ParameterDescriptor(
+                    name="publishing_rate",
+                    type=ParameterType.PARAMETER_INTEGER,
+                    description=(
+                        "ROS joint-state publish timer in Hz (independent of baudrate)"
+                    ),
+                    additional_constraints=(
+                        "any integer ≥ 1; recommended 25@57600, 30 or 50@115200, "
+                        "100@1000000; warn (still start) if above unique-sample ceiling"
+                    ),
+                    read_only=True,
+                ),
+                25,
+            ),
+            ParameterConfig(
+                ParameterDescriptor(
                     name="dynamixel_kp_p",
                     type=ParameterType.PARAMETER_INTEGER_ARRAY,
                     description="Proportional gains",

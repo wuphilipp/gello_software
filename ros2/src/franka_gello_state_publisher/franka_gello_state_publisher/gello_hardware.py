@@ -15,6 +15,7 @@ class GelloHardwareParams(TypedDict):
     gripper: bool
     gripper_range_rad: List[float]
     assembly_offsets: List[float]
+    baudrate: int
     dynamixel_kp_p: List[int]
     dynamixel_kp_i: List[int]
     dynamixel_kp_d: List[int]
@@ -87,6 +88,10 @@ class GelloHardware:
 
     OPERATING_MODE = 5  # CURRENT_BASED_POSITION_MODE
     CURRENT_LIMIT = 600  # mA
+    ALLOWED_BAUDRATES = (57600, 115200, 1000000)
+    BPS_TO_REG = {57600: 1, 115200: 2, 1000000: 3}
+    SCAN_BAUDS = (115200, 57600, 1000000)
+    BAUD_WRITE_SETTLE_S = 0.1
 
     @staticmethod
     def normalize_joint_positions(
@@ -146,6 +151,7 @@ class GelloHardware:
         self._num_total_joints = self._num_arm_joints + (1 if self._gripper else 0)
         self._gripper_range_rad = hardware_config["gripper_range_rad"]
         self._assembly_offsets = np.array(hardware_config["assembly_offsets"])
+        self._desired_baudrate = int(hardware_config["baudrate"])
 
         self._initialize_driver()
 
@@ -180,9 +186,63 @@ class GelloHardware:
         self._driver.start_joint_polling()
 
     def _initialize_driver(self) -> None:
-        """Initialize dynamixel driver with joint IDs and port."""
+        """Open the chain at the live baud, optionally write EEPROM, then reinit at desired."""
+        desired = self._desired_baudrate
+        if desired not in self.ALLOWED_BAUDRATES:
+            raise ValueError(
+                f"Unsupported baudrate {desired}. Allowed: {self.ALLOWED_BAUDRATES}"
+            )
+
         joint_ids = list(range(1, self._num_total_joints + 1))
-        self._driver = DynamixelDriver(joint_ids, port=self._com_port, baudrate=57600)
+        driver = None
+        live = None
+        for candidate in self._baud_scan_order(desired):
+            driver = self._try_open_driver(joint_ids, candidate)
+            if driver is not None:
+                live = candidate
+                break
+
+        if driver is None or live is None:
+            raise ConnectionError(
+                f"No Dynamixels on {self._com_port} at known bauds "
+                f"{self._baud_scan_order(desired)}. Mixed-baud chains are not written; "
+                "recover with Dynamixel Wizard 2.0."
+            )
+
+        if live != desired:
+            self._logger.info(
+                f"GELLO on {self._com_port} answered at {live} baud; "
+                f"writing EEPROM baud_rate for {desired}."
+            )
+            driver.write_value_by_name(
+                "baud_rate", [self.BPS_TO_REG[desired]] * len(joint_ids)
+            )
+            time.sleep(self.BAUD_WRITE_SETTLE_S)
+            driver.close()
+            try:
+                driver = DynamixelDriver(
+                    joint_ids, port=self._com_port, baudrate=desired
+                )
+            except ConnectionError as e:
+                raise ConnectionError(
+                    f"Wrote baud_rate={desired} on {self._com_port} but could not reopen. "
+                    "Chain may be mixed-baud; recover with Dynamixel Wizard 2.0."
+                ) from e
+
+        self._driver = driver
+
+    def _baud_scan_order(self, desired: int) -> list[int]:
+        order: list[int] = []
+        for baud in (desired, *self.SCAN_BAUDS):
+            if baud not in order:
+                order.append(baud)
+        return order
+
+    def _try_open_driver(self, joint_ids: List[int], baudrate: int) -> DynamixelDriver | None:
+        try:
+            return DynamixelDriver(joint_ids, port=self._com_port, baudrate=baudrate)
+        except ConnectionError:
+            return None
 
     def _initialize_parameters(self) -> None:
         """Write all dynamixel configuration parameters to hardware."""
