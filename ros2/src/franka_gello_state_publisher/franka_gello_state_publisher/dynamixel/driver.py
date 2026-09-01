@@ -257,6 +257,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
             self._portHandler.openPort()
             self._portHandler.setBaudRate(self._baudrate)
         except SerialException:
+            self._close_port_quietly()
             detected_ports = self._detect_com_ports()
             if self._port in detected_ports:
                 msg = "Check that you have permissions to access it."
@@ -271,6 +272,7 @@ class DynamixelDriver(DynamixelDriverProtocol):
         try:
             self.read_value_by_name("model_number")
         except (RuntimeError, SerialException):
+            self._close_port_quietly()
             raise ConnectionError(
                 f"Port {self._port} opened but could not read from motors. Make sure no other "
                 "process is using the same port, that all motors are wired correctly and get power."
@@ -396,6 +398,13 @@ class DynamixelDriver(DynamixelDriverProtocol):
     def close(self) -> None:
         self.stop_joint_polling()
         self._portHandler.closePort()
+
+    def _close_port_quietly(self) -> None:
+        """Close the serial port without raising; safe during failed __init__."""
+        try:
+            self._portHandler.closePort()
+        except Exception:
+            pass
 
     def _pulses_to_rad(self, pulses) -> np.ndarray:
         """Convert pulses to radians using motor-specific configuration."""

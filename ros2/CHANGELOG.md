@@ -2,6 +2,22 @@
 
 > This changelog covers only the changes relevant to the ROS 2 implementation of GELLO.
 
+## `ros2-v2.2.0` - 2026-08-31
+ - Added a configurable `baudrate` parameter for the Dynamixel chain in the publisher's config files
+   (`57600` factory, `115200` or `1000000`), replacing the previously hard-coded `57600`.
+ - Added a configurable `publishing_rate` parameter in the publisher's config files, replacing the
+   previously hard-coded 25 Hz. The node warns when the requested rate exceeds the unique-sample
+   ceiling of the configured baud rate, but still starts.
+ - **Behavioral**: On startup, the publisher scans the known baud rates until all expected motor IDs
+   answer. If the live chain baud rate differs from the configured `baudrate`, the motors' EEPROM
+   `baud_rate` is written and the chain is reopened at the configured rate. Mixed-baud chains abort
+   without writing.
+ - Both new parameters are optional and default to the previous values (`57600` and 25 Hz), so
+   existing config files continue to work unchanged.
+ - Added a `--baudrate` argument to the `get_offsets.py` script (defaults to `57600`, no scanning).
+ - Fixed the Dynamixel driver leaving the serial port open when initialization failed.
+ - Documented the baud rate / publish rate pairings and the `latency_timer=1` requirement in the README.
+
 ## `ros2-v2.1.0` - 2026-04-08
  - Updated the Dockerfile and Docker Compose files to support Cyclone DDS as the ROS 2 RMW.
  - **Behavioral**: Cyclone DDS is now the default RMW in the devcontainer.
