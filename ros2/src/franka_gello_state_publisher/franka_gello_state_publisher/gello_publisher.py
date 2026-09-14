@@ -17,13 +17,14 @@ class GelloPublisher(Node):
 
     def __init__(self) -> None:
         super().__init__("gello_publisher")
-        self.PUBLISHING_RATE = 25  # Hz
 
-        hardware_params: GelloHardwareParams = self._setup_hardware_parameters()
+        hardware_params, publishing_rate = self._setup_hardware_parameters()
+        baudrate = int(hardware_params["baudrate"])
+        self._warn_if_rate_exceeds_baud(publishing_rate, baudrate)
 
         try:
             self.gello_hardware = GelloHardware(hardware_params, self.get_logger())
-        except ConnectionError as e:
+        except (ConnectionError, ValueError) as e:
             self.get_logger().error(f"Failed to initialize GELLO hardware: {e}")
             raise
 
@@ -37,8 +38,10 @@ class GelloPublisher(Node):
             ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
         )
 
-        self.get_logger().info("Publishing GELLO joint states.")
-        self.timer = self.create_timer(1 / self.PUBLISHING_RATE, self.publish_joint_jog)
+        self.get_logger().info(
+            f"Publishing GELLO joint states at {publishing_rate} Hz (baudrate {baudrate})."
+        )
+        self.timer = self.create_timer(1.0 / publishing_rate, self.publish_joint_jog)
 
     def parameter_event_callback(self, event: ParameterEvent) -> None:
         """Handle parameter change events for this node."""
@@ -97,7 +100,19 @@ class GelloPublisher(Node):
         for param in config:
             hardware_params[param.descriptor.name] = self._declare_ros2_param(param)
 
-        return hardware_params
+        publishing_rate = int(hardware_params.pop("publishing_rate"))
+        if publishing_rate < 1:
+            raise ValueError(f"publishing_rate must be >= 1, got {publishing_rate}")
+        return hardware_params, publishing_rate
+
+    def _warn_if_rate_exceeds_baud(self, publishing_rate: int, baudrate: int) -> None:
+        ceilings = {57600: 25, 115200: 50, 1000000: 100}
+        ceiling = ceilings.get(baudrate)
+        if ceiling is not None and publishing_rate > ceiling:
+            self.get_logger().warning(
+                f"publishing_rate {publishing_rate} Hz exceeds unique-sample ceiling "
+                f"~{ceiling} Hz at baudrate {baudrate}; publishes may repeat samples."
+            )
 
 
 def main(args=None):
@@ -105,7 +120,7 @@ def main(args=None):
 
     try:
         gello_publisher = GelloPublisher()
-    except ConnectionError:
+    except (ConnectionError, ValueError):
         rclpy.try_shutdown()
         return
 

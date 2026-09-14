@@ -1,5 +1,12 @@
 # This configuration works with the pre-assembled "Franka GELLO Duo" by Franka Robotics GmbH
 # See https://franka.de/documents
+#
+# baudrate = Dynamixel bus speed. publishing_rate = ROS timer (any Hz ≥ 1).
+# Defaults: 57600 / 25 (factory; no EEPROM write).
+# Unique-sample ceiling: ~25 Hz @ 57600 | ~55 @ 115200 | ~135 @ 1000000.
+# Recommended timer: 25 Hz @ 57600 | 30 or 50 Hz @ 115200 | 100 Hz @ 1000000.
+# Above the warn thresholds (25 / 50 / 100) the node still starts and republishes
+# the last sample due to the baudrate speed ceiling.
 
 LEFT:
   namespace: "left"
@@ -9,6 +16,8 @@ LEFT:
   gripper: true
   assembly_offsets: [0.000, 0.000, 3.142, 3.142, 3.142, 4.712, 0.000] # rad
   gripper_range_rad: [2.00, 3.22]
+  baudrate: 57600          # bus speed; unique-sample ceiling
+  publishing_rate: 25      # ROS publish Hz
   # Optional Dynamixel control parameters for all arm joints (+ gripper):
   # Warning: If using the OpenRB-150 instead of the U2D2 communication converter,
   #          do not enable torque until an external 5V power supply is connected to the board's
@@ -28,6 +37,8 @@ RIGHT:
   gripper: true
   assembly_offsets: [0.000, 0.000, 3.142, 3.142, 3.142, 4.712, 0.000] # rad
   gripper_range_rad: [2.00, 3.22]
+  baudrate: 57600          # bus speed; unique-sample ceiling
+  publishing_rate: 25      # ROS publish Hz
   # Optional Dynamixel control parameters for all arm joints (+ gripper):
   # Warning: If using the OpenRB-150 instead of the U2D2 communication converter,
   #          do not enable torque until an external 5V power supply is connected to the board's

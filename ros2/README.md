@@ -141,6 +141,8 @@ Use the `get_offsets.py` script in `/ros2/src/franka_gello_state_publisher/scrip
       ```
 
 Use the output of the `get_offsets.py` script to update the values in your GELLO configuration file located in `/workspace/ros2/src/franka_gello_state_publisher/config/`.
+
+If the Dynamixel chain was provisioned to 115200 (or 1 Mbps), pass `--baudrate 115200` (or `1000000`). The script default is 57600 and does not scan.
       
 Rebuild the project to ensure the updated configuration is applied:
 
@@ -167,7 +169,21 @@ The `config_file` argument is **optional**. If not provided, it defaults to `exa
 - `joint_signs`: as used for calibration
 - `gripper`: true if Gello gripper state shall be used
 - `assembly_offsets` and `gripper_range_rad`: as determined with calibration routine
+- `baudrate`: XL330 serial baud (`57600` factory, `115200`, or `1000000`). Omitted keys default to `57600`. EEPROM is written only if the live chain baud differs from this value.
+- `publishing_rate`: ROS joint-state timer in Hz (any integer ≥ 1). Recommended values in the table below. Omitted keys default to `25`.
 - Dynamixel control parameters: `dynamixel_...` (see below)
+
+**Baud rate and publish rate:**
+
+The publisher scans `(desired, 115200, 57600, 1000000)` until every expected ID answers `model_number`. If live baud differs from YAML `baudrate`, it SyncWrites EEPROM `baud_rate` and reopens at the desired rate. Mixed-baud chains abort with no write. Package YAML stays factory `57600` / `25` so stock GELLOs are unchanged.
+
+| `baudrate` | Unique-Hz ceiling | Warn threshold | Recommended `publishing_rate` |
+|---|---|---|---|
+| `57600` | ~25 | 25 | **25** (factory; no EEPROM write) |
+| `115200` | ~55 | 50 | **30** or **50** |
+| `1000000` | ~135 | 100 | **100** |
+
+The table is recommended, not an enum. `publishing_rate` may be any integer ≥ 1 (e.g. `115200` → `40`). Above the warn thresholds (25 / 50 / 100) the node still starts and republishes the last sample due to the baudrate speed ceiling. `latency_timer=1` is recommended for 50 Hz at 115200 and 100 Hz at 1 Mbps (Linux FTDI default is 16 ms). See [Troubleshooting](#the-movement-of-the-follower-robot-is-slightly-jerky).
 
 **Virtual Springs and Dampers:**<a name="virtual-springs-dampers"></a>
 
@@ -302,7 +318,7 @@ Fix this by correcting the `LIBFRANKA_VERSION=0.15.0` in the [Dockerfile](./.dev
 
 ### The movement of the follower robot is slightly jerky
 
-If the movements of the follower robot do not feel smooth or you experience frequent force threshold errors, this may be related to high USB latency on your machine. To fix this, try the following (non-permanent) fix **on your host PC**:
+If the movements of the follower robot do not feel smooth or you experience frequent force threshold errors, this may be related to high USB latency on your machine. `latency_timer=1` is required for unique ~50 Hz at 115200 baud (and 100 Hz at 1 Mbps). To fix this, try the following (non-permanent) fix **on your host PC**:
 
 1. Check which `ttyUSBx`/`ttyACMx` is mapped to your U2D2 or OpenRB-150 device: `ls -la /dev/serial/by-id/`
 2. Reduce the USB latency from the default 16ms to 1ms: `echo 1 | sudo tee /sys/bus/usb-serial/devices/ttyUSB0/latency_timer` (replace `ttyUSB0` with your actual device)

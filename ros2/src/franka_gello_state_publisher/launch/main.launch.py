@@ -38,6 +38,8 @@ def generate_robot_nodes(context):
                     {"gripper": config["gripper"]},
                     {"gripper_range_rad": config["gripper_range_rad"]},
                     {"assembly_offsets": config["assembly_offsets"]},
+                    {"baudrate": config.get("baudrate", 57600)},
+                    {"publishing_rate": config.get("publishing_rate", 25)},
                     {"dynamixel_kp_p": config["dynamixel_kp_p"]},
                     {"dynamixel_kp_i": config["dynamixel_kp_i"]},
                     {"dynamixel_kp_d": config["dynamixel_kp_d"]},
