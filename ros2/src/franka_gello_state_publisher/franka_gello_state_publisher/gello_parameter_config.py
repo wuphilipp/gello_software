@@ -153,8 +153,8 @@ class GelloParameterConfig:
             ParameterConfig(
                 ParameterDescriptor(
                     name="dynamixel_goal_position",
-                    type=ParameterType.PARAMETER_INTEGER_ARRAY,
-                    description="Goal positions",
+                    type=ParameterType.PARAMETER_DOUBLE_ARRAY,
+                    description="Goal positions in radians",
                     read_only=False,
                 ),
                 self.DEFAULT_GOAL_POSITION,

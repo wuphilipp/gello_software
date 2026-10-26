@@ -68,15 +68,15 @@ class GelloPublisher(Node):
         ]
         [gello_arm_joints, gripper_position] = self.gello_hardware.get_joint_and_gripper_positions()
 
-        arm_joint_states = JointState()
-        arm_joint_states.header.stamp = self.get_clock().now().to_msg()
-        arm_joint_states.name = JOINT_NAMES
-        arm_joint_states.header.frame_id = "fr3_link0"
-        arm_joint_states.position = gello_arm_joints.tolist()
-
         gripper_joint_states = Float32()
         gripper_joint_states.data = gripper_position
-        self.arm_joint_publisher.publish(arm_joint_states)
+        if len(gello_arm_joints) > 0:
+            arm_joint_states = JointState()
+            arm_joint_states.header.stamp = self.get_clock().now().to_msg()
+            arm_joint_states.name = JOINT_NAMES[: len(gello_arm_joints)]
+            arm_joint_states.header.frame_id = "fr3_link0"
+            arm_joint_states.position = gello_arm_joints.tolist()
+            self.arm_joint_publisher.publish(arm_joint_states)
         self.gripper_joint_publisher.publish(gripper_joint_states)
 
     def destroy_node(self) -> None:

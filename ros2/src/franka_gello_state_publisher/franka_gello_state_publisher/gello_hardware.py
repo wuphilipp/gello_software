@@ -127,14 +127,14 @@ class GelloHardware:
             Normalized joint positions in radians
 
         """
+        mid_positions = GelloHardware.MID_JOINT_POSITIONS[: len(raw_positions)]
         return (
             np.mod(
-                (raw_positions - assembly_offsets) * joint_signs
-                - GelloHardware.MID_JOINT_POSITIONS,
+                (raw_positions - assembly_offsets) * joint_signs - mid_positions,
                 2 * np.pi,
             )
             - np.pi
-            + GelloHardware.MID_JOINT_POSITIONS
+            + mid_positions
         )
 
     def __init__(
@@ -146,11 +146,13 @@ class GelloHardware:
         self._com_port = hardware_config["com_port"]
         self._gello_name = hardware_config["gello_name"]
         self._num_arm_joints = hardware_config["num_arm_joints"]
-        self._joint_signs = np.array(hardware_config["joint_signs"])
+        self._joint_signs = np.array(hardware_config["joint_signs"])[: self._num_arm_joints]
         self._gripper = hardware_config["gripper"]
         self._num_total_joints = self._num_arm_joints + (1 if self._gripper else 0)
         self._gripper_range_rad = hardware_config["gripper_range_rad"]
-        self._assembly_offsets = np.array(hardware_config["assembly_offsets"])
+        self._assembly_offsets = np.array(hardware_config["assembly_offsets"])[
+            : self._num_arm_joints
+        ]
         self._desired_baudrate = int(hardware_config["baudrate"])
 
         self._initialize_driver()
@@ -302,7 +304,9 @@ class GelloHardware:
         self._prev_arm_joints_raw = arm_joints_raw.copy()
 
         arm_joints_clipped = np.clip(
-            arm_joints, self.JOINT_POSITION_LIMITS[:, 0], self.JOINT_POSITION_LIMITS[:, 1]
+            arm_joints,
+            self.JOINT_POSITION_LIMITS[: self._num_arm_joints, 0],
+            self.JOINT_POSITION_LIMITS[: self._num_arm_joints, 1],
         )
         return arm_joints_clipped
 
@@ -329,7 +333,9 @@ class GelloHardware:
         # 2. Reconstruct 'arm_goals_raw': Combine the rotation offset, goal position, and assembly offsets,
         #    applying the correct joint signs to match the motor's coordinate system.
         initial_rotations = np.floor_divide(
-            self._initial_arm_joints_raw - self._assembly_offsets - self.MID_JOINT_POSITIONS,
+            self._initial_arm_joints_raw
+            - self._assembly_offsets
+            - self.MID_JOINT_POSITIONS[: self._num_arm_joints],
             2 * np.pi,
         )
         arm_goals_raw = (
