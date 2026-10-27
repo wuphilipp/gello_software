@@ -14,6 +14,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
 
@@ -31,10 +32,15 @@ class MockGelloJointStatePublisher : public rclcpp::Node {
                                 std::bind(&MockGelloJointStatePublisher::publishJointState_, this));
   }
 
+  void stopPublishing() { timer_->cancel(); }
+
+  /// Shift the header stamps of published messages, simulating a sender clock that is off.
+  void setStampOffset(const rclcpp::Duration& offset) { stamp_offset_ns_ = offset.nanoseconds(); }
+
  private:
   void publishJointState_() {
     auto message = sensor_msgs::msg::JointState();
-    message.header.stamp = this->now();
+    message.header.stamp = this->now() + rclcpp::Duration::from_nanoseconds(stamp_offset_ns_);
     message.name = {"joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "joint7", "joint8"};
     message.position = {1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0};
     message.velocity = {0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
@@ -45,4 +51,5 @@ class MockGelloJointStatePublisher : public rclcpp::Node {
 
   rclcpp::Publisher<sensor_msgs::msg::JointState>::SharedPtr publisher_;
   rclcpp::TimerBase::SharedPtr timer_;
+  std::atomic<int64_t> stamp_offset_ns_{0};
 };

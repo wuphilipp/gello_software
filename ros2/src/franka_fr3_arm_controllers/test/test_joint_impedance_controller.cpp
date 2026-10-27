@@ -102,6 +102,16 @@ void JointImpedanceControllerTest::setRobotPosition(const std::vector<double>& p
   }
 }
 
+void JointImpedanceControllerTest::runUpdates(std::chrono::milliseconds duration) {
+  const auto end = std::chrono::steady_clock::now() + duration;
+  rclcpp::Time time;
+  rclcpp::Duration period = rclcpp::Duration::from_seconds(0.01);
+  while (std::chrono::steady_clock::now() < end) {
+    controller_->update(time, period);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  }
+}
+
 void JointImpedanceControllerTest::setValidControllerParameters() {
   controller_->get_node()->set_parameters(
       {{"arm_id", kArmId_}, {"k_gains", kKGains_}, {"d_gains", kDGains_}, {"k_alpha", kKAlpha_}});

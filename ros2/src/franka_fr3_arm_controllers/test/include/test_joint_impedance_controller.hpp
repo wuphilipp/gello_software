@@ -46,6 +46,7 @@ class JointImpedanceControllerTest : public ::testing::Test {
   rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn startController();
   void setRobotPosition(const std::vector<double>& positions);
   void setValidControllerParameters();
+  void runUpdates(std::chrono::milliseconds duration);
 
   std::shared_ptr<franka_fr3_arm_controllers::JointImpedanceController> controller_;
   std::shared_ptr<MockRobotParameterServer> mock_parameter_server_;

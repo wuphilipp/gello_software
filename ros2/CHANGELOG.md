@@ -13,6 +13,9 @@
  - Fixed runtime updates of `dynamixel_...` parameters bypassing the parameter validation via
    `/parameter_events`. Only updates accepted through the node's parameter interface are now
    written to the motors.
+ - Fixed the joint impedance controller not detecting when GELLO joint states stop arriving. The
+   timeout is now checked in every control cycle against the local receive time instead of the
+   sender's message stamp.
 
 ## `ros2-v2.2.0` - 2026-08-31
  - Added a configurable `baudrate` parameter for the Dynamixel chain in the publisher's config files
