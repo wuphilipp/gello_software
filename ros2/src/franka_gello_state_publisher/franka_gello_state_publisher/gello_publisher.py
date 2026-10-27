@@ -3,8 +3,8 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
-from rcl_interfaces.msg import ParameterEvent
-from rclpy.parameter import parameter_value_to_python
+from rcl_interfaces.msg import ParameterEvent, SetParametersResult
+from rclpy.parameter import Parameter, parameter_value_to_python
 from franka_gello_state_publisher.gello_hardware import GelloHardware, GelloHardwareParams
 from franka_gello_state_publisher.gello_parameter_config import (
     ParameterConfig,
@@ -33,6 +33,8 @@ class GelloPublisher(Node):
             Float32, "gripper/gripper_client/target_gripper_width_percent", 10
         )
 
+        self.add_on_set_parameters_callback(self.validate_parameters_callback)
+
         # Subscribe to parameter events to allow dynamic updates of parameters
         self.parameter_subscription = self.create_subscription(
             ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
@@ -42,6 +44,21 @@ class GelloPublisher(Node):
             f"Publishing GELLO joint states at {publishing_rate} Hz (baudrate {baudrate})."
         )
         self.timer = self.create_timer(1.0 / publishing_rate, self.publish_joint_jog)
+
+    def validate_parameters_callback(self, params: list[Parameter]) -> SetParametersResult:
+        """Reject updates of Dynamixel control parameters with a wrong number of entries."""
+        num_arm_joints = self.get_parameter("num_arm_joints").value
+        gripper = self.get_parameter("gripper").value
+        for param in params:
+            if not param.name.startswith("dynamixel_"):
+                continue
+            try:
+                GelloHardware.validate_dynamixel_control_parameter(
+                    param.name, param.value, num_arm_joints, gripper
+                )
+            except ValueError as e:
+                return SetParametersResult(successful=False, reason=str(e))
+        return SetParametersResult(successful=True)
 
     def parameter_event_callback(self, event: ParameterEvent) -> None:
         """Handle parameter change events for this node."""
@@ -90,7 +107,8 @@ class GelloPublisher(Node):
             param.descriptor.name, param.default, param.descriptor
         ).get_parameter_value()
 
-        return parameter_value_to_python(parameter_value)
+        value = parameter_value_to_python(parameter_value)
+        return [] if value is None else value
 
     def _setup_hardware_parameters(self):
         """Declare and setup all hardware configuration parameters."""

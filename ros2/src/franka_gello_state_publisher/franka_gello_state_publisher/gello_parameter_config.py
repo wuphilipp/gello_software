@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from rcl_interfaces.msg import ParameterDescriptor, ParameterType
+from rclpy.parameter import Parameter
 from typing import Any, Iterator
 
 
@@ -14,8 +15,10 @@ class GelloParameterConfig:
 
     DEFAULT_COM_PORT = "/dev/ttyUSB0"
     DEFAULT_NUM_JOINTS = 7
-    DEFAULT_JOINT_SIGNS = [1] * DEFAULT_NUM_JOINTS
-    DEFAULT_BEST_OFFSETS = [0.0] * DEFAULT_NUM_JOINTS
+    # Declared by type only: an empty list default would be inferred as BYTE_ARRAY by rclpy and
+    # reject the configured values. Omitted parameters stay unset and are read as empty lists.
+    DEFAULT_JOINT_SIGNS = Parameter.Type.INTEGER_ARRAY
+    DEFAULT_BEST_OFFSETS = Parameter.Type.DOUBLE_ARRAY
     DEFAULT_GRIPPER_RANGE_RAD = (0.0, 0.0)
     DEFAULT_CONTROL_GAINS = [0] * DEFAULT_NUM_JOINTS
     DEFAULT_GOAL_POSITION = [0.0] * DEFAULT_NUM_JOINTS

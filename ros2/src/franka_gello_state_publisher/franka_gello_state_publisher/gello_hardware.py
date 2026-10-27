@@ -85,6 +85,15 @@ class GelloHardware:
         ]
     )
     MID_JOINT_POSITIONS = JOINT_POSITION_LIMITS.mean(axis=1)
+    FR3_NUM_JOINTS = len(JOINT_POSITION_LIMITS)
+    ARM_JOINT_PARAMS = ("joint_signs", "assembly_offsets")
+    DYNAMIXEL_CONTROL_PARAMS = (
+        "dynamixel_kp_p",
+        "dynamixel_kp_i",
+        "dynamixel_kp_d",
+        "dynamixel_torque_enable",
+        "dynamixel_goal_position",
+    )
 
     OPERATING_MODE = 5  # CURRENT_BASED_POSITION_MODE
     CURRENT_LIMIT = 600  # mA
@@ -142,17 +151,17 @@ class GelloHardware:
         hardware_config: GelloHardwareParams,
         logger,
     ) -> None:
+        self.validate_parameters(hardware_config)
+
         self._logger = logger
         self._com_port = hardware_config["com_port"]
         self._gello_name = hardware_config["gello_name"]
         self._num_arm_joints = hardware_config["num_arm_joints"]
-        self._joint_signs = np.array(hardware_config["joint_signs"])[: self._num_arm_joints]
         self._gripper = hardware_config["gripper"]
         self._num_total_joints = self._num_arm_joints + (1 if self._gripper else 0)
+        self._joint_signs = np.array(hardware_config["joint_signs"])
         self._gripper_range_rad = hardware_config["gripper_range_rad"]
-        self._assembly_offsets = np.array(hardware_config["assembly_offsets"])[
-            : self._num_arm_joints
-        ]
+        self._assembly_offsets = np.array(hardware_config["assembly_offsets"])
         self._desired_baudrate = int(hardware_config["baudrate"])
 
         self._initialize_driver()
@@ -186,6 +195,54 @@ class GelloHardware:
 
         self._initialize_parameters()
         self._driver.start_joint_polling()
+
+    @staticmethod
+    def validate_parameters(hardware_config: GelloHardwareParams) -> None:
+        """Raise a ValueError if a parameter does not match the configured joints."""
+        num_arm_joints = hardware_config["num_arm_joints"]
+        gripper = hardware_config["gripper"]
+        if num_arm_joints not in (0, GelloHardware.FR3_NUM_JOINTS):
+            raise ValueError(
+                f"num_arm_joints must be 0 (gripper only) or {GelloHardware.FR3_NUM_JOINTS} "
+                f"(FR3 arm), got {num_arm_joints}"
+            )
+        if num_arm_joints == 0 and not gripper:
+            raise ValueError("gripper must be true if num_arm_joints is 0 (gripper only)")
+        for param_name in GelloHardware.ARM_JOINT_PARAMS:
+            num_values = len(hardware_config[param_name])
+            if num_values != num_arm_joints:
+                raise ValueError(
+                    f"{param_name} must have {num_arm_joints} entries (one per arm joint), "
+                    f"got {num_values}"
+                )
+        gripper_range_rad = hardware_config["gripper_range_rad"]
+        if gripper and (
+            len(gripper_range_rad) != 2 or gripper_range_rad[0] == gripper_range_rad[1]
+        ):
+            raise ValueError(
+                "gripper_range_rad must have 2 different entries (open and closed position), "
+                f"got {list(gripper_range_rad)}"
+            )
+        for param_name in GelloHardware.DYNAMIXEL_CONTROL_PARAMS:
+            GelloHardware.validate_dynamixel_control_parameter(
+                param_name, hardware_config[param_name], num_arm_joints, gripper
+            )
+
+    @staticmethod
+    def validate_dynamixel_control_parameter(
+        param_name: str,
+        param_value: list[float] | list[int],
+        num_arm_joints: int,
+        gripper: bool,
+    ) -> None:
+        """Raise a ValueError if a dynamixel parameter does not have one entry per motor."""
+        num_total_joints = num_arm_joints + (1 if gripper else 0)
+        if len(param_value) != num_total_joints:
+            gripper_note = " plus gripper" if gripper else ""
+            raise ValueError(
+                f"{param_name} must have {num_total_joints} entries "
+                f"(one per arm joint{gripper_note}), got {len(param_value)}"
+            )
 
     def _initialize_driver(self) -> None:
         """Open the chain at the live baud, optionally write EEPROM, then reinit at desired."""

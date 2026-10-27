@@ -22,6 +22,10 @@ def generate_robot_nodes(context):
     nodes = []
     for item_name, config in configs.items():
         namespace = config["namespace"]
+        # launch_ros rejects empty lists, so they are omitted and the node's empty defaults apply.
+        arm_joint_params = [
+            {key: config[key]} for key in ("joint_signs", "assembly_offsets") if config.get(key)
+        ]
         nodes.append(
             Node(
                 package="franka_gello_state_publisher",
@@ -34,10 +38,9 @@ def generate_robot_nodes(context):
                     {"com_port": "/dev/serial/by-id/" + config["com_port"]},
                     {"gello_name": item_name},
                     {"num_arm_joints": config["num_arm_joints"]},
-                    {"joint_signs": config["joint_signs"]},
+                    *arm_joint_params,
                     {"gripper": config["gripper"]},
                     {"gripper_range_rad": config["gripper_range_rad"]},
-                    {"assembly_offsets": config["assembly_offsets"]},
                     {"baudrate": config.get("baudrate", 57600)},
                     {"publishing_rate": config.get("publishing_rate", 25)},
                     {"dynamixel_kp_p": config["dynamixel_kp_p"]},

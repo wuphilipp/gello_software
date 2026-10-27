@@ -6,6 +6,10 @@
  - Fixed the publisher not supporting a gripper-only GELLO (`num_arm_joints: 0`). The joint position
    normalization, goal position conversion and joint limit clamping were hard-coded to 7 joints.
    `gello/joint_states` is now not published if `num_arm_joints` is 0.
+ - Added validation of the publisher's config parameters (see README). Misconfigured parameters now
+   fail on startup with an error naming the offending parameter instead of being silently misapplied
+   or causing unspecific errors, and invalid runtime updates of `dynamixel_...` parameters are
+   rejected instead of crashing the publisher.
 
 ## `ros2-v2.2.0` - 2026-08-31
  - Added a configurable `baudrate` parameter for the Dynamixel chain in the publisher's config files
