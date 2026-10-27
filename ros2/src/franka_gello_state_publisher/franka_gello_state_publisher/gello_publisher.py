@@ -3,7 +3,7 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
-from rcl_interfaces.msg import ParameterEvent, SetParametersResult
+from rcl_interfaces.msg import SetParametersResult
 from rclpy.parameter import Parameter, parameter_value_to_python
 from franka_gello_state_publisher.gello_hardware import GelloHardware, GelloHardwareParams
 from franka_gello_state_publisher.gello_parameter_config import (
@@ -33,25 +33,44 @@ class GelloPublisher(Node):
             Float32, "gripper/gripper_client/target_gripper_width_percent", 10
         )
 
-        self.add_on_set_parameters_callback(self.validate_parameters_callback)
-
-        # Subscribe to parameter events to allow dynamic updates of parameters
-        self.parameter_subscription = self.create_subscription(
-            ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
-        )
+        # Hardware writes happen here because Humble's rclpy has no post-set parameter callback.
+        self.add_on_set_parameters_callback(self.set_parameters_callback)
 
         self.get_logger().info(
             f"Publishing GELLO joint states at {publishing_rate} Hz (baudrate {baudrate})."
         )
         self.timer = self.create_timer(1.0 / publishing_rate, self.publish_joint_jog)
 
-    def validate_parameters_callback(self, params: list[Parameter]) -> SetParametersResult:
+    def set_parameters_callback(self, params: list[Parameter]) -> SetParametersResult:
+        """Validate parameter updates and write accepted Dynamixel control parameters."""
+        result = self.validate_parameter_updates(params)
+        if not result.successful:
+            return result
+        for param in params:
+            if param.name not in GelloHardware.DYNAMIXEL_CONTROL_PARAMS:
+                continue
+            try:
+                self.gello_hardware.update_dynamixel_control_parameter(param.name, param.value)
+            except (RuntimeError, ValueError) as e:
+                reason = f"Failed to write {param.name}: {e}"
+                self.get_logger().error(
+                    f"{reason}. Motors may be partially updated and differ from the parameters."
+                )
+                return SetParametersResult(successful=False, reason=reason)
+        return result
+
+    def validate_parameter_updates(self, params: list[Parameter]) -> SetParametersResult:
         """Reject updates of Dynamixel control parameters with a wrong number of entries."""
         num_arm_joints = self.get_parameter("num_arm_joints").value
         gripper = self.get_parameter("gripper").value
         for param in params:
             if not param.name.startswith("dynamixel_"):
                 continue
+            if param.name not in GelloHardware.DYNAMIXEL_CONTROL_PARAMS:
+                return SetParametersResult(
+                    successful=False,
+                    reason=f"{param.name} is not a writable dynamixel control parameter",
+                )
             try:
                 GelloHardware.validate_dynamixel_control_parameter(
                     param.name, param.value, num_arm_joints, gripper
@@ -59,18 +78,6 @@ class GelloPublisher(Node):
             except ValueError as e:
                 return SetParametersResult(successful=False, reason=str(e))
         return SetParametersResult(successful=True)
-
-    def parameter_event_callback(self, event: ParameterEvent) -> None:
-        """Handle parameter change events for this node."""
-        if event.node != self.get_fully_qualified_name():
-            return
-
-        for param in event.changed_parameters:
-            # Skip parameters that are not related to the Dynamixel control parameters
-            if not param.name.startswith("dynamixel_"):
-                continue
-            param_value = parameter_value_to_python(param.value)
-            self.gello_hardware.update_dynamixel_control_parameter(param.name, param_value)
 
     def publish_joint_jog(self) -> None:
         """Publish current joint states and gripper position."""

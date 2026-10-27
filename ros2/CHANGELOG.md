@@ -10,6 +10,9 @@
    fail on startup with an error naming the offending parameter instead of being silently misapplied
    or causing unspecific errors, and invalid runtime updates of `dynamixel_...` parameters are
    rejected instead of crashing the publisher.
+ - Fixed runtime updates of `dynamixel_...` parameters bypassing the parameter validation via
+   `/parameter_events`. Only updates accepted through the node's parameter interface are now
+   written to the motors.
 
 ## `ros2-v2.2.0` - 2026-08-31
  - Added a configurable `baudrate` parameter for the Dynamixel chain in the publisher's config files

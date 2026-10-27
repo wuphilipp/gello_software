@@ -324,13 +324,16 @@ class GelloHardware:
         self, param_name: str, param_value: list[float] | list[int]
     ) -> None:
         """Update a single dynamixel parameter and handle dependencies."""
+        if param_name not in self.DYNAMIXEL_CONTROL_PARAMS:
+            raise ValueError(f"{param_name} is not a writable dynamixel control parameter")
         clean_name = param_name.replace("dynamixel_", "")
+        param_value = list(param_value)
 
         if clean_name == "goal_position":
             param_value = self._goal_position_to_pulses(param_value)
 
+        self._driver.write_value_by_name(clean_name, param_value)
         self._dynamixel_control_config[clean_name] = param_value
-        self._driver.write_value_by_name(clean_name, self._dynamixel_control_config[clean_name])
         if clean_name == "torque_enable":
             self._driver.write_value_by_name(
                 "goal_position", self._dynamixel_control_config["goal_position"]

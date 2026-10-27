@@ -300,23 +300,25 @@ class DynamixelDriver(DynamixelDriverProtocol):
         if len(values) != len(self._ids):
             raise ValueError(f"The length of {name} must match the number of servos")
         with self._lock:
-            for dxl_id, value in zip(self._ids, values):
-                if value is None:
-                    continue
-                if value_min is not None:
-                    value = max(value, value_min)
-                if value_max is not None:
-                    value = min(value, value_max)
-                # Convert value to little-endian byte array of length value_length
-                param = [(value >> (8 * i)) & 0xFF for i in range(value_length)]
-                result = groupSyncWriteHandler.addParam(dxl_id, param)
-                if not result:
-                    raise RuntimeError(f"Failed to set {name} for Dynamixel with ID {dxl_id}")
-            comm_result = groupSyncWriteHandler.txPacket()
-            if comm_result != COMM_SUCCESS:
-                result_string = self._packetHandler.getTxRxResult(comm_result)
-                raise RuntimeError(f"Failed to syncwrite {name}, {result_string}")
-            groupSyncWriteHandler.clearParam()
+            try:
+                for dxl_id, value in zip(self._ids, values):
+                    if value is None:
+                        continue
+                    if value_min is not None:
+                        value = max(value, value_min)
+                    if value_max is not None:
+                        value = min(value, value_max)
+                    # Convert value to little-endian byte array of length value_length
+                    param = [(value >> (8 * i)) & 0xFF for i in range(value_length)]
+                    result = groupSyncWriteHandler.addParam(dxl_id, param)
+                    if not result:
+                        raise RuntimeError(f"Failed to set {name} for Dynamixel with ID {dxl_id}")
+                comm_result = groupSyncWriteHandler.txPacket()
+                if comm_result != COMM_SUCCESS:
+                    result_string = self._packetHandler.getTxRxResult(comm_result)
+                    raise RuntimeError(f"Failed to syncwrite {name}, {result_string}")
+            finally:
+                groupSyncWriteHandler.clearParam()
 
     def write_value_by_name(self, name: str, values: Sequence[int | None]):
         self._set_group(

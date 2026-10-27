@@ -1,3 +1,4 @@
+import time
 from contextlib import contextmanager
 from types import SimpleNamespace
 from unittest import mock
@@ -5,11 +6,16 @@ from unittest import mock
 import numpy as np
 import pytest
 import rclpy
+from rcl_interfaces.msg import Parameter as ParameterMsg
+from rcl_interfaces.msg import ParameterEvent, ParameterType, ParameterValue
 from rclpy.clock import Clock
+from rclpy.exceptions import ParameterNotDeclaredException
+from rclpy.executors import SingleThreadedExecutor
 from rclpy.parameter import Parameter
 
 from franka_gello_state_publisher.gello_publisher import GelloPublisher
 
+NUM_MOTORS = 8
 ARM_PARAMETERS = {
     "num_arm_joints": "7",
     "joint_signs": "[1, -1, 1, -1, 1, 1, 1]",
@@ -83,31 +89,108 @@ def test_publisher_publishes_names_for_configured_joints_only(num_arm_joints):
         assert len(joint_states.position) == num_arm_joints
 
 
-def make_publisher(num_arm_joints=7, gripper=True):
-    parameters = {"num_arm_joints": num_arm_joints, "gripper": gripper}
-    return SimpleNamespace(get_parameter=lambda name: SimpleNamespace(value=parameters[name]))
+@pytest.fixture
+def publisher(fake_driver):
+    with running_publisher(ARM_PARAMETERS) as node:
+        driver = node.gello_hardware._driver
+        driver.write_value_by_name = mock.Mock(wraps=driver.write_value_by_name)
+        yield node
 
 
-def test_runtime_update_with_correct_length_is_accepted():
-    result = GelloPublisher.validate_parameters_callback(
-        make_publisher(), [Parameter("dynamixel_kp_p", value=[0] * 8)]
+def driver_writes(publisher):
+    return publisher.gello_hardware._driver.write_value_by_name
+
+
+def test_valid_update_is_written_to_driver(publisher):
+    [result] = publisher.set_parameters([Parameter("dynamixel_kp_p", value=[5] * NUM_MOTORS)])
+
+    assert result.successful
+    driver_writes(publisher).assert_called_once_with("kp_p", [5] * NUM_MOTORS)
+    assert list(publisher.get_parameter("dynamixel_kp_p").value) == [5] * NUM_MOTORS
+
+
+def test_torque_enable_update_rewrites_goal_position(publisher):
+    goal_position = publisher.gello_hardware._dynamixel_control_config["goal_position"]
+
+    [result] = publisher.set_parameters(
+        [Parameter("dynamixel_torque_enable", value=[1] * NUM_MOTORS)]
     )
 
     assert result.successful
+    assert driver_writes(publisher).call_args_list == [
+        mock.call("torque_enable", [1] * NUM_MOTORS),
+        mock.call("goal_position", goal_position),
+    ]
 
 
-def test_runtime_update_with_wrong_length_is_rejected():
-    result = GelloPublisher.validate_parameters_callback(
-        make_publisher(), [Parameter("dynamixel_kp_p", value=[0] * 7)]
+def test_update_with_wrong_length_is_not_written_to_driver(publisher):
+    [result] = publisher.set_parameters(
+        [Parameter("dynamixel_kp_p", value=[5] * (NUM_MOTORS - 1))]
     )
 
     assert not result.successful
-    assert "dynamixel_kp_p must have 8 entries" in result.reason
+    driver_writes(publisher).assert_not_called()
+    assert list(publisher.get_parameter("dynamixel_kp_p").value) == [0] * NUM_MOTORS
 
 
-def test_runtime_update_of_other_parameters_is_not_checked():
-    result = GelloPublisher.validate_parameters_callback(
-        make_publisher(), [Parameter("publishing_rate", value=50)]
+def test_failed_driver_write_rejects_update(publisher):
+    driver_writes(publisher).side_effect = RuntimeError("communication error")
+
+    [result] = publisher.set_parameters([Parameter("dynamixel_kp_p", value=[5] * NUM_MOTORS)])
+    driver_writes(publisher).side_effect = None
+
+    assert not result.successful
+    assert "communication error" in result.reason
+    assert list(publisher.get_parameter("dynamixel_kp_p").value) == [0] * NUM_MOTORS
+
+
+def test_undeclared_dynamixel_parameter_cannot_be_set(publisher):
+    with pytest.raises(ParameterNotDeclaredException):
+        publisher.set_parameters([Parameter("dynamixel_goal_current", value=[2000] * NUM_MOTORS)])
+
+    result = publisher.set_parameters_callback(
+        [Parameter("dynamixel_goal_current", value=[2000] * NUM_MOTORS)]
     )
 
-    assert result.successful
+    assert not result.successful
+    driver_writes(publisher).assert_not_called()
+
+
+def test_parameter_event_is_not_written_to_driver(publisher):
+    sender = rclpy.create_node("parameter_event_sender")
+    event = ParameterEvent(
+        node=publisher.get_fully_qualified_name(),
+        changed_parameters=[
+            ParameterMsg(
+                name=name,
+                value=ParameterValue(
+                    type=ParameterType.PARAMETER_INTEGER_ARRAY,
+                    integer_array_value=[1] * NUM_MOTORS,
+                ),
+            )
+            for name in ("dynamixel_torque_enable", "dynamixel_goal_current")
+        ],
+    )
+    received = []
+    sender.create_subscription(
+        ParameterEvent,
+        "/parameter_events",
+        lambda msg: received.append(msg) if msg.node == event.node else None,
+        10,
+    )
+    event_publisher = sender.create_publisher(ParameterEvent, "/parameter_events", 10)
+    executor = SingleThreadedExecutor()
+    executor.add_node(publisher)
+    executor.add_node(sender)
+
+    deadline = time.monotonic() + 5.0
+    while not received and time.monotonic() < deadline:
+        event_publisher.publish(event)
+        executor.spin_once(timeout_sec=0.1)
+    for _ in range(5):
+        executor.spin_once(timeout_sec=0.05)
+
+    executor.shutdown()
+    sender.destroy_node()
+    assert received, "parameter event was not delivered, test is inconclusive"
+    driver_writes(publisher).assert_not_called()
