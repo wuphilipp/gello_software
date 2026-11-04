@@ -2,7 +2,7 @@
 
 > This changelog covers only the changes relevant to the ROS 2 implementation of GELLO.
 
-## `ros2-v2.2.1` - UNRELEASED
+## `ros2-v2.2.1` - 2026-11-05
  - Fixed the publisher not supporting a gripper-only GELLO (`num_arm_joints: 0`). The joint position
    normalization, goal position conversion and joint limit clamping were hard-coded to 7 joints.
    `gello/joint_states` is now not published if `num_arm_joints` is 0.
