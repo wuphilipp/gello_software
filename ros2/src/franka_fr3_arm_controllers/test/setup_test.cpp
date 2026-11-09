@@ -88,13 +88,58 @@ TEST_F(JointImpedanceControllerTest, TestUpdateGelloPositionValuesOnly) {
   }
 }
 
-TEST_F(JointImpedanceControllerTest, TestUpdateInvalidGelloPositionValues) {
-  GTEST_SKIP() << "Skipping this test because yet not implemented";
+// While following the Gello at the robot's position, only damping remains: -d_gain * velocity
+static constexpr double kFollowingCommand = -0.1;
+static constexpr double kFollowingTolerance = 0.01;
 
-  /**
-   * Description: Modify mock_joint_state_publisher.hpp (Fake Gello), to be reconfigured to publish
-   * invalid joint states (invalid / old timestamp).
-   */
+TEST_F(JointImpedanceControllerTest, TestUpdateNoTimeoutWithRegularGelloMessages) {
+  setRobotPosition({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
+  startController();
+
+  runUpdates(std::chrono::milliseconds(1500));
+
+  EXPECT_TRUE(rclcpp::ok());
+  for (double command : joint_commands_) {
+    EXPECT_NEAR(command, kFollowingCommand, kFollowingTolerance);
+  }
+}
+
+TEST_F(JointImpedanceControllerTest, TestUpdateTimeoutWhenGelloMessagesStop) {
+  setRobotPosition({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
+  startController();
+  runUpdates(std::chrono::milliseconds(300));
+  ASSERT_TRUE(rclcpp::ok());
+
+  mock_joint_state_publisher_->stopPublishing();
+  runUpdates(std::chrono::milliseconds(700));
+
+  EXPECT_FALSE(rclcpp::ok());
+}
+
+TEST_F(JointImpedanceControllerTest, TestUpdateTimeoutWhenGelloMessagesWithFutureStampsStop) {
+  mock_joint_state_publisher_->setStampOffset(rclcpp::Duration::from_seconds(10.0));
+  setRobotPosition({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
+  startController();
+  runUpdates(std::chrono::milliseconds(300));
+  ASSERT_TRUE(rclcpp::ok());
+
+  mock_joint_state_publisher_->stopPublishing();
+  runUpdates(std::chrono::milliseconds(700));
+
+  EXPECT_FALSE(rclcpp::ok());
+}
+
+TEST_F(JointImpedanceControllerTest, TestUpdateNoTimeoutWithRegularGelloMessagesWithPastStamps) {
+  mock_joint_state_publisher_->setStampOffset(rclcpp::Duration::from_seconds(-10.0));
+  setRobotPosition({1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0});
+  startController();
+
+  runUpdates(std::chrono::milliseconds(1500));
+
+  EXPECT_TRUE(rclcpp::ok());
+  for (double command : joint_commands_) {
+    EXPECT_NEAR(command, kFollowingCommand, kFollowingTolerance);
+  }
 }
 
 TEST_F(JointImpedanceControllerTest, TestCommandInterfaceConfiguration) {

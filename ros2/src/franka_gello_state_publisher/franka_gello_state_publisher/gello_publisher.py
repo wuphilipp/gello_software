@@ -3,8 +3,8 @@ from rclpy.executors import ExternalShutdownException
 from rclpy.node import Node
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Float32
-from rcl_interfaces.msg import ParameterEvent
-from rclpy.parameter import parameter_value_to_python
+from rcl_interfaces.msg import SetParametersResult
+from rclpy.parameter import Parameter, parameter_value_to_python
 from franka_gello_state_publisher.gello_hardware import GelloHardware, GelloHardwareParams
 from franka_gello_state_publisher.gello_parameter_config import (
     ParameterConfig,
@@ -33,27 +33,51 @@ class GelloPublisher(Node):
             Float32, "gripper/gripper_client/target_gripper_width_percent", 10
         )
 
-        # Subscribe to parameter events to allow dynamic updates of parameters
-        self.parameter_subscription = self.create_subscription(
-            ParameterEvent, "/parameter_events", self.parameter_event_callback, 10
-        )
+        # Hardware writes happen here because Humble's rclpy has no post-set parameter callback.
+        self.add_on_set_parameters_callback(self.set_parameters_callback)
 
         self.get_logger().info(
             f"Publishing GELLO joint states at {publishing_rate} Hz (baudrate {baudrate})."
         )
         self.timer = self.create_timer(1.0 / publishing_rate, self.publish_joint_jog)
 
-    def parameter_event_callback(self, event: ParameterEvent) -> None:
-        """Handle parameter change events for this node."""
-        if event.node != self.get_fully_qualified_name():
-            return
+    def set_parameters_callback(self, params: list[Parameter]) -> SetParametersResult:
+        """Validate parameter updates and write accepted Dynamixel control parameters."""
+        result = self.validate_parameter_updates(params)
+        if not result.successful:
+            return result
+        for param in params:
+            if param.name not in GelloHardware.DYNAMIXEL_CONTROL_PARAMS:
+                continue
+            try:
+                self.gello_hardware.update_dynamixel_control_parameter(param.name, param.value)
+            except (RuntimeError, ValueError) as e:
+                reason = f"Failed to write {param.name}: {e}"
+                self.get_logger().error(
+                    f"{reason}. Motors may be partially updated and differ from the parameters."
+                )
+                return SetParametersResult(successful=False, reason=reason)
+        return result
 
-        for param in event.changed_parameters:
-            # Skip parameters that are not related to the Dynamixel control parameters
+    def validate_parameter_updates(self, params: list[Parameter]) -> SetParametersResult:
+        """Reject updates of Dynamixel control parameters with a wrong number of entries."""
+        num_arm_joints = self.get_parameter("num_arm_joints").value
+        gripper = self.get_parameter("gripper").value
+        for param in params:
             if not param.name.startswith("dynamixel_"):
                 continue
-            param_value = parameter_value_to_python(param.value)
-            self.gello_hardware.update_dynamixel_control_parameter(param.name, param_value)
+            if param.name not in GelloHardware.DYNAMIXEL_CONTROL_PARAMS:
+                return SetParametersResult(
+                    successful=False,
+                    reason=f"{param.name} is not a writable dynamixel control parameter",
+                )
+            try:
+                GelloHardware.validate_dynamixel_control_parameter(
+                    param.name, param.value, num_arm_joints, gripper
+                )
+            except ValueError as e:
+                return SetParametersResult(successful=False, reason=str(e))
+        return SetParametersResult(successful=True)
 
     def publish_joint_jog(self) -> None:
         """Publish current joint states and gripper position."""
@@ -68,15 +92,15 @@ class GelloPublisher(Node):
         ]
         [gello_arm_joints, gripper_position] = self.gello_hardware.get_joint_and_gripper_positions()
 
-        arm_joint_states = JointState()
-        arm_joint_states.header.stamp = self.get_clock().now().to_msg()
-        arm_joint_states.name = JOINT_NAMES
-        arm_joint_states.header.frame_id = "fr3_link0"
-        arm_joint_states.position = gello_arm_joints.tolist()
-
         gripper_joint_states = Float32()
         gripper_joint_states.data = gripper_position
-        self.arm_joint_publisher.publish(arm_joint_states)
+        if len(gello_arm_joints) > 0:
+            arm_joint_states = JointState()
+            arm_joint_states.header.stamp = self.get_clock().now().to_msg()
+            arm_joint_states.name = JOINT_NAMES[: len(gello_arm_joints)]
+            arm_joint_states.header.frame_id = "fr3_link0"
+            arm_joint_states.position = gello_arm_joints.tolist()
+            self.arm_joint_publisher.publish(arm_joint_states)
         self.gripper_joint_publisher.publish(gripper_joint_states)
 
     def destroy_node(self) -> None:
@@ -90,7 +114,8 @@ class GelloPublisher(Node):
             param.descriptor.name, param.default, param.descriptor
         ).get_parameter_value()
 
-        return parameter_value_to_python(parameter_value)
+        value = parameter_value_to_python(parameter_value)
+        return [] if value is None else value
 
     def _setup_hardware_parameters(self):
         """Declare and setup all hardware configuration parameters."""

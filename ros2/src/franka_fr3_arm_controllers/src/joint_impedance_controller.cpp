@@ -83,7 +83,8 @@ controller_interface::return_type JointImpedanceController::update(
   if (move_to_start_position_finished_) {
     // After reaching the start position we follow the joint position from the input topic
     // This is the normal operation mode of the controller
-    if (!gello_position_values_valid_) {
+    if (!gelloJointStatesAreFresh_() && !joint_state_timeout_detected_) {
+      joint_state_timeout_detected_ = true;
       RCLCPP_FATAL(get_node()->get_logger(), "Timeout: No valid joint states received from Gello");
       rclcpp::shutdown();  // Exit the node permanently
     }
@@ -102,10 +103,6 @@ controller_interface::return_type JointImpedanceController::update(
 }
 
 void JointImpedanceController::jointStateCallback_(const sensor_msgs::msg::JointState msg) {
-  if (last_joint_state_time_.seconds() == 0.0) {
-    return;
-  }
-
   if (msg.position.size() < gello_position_values_.size()) {
     RCLCPP_WARN(get_node()->get_logger(),
                 "Received joint state size is smaller than expected size.");
@@ -115,8 +112,8 @@ void JointImpedanceController::jointStateCallback_(const sensor_msgs::msg::Joint
   std::copy(msg.position.begin(), msg.position.begin() + gello_position_values_.size(),
             gello_position_values_.begin());
 
-  validateGelloPositions_(msg);
-  last_joint_state_time_ = msg.header.stamp;
+  // Liveness is based on the local receive time, so it does not depend on the sender's clock.
+  last_joint_state_receive_time_ns_ = get_node()->now().nanoseconds();
 }
 
 CallbackReturn JointImpedanceController::on_init() {
@@ -185,7 +182,6 @@ CallbackReturn JointImpedanceController::on_configure(
 
 CallbackReturn JointImpedanceController::on_activate(
     const rclcpp_lifecycle::State& /*previous_state*/) {
-  last_joint_state_time_ = get_node()->now();
   dq_filtered_.setZero();
   start_time_ = this->get_node()->now();
 
@@ -216,19 +212,15 @@ bool JointImpedanceController::validateGains_(const std::vector<double>& gains,
   return true;
 }
 
-void JointImpedanceController::validateGelloPositions_(const sensor_msgs::msg::JointState& msg) {
-  const double max_time_diff = 0.5;
-  auto current_time = get_node()->now();
-  auto time_since_last_joint_state = (current_time - last_joint_state_time_).seconds();
-  auto time_since_msg_stamp = (current_time - msg.header.stamp).seconds();
-  gello_position_values_valid_ =
-      (time_since_last_joint_state < max_time_diff && time_since_msg_stamp < max_time_diff);
-  if (!gello_position_values_valid_) {
-    RCLCPP_WARN(get_node()->get_logger(),
-                "Gello position values are not valid. Time since last joint state: %f // Time "
-                "since message stamp: %f",
-                time_since_last_joint_state, time_since_msg_stamp);
+bool JointImpedanceController::gelloJointStatesAreFresh_() {
+  const int64_t last_receive_time_ns = last_joint_state_receive_time_ns_;
+  if (last_receive_time_ns == 0) {
+    return false;
   }
+  auto time_since_last_joint_state =
+      rclcpp::Duration::from_nanoseconds(get_node()->now().nanoseconds() - last_receive_time_ns)
+          .seconds();
+  return time_since_last_joint_state < kJointStateTimeout;
 }
 
 void JointImpedanceController::updateJointStates_() {
@@ -245,7 +237,7 @@ void JointImpedanceController::updateJointStates_() {
 }
 
 bool JointImpedanceController::initializeMotionGenerator_() {
-  if (!gello_position_values_valid_) {
+  if (!gelloJointStatesAreFresh_()) {
     // Only send a warning once every 10 seconds in order not to spam the log
     RCLCPP_WARN_THROTTLE(get_node()->get_logger(), *get_node()->get_clock(), 10 * 1000,
                          "Waiting for valid joint states...");

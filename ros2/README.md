@@ -165,10 +165,11 @@ The `config_file` argument is **optional**. If not provided, it defaults to `exa
 
 - `com_port`: the previously determined port ID of your communication converter
 - `namespace`: ROS 2 namespace (must match the robot and the gripper)
-- `num_joints`: 7 for Franka FR3
-- `joint_signs`: as used for calibration
+- `num_arm_joints`: number of arm joints, `7` for Franka FR3 or `0` for a gripper-only GELLO. Other values are currently not supported.
+- `joint_signs`: as used for calibration (arm joints only, exactly `num_arm_joints` entries; omit if `num_arm_joints` is 0)
 - `gripper`: true if Gello gripper state shall be used
-- `assembly_offsets` and `gripper_range_rad`: as determined with calibration routine
+- `assembly_offsets`: as determined with calibration routine (arm joints only, exactly `num_arm_joints` entries; omit if `num_arm_joints` is 0)
+- `gripper_range_rad`: as determined with calibration routine (gripper only, open and closed position)
 - `baudrate`: XL330 serial baud (`57600` factory, `115200`, or `1000000`). Omitted keys default to `57600`. EEPROM is written only if the live chain baud differs from this value.
 - `publishing_rate`: ROS joint-state timer in Hz (any integer ≥ 1). Recommended values in the table below. Omitted keys default to `25`.
 - Dynamixel control parameters: `dynamixel_...` (see below)
@@ -189,13 +190,13 @@ The table is recommended, not an enum. `publishing_rate` may be any integer ≥ 
 
 Each Dynamixel motor has an internal PID controller that can be configured to behave like a virtual spring and damper. Damping is useful to prevent the operator from moving the GELLO arm faster than the real robot can follow. The spring-like behavior allows to support individual joints that could sag to an unwanted position when having 7 degrees of freedom.
 
-This is done by setting the following parameters in the configuration file. Each parameter is an array of integers, where each value corresponds to a GELLO joint in ascending order.
+This is done by setting the following parameters in the configuration file. Each parameter is an array, where each value corresponds to a GELLO joint in ascending order. The gripper, if enabled, is the last entry (e.g. 8 values for 7 arm joints plus gripper). The publisher refuses to start, and rejects runtime updates, if the number of entries does not match.
 
   - `dynamixel_torque_enable`: Enable (1) / disable (0) torque of a joint. Must be enabled for the other control parameters to take effect.
-  - `dynamixel_goal_position`: Goal positions in pulses. 4095 = 360 degrees. Choose values that correspond to the desired joint angles.
+  - `dynamixel_goal_position`: Goal positions in radians. For arm joints, these are the desired joint angles of the robot (same as the published joint states). For the gripper, it is the raw motor angle, i.e. a value within `gripper_range_rad`.
   - `dynamixel_kp_p`: Proportional gains. Determines the rotary spring-like behavior. Sensible values: 0 to ~1000.
   - `dynamixel_kp_i`: Integral gains. Recommended to be 0 for all joints.
-  - `dynamixel_kd_d`: Derivative gains. Determines the damping behavior. Sensible values: 0 to ~1000.
+  - `dynamixel_kp_d`: Derivative gains. Determines the damping behavior. Sensible values: 0 to ~1000.
 
 When the GELLO publisher is started, these parameters are used to configure the Dynamixel motors. The motors then operate in their internal "Current-based Position Control" mode with a current limit set to 600mA. Check the [Dynamixel documentation](https://emanual.robotis.com/docs/en/dxl/x/xl330-m288/) for more information on the control parameters.
 

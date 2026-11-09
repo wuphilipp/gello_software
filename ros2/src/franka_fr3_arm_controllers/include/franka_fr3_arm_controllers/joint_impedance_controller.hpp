@@ -15,6 +15,7 @@
 #pragma once
 
 #include <Eigen/Eigen>
+#include <atomic>
 #include <controller_interface/controller_interface.hpp>
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/joint_state.hpp>
@@ -57,15 +58,17 @@ class JointImpedanceController : public controller_interface::ControllerInterfac
   rclcpp::Time start_time_;
   std::unique_ptr<MotionGenerator> motion_generator_;
   rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr joint_state_subscriber_ = nullptr;
-  bool gello_position_values_valid_ = false;
   std::array<double, 7> gello_position_values_{0, 0, 0, 0, 0, 0, 0};
-  rclcpp::Time last_joint_state_time_;
+  static constexpr double kJointStateTimeout = 0.5;  // seconds
+  // Written by the subscription callback and read in update(), 0 means nothing received yet.
+  std::atomic<int64_t> last_joint_state_receive_time_ns_{0};
+  bool joint_state_timeout_detected_{false};
 
   Vector7d calculateTauDGains_(const Vector7d& q_goal);
   bool validateGains_(const std::vector<double>& gains, const std::string& gains_name);
   bool initializeMotionGenerator_();
   void updateJointStates_();
-  void validateGelloPositions_(const sensor_msgs::msg::JointState& msg);
+  bool gelloJointStatesAreFresh_();
   void jointStateCallback_(const sensor_msgs::msg::JointState msg);
 };
 
