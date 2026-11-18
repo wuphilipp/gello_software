@@ -1,3 +1,4 @@
+import time
 from typing import Dict
 
 import numpy as np
@@ -23,9 +24,9 @@ class YAMRobot(Robot):
             "joint6",
             "gripper",
         ]
-        self._joint_state = np.zeros(7)  # 7 joints
+        self._joint_state = self.get_joint_pos()
         self._joint_velocities = np.zeros(7)  # 7 joints
-        self._gripper_state = 0.0
+        self._last_state_time = time.monotonic()
 
     def num_dofs(self) -> int:
         return 7  # YAM has 7 DOFs
@@ -48,20 +49,24 @@ class YAMRobot(Robot):
             len(joint_state) == self.num_dofs()
         ), f"Expected {self.num_dofs()} joint values, got {len(joint_state)}"
 
-        dt = 0.01
-        self._joint_velocities = (joint_state - self._joint_state) / dt
-        self._joint_state = joint_state
-
         # Command the I2RT robot with all 7 joints (6 arm + 1 gripper)
         self.command_joint_pos(joint_state)
 
     def get_observations(self) -> Dict[str, np.ndarray]:
+        # Report the measured state, not the last command: a gripper stopped by an
+        # object or a joint that lags its target has to show up in the observation.
+        previous, previous_time = self._joint_state, self._last_state_time
+        joint_state = self.get_joint_state()
+        self._last_state_time = time.monotonic()
+        dt = self._last_state_time - previous_time
+        if dt > 0:
+            self._joint_velocities = (joint_state - previous) / dt
         ee_pos_quat = np.zeros(7)  # Placeholder for FK
         return {
-            "joint_positions": self._joint_state,
+            "joint_positions": joint_state,
             "joint_velocities": self._joint_velocities,
             "ee_pos_quat": ee_pos_quat,
-            "gripper_position": np.array([self._gripper_state]),
+            "gripper_position": np.array([joint_state[-1]]),
         }
 
     def get_joint_pos(self):
